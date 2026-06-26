@@ -1,2 +1,10 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Vendored task-board assets (fonts, JS drop-ins, generated fonts.css) must stay
+# BYTE-EXACT on every OS: board-server.mjs verifies each against a pinned sha256 at
+# install time, and build-codex-plugin.ps1 -Check SHA256-compares the mirrored copy.
+# `binary` disables EOL normalization so checkout never mutates the bytes. (Covers
+# both the root source and the generated Codex mirror.)
+skills/tasks-start/assets/vendor/** binary
+plugins/shaughv-tasks/skills/tasks-start/assets/vendor/** binary

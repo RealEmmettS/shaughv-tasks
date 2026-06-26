@@ -1,0 +1,38 @@
+/* SHAUGHV task board — locally-vendored font subset (the offline tier).
+ *
+ * Served by board-server.mjs at /vendor/fonts.css and injected by the dashboard AFTER the
+ * CDN font links (so these faces win for the weights they cover). Each face tries the
+ * locally-served woff2 FIRST, then the CDN — so the board renders its brand fonts fully
+ * offline once provisioned, and still self-heals to the CDN if a local file is missing.
+ *
+ * Only the weights the dashboard actually paints are vendored (mono labels: IBM Plex Mono
+ * 400/500/600; display headline: Unbounded 400/700). Other weights, and Makira (commercial
+ * license — NOT redistributable, so never bundled), are left to the CDN links / the CSS
+ * system-font fallback chain. The Slot Roll + FLIP motion is glyph-agnostic, so behaviour is
+ * identical regardless of which fonts resolve. */
+
+@font-face {
+  font-family: "IBM Plex Mono"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("/vendor/fonts/ibm-plex-mono/IBMPlexMono-Regular.woff2") format("woff2"),
+       url("https://cdn.shaughv.com/fonts/ibm-plex-mono/woff2/IBMPlexMono-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: swap;
+  src: url("/vendor/fonts/ibm-plex-mono/IBMPlexMono-Medium.woff2") format("woff2"),
+       url("https://cdn.shaughv.com/fonts/ibm-plex-mono/woff2/IBMPlexMono-Medium.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Mono"; font-style: normal; font-weight: 600; font-display: swap;
+  src: url("/vendor/fonts/ibm-plex-mono/IBMPlexMono-SemiBold.woff2") format("woff2"),
+       url("https://cdn.shaughv.com/fonts/ibm-plex-mono/woff2/IBMPlexMono-SemiBold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Unbounded"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("/vendor/fonts/unbounded/Unbounded-Regular.woff2") format("woff2"),
+       url("https://cdn.shaughv.com/fonts/unbounded/woff2/Unbounded-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Unbounded"; font-style: normal; font-weight: 700; font-display: swap;
+  src: url("/vendor/fonts/unbounded/Unbounded-Bold.woff2") format("woff2"),
+       url("https://cdn.shaughv.com/fonts/unbounded/woff2/Unbounded-Bold.woff2") format("woff2");
+}

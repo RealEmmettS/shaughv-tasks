@@ -1,0 +1,4188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TASKS / SHAUGHV</title>
+  <link rel="icon" type="image/svg+xml" href="https://cdn.shaughv.com/brand/shaughv/favicons/SHAUGHV-Favicon-Dark.svg" media="(prefers-color-scheme: light)">
+  <link rel="icon" type="image/svg+xml" href="https://cdn.shaughv.com/brand/shaughv/favicons/SHAUGHV-Favicon-Light.svg" media="(prefers-color-scheme: dark)">
+  <link rel="preconnect" href="https://cdn.shaughv.com" crossorigin>
+  <!-- SHAUGHV fonts: Makira (display/body), IBM Plex Mono (labels/metadata), Unbounded (headlines) -->
+  <link rel="stylesheet" href="https://cdn.shaughv.com/fonts/makira/makira.css">
+  <link rel="stylesheet" href="https://cdn.shaughv.com/fonts/ibm-plex-mono/ibm-plex-mono.css">
+  <link rel="stylesheet" href="https://cdn.shaughv.com/fonts/unbounded/unbounded.css">
+  <!-- SHAUGHV animated brand mark + canonical loader (vanilla drop-ins, inherit currentColor) -->
+  <script defer src="https://cdn.shaughv.com/js/animated-brand-mark.js"></script>
+  <script defer src="https://cdn.shaughv.com/js/shaughv-loader.js"></script>
+  <!-- Theme bootstrap: set surface before first paint to avoid a flash of the wrong theme -->
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('shaughv-tasks-theme');
+        var dark = saved ? saved === "dark"
+          : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (dark) document.documentElement.setAttribute('data-theme', 'dark');
+      } catch (e) {}
+    })();
+  </script>
+  <!-- Tiered asset loader (progressive enhancement; see references/board-server.md "Tiered dependencies").
+       The static CDN stylesheet + script tags above are the file:// + online path. When the board is served
+       over http (SERVER_MODE), this prefers the locally-provisioned /vendor/* copies first so the board
+       renders fully offline, self-healing to the CDN, and finally to system fonts / the built-in motion
+       engine. Behaviour is IDENTICAL at every tier — only the byte source changes. -->
+  <script>
+    (function () {
+      try {
+        var SERVER = location.protocol === 'http:' || location.protocol === 'https:';
+        var head = document.head || document.getElementsByTagName('head')[0];
+        function css(href) { var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; head.appendChild(l); }
+        function js(src, onerror) { var s = document.createElement('script'); s.src = src; if (onerror) s.onerror = onerror; head.appendChild(s); }
+
+        // Fonts — inject the locally-vendored stylesheet AFTER the CDN <link>s already in <head>.
+        // fonts.css is itself local-first → CDN-fallback per @font-face, so the vendored weights win
+        // when present and self-heal to the CDN otherwise; Makira (never bundled) + the system stack
+        // still cover the rest. file:// keeps the CDN links only.
+        if (SERVER) css('/vendor/fonts.css');
+
+        // anime.js — optional alternate driver for the Slot Roll. Local → CDN → leave window.anime
+        // undefined (the built-in CSS driver then runs, with identical motion). Loaded async; the
+        // Slot Roll checks window.anime per-call, so whenever it lands it's picked up — no race.
+        var ANIME_CDN = 'https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js';
+        if (SERVER) js('/vendor/anime.min.js', function () { js(ANIME_CDN); });
+        else js(ANIME_CDN);
+
+        // Brand mark — prefer the vendored drop-in in SERVER_MODE. The CDN <script defer> in <head>
+        // remains for file:// / online; animated-brand-mark.js self-guards customElements.define, so
+        // loading both is safe (first wins). If <shaughv-mark> is still undefined a moment after load
+        // (the true offline floor), register a tiny dependency-free text fallback so the mark/header
+        // still read "SHAUGHV" instead of rendering empty.
+        if (SERVER) js('/vendor/animated-brand-mark.js');
+        setTimeout(function () {
+          if (typeof customElements === 'undefined' || customElements.get('shaughv-mark')) return;
+          try {
+            customElements.define('shaughv-mark', class extends HTMLElement {
+              connectedCallback() {
+                var icon = this.hasAttribute('data-icon-only');
+                this.style.display = 'inline-flex';
+                this.style.alignItems = 'center';
+                this.style.justifyContent = 'center';
+                this.style.fontFamily = 'var(--font-display)';
+                this.style.fontWeight = '700';
+                this.style.lineHeight = '1';
+                this.style.fontSize = icon ? '0.82em' : '0.5em';
+                this.style.letterSpacing = icon ? '0' : '0.04em';
+                if (!this.textContent.trim()) this.textContent = icon ? 'S' : 'SHAUGHV';
+              }
+            });
+          } catch (e) {}
+        }, 1500);
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      color-scheme: light;
+      /* SHAUGHV - Vintage edition (cream + sage + olive) */
+      --bg-primary: #F5F5F0;       /* cream-200 - page */
+      --bg-secondary: #EAEAE1;     /* recessed wells / columns */
+      --bg-card: #FAFAF8;          /* cream-100 - cards */
+      --text-primary: #4C4436;     /* olive-dark */
+      --text-secondary: #6C6456;   /* olive-light */
+      --text-muted: rgba(92, 84, 70, 0.58);
+      --accent: #5B8A5B;           /* sage - the action color */
+      --accent-hover: #4A7A4A;     /* sage-dark */
+      --accent-contrast: #FAFAF8;  /* text/icon on accent fills */
+      --accent-tint: rgba(91, 138, 91, 0.10);
+      --border: rgba(92, 84, 70, 0.20);
+      --border-light: rgba(92, 84, 70, 0.10);
+      --shadow: rgba(92, 84, 70, 0.06);
+      --shadow-hover: rgba(92, 84, 70, 0.12);
+      --overlay: rgba(76, 68, 54, 0.42);
+      --font-display: "Unbounded", "Makira", system-ui, sans-serif;
+      --font-body: "Makira", "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+    }
+
+    [data-theme="dark"] {
+      color-scheme: dark;
+      /* SHAUGHV - Brutalist edition (near-black + brand orange) */
+      --bg-primary: #0B0B0B;
+      --bg-secondary: #161615;
+      --bg-card: #1C1C1A;
+      --text-primary: #FAFAF8;
+      --text-secondary: rgba(250, 250, 248, 0.68);
+      --text-muted: rgba(250, 250, 248, 0.42);
+      --accent: #FF5E1A;           /* brand orange - the live brutalist signal color */
+      --accent-hover: #E54E10;
+      --accent-contrast: #0B0B0B;
+      --accent-tint: rgba(255, 94, 26, 0.12);
+      --border: rgba(250, 250, 248, 0.16);
+      --border-light: rgba(250, 250, 248, 0.08);
+      --shadow: rgba(0, 0, 0, 0.45);
+      --shadow-hover: rgba(0, 0, 0, 0.60);
+      --overlay: rgba(0, 0, 0, 0.62);
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      height: 100vh;
+      padding: 20px 24px;
+      line-height: 1.5;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 12px; color: var(--text-secondary); }
+
+    .header-left {
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+    }
+
+    .view-toggle {
+      display: flex;
+      gap: 4px;
+      background: var(--bg-secondary);
+      padding: 4px;
+      border-radius: 8px;
+      margin-left: 16px;
+    }
+
+    .view-toggle button {
+      background: transparent;
+      border: none;
+      padding: 6px 14px;
+      font-size: 13px;
+      color: var(--text-muted);
+      border-radius: 6px;
+    }
+
+    .view-toggle button:hover {
+      color: var(--text-primary);
+      background: transparent;
+    }
+
+    .view-toggle button.active {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      box-shadow: 0 1px 3px var(--shadow);
+    }
+
+    .buttons { display: flex; gap: 12px; }
+
+    button {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }
+
+    button:hover {
+      background: var(--bg-secondary);
+      border-color: var(--text-muted);
+    }
+
+    button.primary {
+      background: var(--accent);
+      color: var(--accent-contrast);
+      border-color: var(--accent);
+    }
+
+    button.primary:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* ===== TASKS STYLES ===== */
+
+    .board {
+      display: flex;
+      gap: 24px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-bottom: 24px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .column {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      min-width: 340px;
+      max-width: 340px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-height: 100%;
+    }
+
+    .column-header {
+      padding: 16px 18px;
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: grab;
+    }
+
+    .column-header:active {
+      cursor: grabbing;
+    }
+
+    .column.dragging-column {
+      opacity: 0.5;
+    }
+
+    .column-drop-indicator {
+      width: 3px;
+      background: var(--accent);
+      border-radius: 2px;
+      margin: 0 -2px;
+      min-height: 100px;
+    }
+
+    .column-header .count {
+      background: var(--bg-card);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .cards {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 12px 12px;
+      min-height: 100px;
+    }
+
+    .cards.drag-over {
+      background: var(--accent-tint);
+      border-radius: 8px;
+    }
+
+    .task-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      cursor: grab;
+      transition: all 0.15s ease;
+      box-shadow: 0 1px 3px var(--shadow);
+      position: relative;
+    }
+
+    .task-card:hover {
+      box-shadow: 0 4px 12px var(--shadow-hover);
+      border-color: var(--border);
+    }
+
+    .task-card .add-on-hover {
+      display: none;
+    }
+
+    .task-card:hover .add-on-hover {
+      display: block;
+    }
+
+    .task-card .delete-btn {
+      display: none;
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px 6px;
+      font-size: 14px;
+      line-height: 1;
+      border-radius: 4px;
+    }
+
+    .task-card:hover .delete-btn {
+      display: block;
+    }
+
+    .task-card .delete-btn:hover {
+      background: var(--bg-secondary);
+      color: var(--accent);
+    }
+
+    .task-card.dragging {
+      opacity: 0.5;
+      transform: rotate(2deg);
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.5;
+      color: var(--text-primary);
+    }
+
+    .card-note {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      line-height: 1.4;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+
+    .card-subtasks {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-light);
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .subtask {
+      padding: 3px 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .checkbox {
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      min-height: 18px;
+      flex-shrink: 0;
+      border: 2px solid var(--border);
+      border-radius: 5px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      background: var(--bg-card);
+    }
+
+    .checkbox:hover {
+      border-color: var(--accent);
+    }
+
+    .checkbox.checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .checkbox.checked::after {
+      content: '';
+      width: 5px;
+      height: 9px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+      margin-bottom: 2px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 80px 40px;
+      color: var(--text-muted);
+    }
+
+    .empty-state button {
+      font-size: 16px;
+      padding: 14px 28px;
+      background: var(--accent);
+      border: none;
+      color: var(--accent-contrast);
+    }
+
+    .empty-state button:hover {
+      background: var(--accent-hover);
+    }
+
+    .status-bar {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text-primary);
+      color: var(--bg-primary);
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      box-shadow: 0 4px 20px rgba(20, 20, 19, 0.15);
+      z-index: 200;
+    }
+
+    .status-bar.visible { opacity: 1; }
+
+    .add-card {
+      padding: 12px;
+    }
+
+    .add-card button {
+      width: 100%;
+      background: transparent;
+      border: 2px dashed var(--border);
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .add-card button:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: transparent;
+    }
+
+    .new-task-input {
+      width: 100%;
+      background: var(--bg-card);
+      border: 2px solid var(--accent);
+      border-radius: 8px;
+      padding: 12px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: inherit;
+      resize: none;
+    }
+
+    .new-task-input:focus {
+      outline: none;
+    }
+
+    .new-task-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    /* Scrollbar styling */
+    .cards::-webkit-scrollbar,
+    .list-view::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .cards::-webkit-scrollbar-track,
+    .list-view::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .cards::-webkit-scrollbar-thumb,
+    .list-view::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    .cards::-webkit-scrollbar-thumb:hover,
+    .list-view::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    /* List View Styles */
+    .list-view {
+      max-width: 800px;
+      margin: 0 auto;
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      min-height: 0;
+    }
+
+    .list-section {
+      margin-bottom: 28px;
+    }
+
+    .list-section.drag-over {
+      background: var(--accent-tint);
+      border-radius: 8px;
+      margin: 0 -12px 32px;
+      padding: 0 12px;
+    }
+
+    .list-section-header {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      padding: 4px 0;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .list-section-header .section-title {
+      cursor: pointer;
+    }
+
+    .list-section-header .section-title:hover {
+      color: var(--text-primary);
+    }
+
+    .list-section-header .count {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .list-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      cursor: grab;
+      position: relative;
+      border-radius: 10px;
+      transition: all 0.15s ease;
+      box-shadow: 0 1px 3px var(--shadow);
+    }
+
+    .list-item:active {
+      cursor: grabbing;
+    }
+
+    .list-item:hover {
+      box-shadow: 0 4px 12px var(--shadow-hover);
+      border-color: var(--border);
+    }
+
+    .list-item.dragging {
+      opacity: 0.5;
+      background: var(--bg-secondary);
+    }
+
+    .list-item .checkbox {
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .list-item-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .list-item-title {
+      font-size: 15px;
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+
+    .list-item-title.checked {
+      color: var(--text-muted);
+      text-decoration: line-through;
+    }
+
+    .list-item-note {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      cursor: pointer;
+    }
+
+    .list-item-note:hover {
+      color: var(--text-secondary);
+    }
+
+    .list-item-note.add-note {
+      font-style: italic;
+      display: none;
+    }
+
+    .list-item:hover .list-item-note.add-note {
+      display: block;
+    }
+
+    .list-item-subtasks {
+      margin-top: 8px;
+      padding-left: 2px;
+    }
+
+    .list-item-subtask {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 3px 0;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .list-item-subtask .checkbox {
+      width: 16px;
+      height: 16px;
+      min-width: 16px;
+      min-height: 16px;
+      margin-top: 1px;
+    }
+
+    .list-item-subtask span {
+      cursor: pointer;
+    }
+
+    .list-item-subtask span:hover {
+      color: var(--text-primary);
+    }
+
+    .list-item-add-subtask {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-style: italic;
+      cursor: pointer;
+      padding: 3px 0;
+      padding-left: 24px;
+      display: none;
+    }
+
+    .list-item:hover .list-item-add-subtask {
+      display: block;
+    }
+
+    .list-item-add-subtask:hover {
+      color: var(--accent);
+    }
+
+    .list-item-section {
+      font-size: 11px;
+      color: var(--text-muted);
+      background: var(--bg-secondary);
+      padding: 2px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .list-item-actions {
+      display: none;
+      position: absolute;
+      top: 8px;
+      right: 8px;
+    }
+
+    .list-item:hover .list-item-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .list-item-actions button {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px 6px;
+      font-size: 14px;
+      line-height: 1;
+      border-radius: 4px;
+    }
+
+    .list-item-actions button:hover {
+      background: var(--bg-card);
+      color: var(--accent);
+    }
+
+    .list-drop-indicator {
+      height: 3px;
+      background: var(--accent);
+      border-radius: 2px;
+      margin: 2px -12px;
+    }
+
+    .list-add-section {
+      margin-top: 16px;
+      padding: 16px;
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+
+    .list-add-section:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .quick-add {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+    }
+
+    .quick-add-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      font-size: 15px;
+      color: var(--text-primary);
+      font-family: inherit;
+      outline: none;
+    }
+
+    .quick-add-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .quick-add-section {
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--bg-secondary);
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+    }
+
+    .quick-add-section:hover {
+      border-color: var(--accent);
+    }
+
+    .section-picker {
+      position: absolute;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 4px 20px var(--shadow-hover);
+      padding: 4px;
+      z-index: 100;
+    }
+
+    .section-picker button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 8px 12px;
+      font-size: 13px;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+    }
+
+    .section-picker button:hover {
+      background: var(--bg-secondary);
+    }
+
+    /* ===== MEMORY STYLES ===== */
+
+    .memory-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      background: var(--bg-secondary);
+      padding: 4px;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .memory-tab {
+      background: transparent;
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+      text-transform: capitalize;
+    }
+
+    .memory-tab:hover { color: var(--text-primary); }
+
+    .memory-tab.active {
+      color: var(--text-primary);
+      background: var(--bg-card);
+      box-shadow: 0 1px 3px var(--shadow);
+    }
+
+    .memory-tab .count {
+      background: var(--bg-secondary);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      margin-left: 6px;
+      color: var(--text-muted);
+    }
+
+    .memory-tab.active .count {
+      background: var(--border-light);
+    }
+
+    .memory-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .memory-flat-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .memory-flat-table th {
+      text-align: left;
+      padding: 10px 16px;
+      font-weight: 500;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .memory-flat-table td {
+      padding: 9px 16px;
+      border-bottom: 1px solid var(--border-light);
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+
+    .memory-flat-table td:first-child {
+      color: var(--text-muted);
+      font-weight: 500;
+      white-space: nowrap;
+      width: 120px;
+    }
+
+    .memory-flat-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .memory-flat-table tr:hover td {
+      background: var(--bg-secondary);
+    }
+
+    .memory-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 10px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 1px 3px var(--shadow);
+    }
+
+    .memory-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 4px 12px var(--shadow-hover);
+    }
+
+    .memory-card-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-primary);
+    }
+
+    .memory-card-meta {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .memory-card-preview {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+    }
+
+    .memory-card-fields {
+      margin-top: 10px;
+      font-size: 12px;
+    }
+
+    .memory-card-field {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .memory-card-field-label {
+      color: var(--text-muted);
+      min-width: 80px;
+    }
+
+    .memory-card-field-value {
+      color: var(--text-secondary);
+    }
+
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px var(--shadow);
+    }
+
+    .file-card-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .file-card-header:hover {
+      background: var(--bg-secondary);
+    }
+
+    .file-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .file-card-content {
+      padding: 16px;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      overflow-y: auto;
+      display: none;
+      color: var(--text-secondary);
+    }
+
+    .file-card-content.expanded {
+      display: block;
+    }
+
+    .stats {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 10px;
+      padding: 16px 24px;
+      min-width: 100px;
+      box-shadow: 0 1px 3px var(--shadow);
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: capitalize;
+      margin-top: 4px;
+    }
+
+    .search-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .search-box input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .search-box input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .add-btn {
+      background: transparent;
+      border: 2px dashed var(--border);
+      color: var(--text-muted);
+      padding: 40px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .add-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .markdown-content {
+      line-height: 1.6;
+      color: var(--text-secondary);
+    }
+
+    .markdown-content h1 { font-size: 1.4em; margin: 16px 0 8px; color: var(--text-primary); }
+    .markdown-content h2 { font-size: 1.2em; margin: 14px 0 6px; color: var(--text-primary); }
+    .markdown-content h3 { font-size: 1.1em; margin: 12px 0 4px; color: var(--text-secondary); }
+    .markdown-content p { margin: 8px 0; }
+    .markdown-content ul, .markdown-content ol { margin: 8px 0 8px 20px; }
+    .markdown-content li { margin: 4px 0; }
+    .markdown-content code {
+      background: var(--bg-secondary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: var(--text-primary);
+    }
+    .markdown-content pre {
+      background: var(--bg-secondary);
+      padding: 12px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 8px 0;
+      border: 1px solid var(--border-light);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0;
+      font-size: 13px;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .markdown-content th {
+      background: var(--bg-secondary);
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--overlay);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.visible {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg-card);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 800px;
+      max-height: 85vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(20, 20, 19, 0.2);
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .modal-close:hover { color: var(--text-primary); }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .modal-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* ===== Task modal (rich view + edit) ===== */
+    .modal.task-modal { max-width: 960px; max-height: 88vh; width: 92%; }
+    @media (max-width: 640px) { .modal.task-modal { width: 96%; max-height: 94vh; } }
+    .tm-id { font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; color: var(--text-muted); }
+    .tm-title-input { width: 100%; font-size: 19px; font-weight: 600; font-family: var(--font-display, inherit); background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-primary); outline: none; padding: 2px 0; }
+    .tm-title-input:focus { border-bottom-color: var(--accent); }
+    .tm-section-label { font-family: var(--font-mono, ui-monospace, monospace); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 18px 0 6px; }
+    .tm-section-label:first-child { margin-top: 0; }
+    .tm-note-input { width: 100%; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; color: var(--text-primary); font-family: inherit; font-size: 14px; outline: none; }
+    .tm-note-input:focus { border-color: var(--accent); }
+    .tm-row-between { display: flex; align-items: center; justify-content: space-between; }
+    .tm-btn { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 12px; padding: 4px 12px; cursor: pointer; font-family: inherit; }
+    .tm-btn:hover { border-color: var(--accent); }
+    .tm-desc-rendered { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; font-size: 14px; }
+    .tm-desc-rendered h2 { font-size: 17px; margin: 12px 0 6px; }
+    .tm-desc-rendered h3 { font-size: 15px; margin: 10px 0 4px; }
+    .tm-desc-rendered h4 { font-size: 13px; margin: 8px 0 4px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .tm-desc-rendered p { margin: 6px 0; line-height: 1.55; }
+    .tm-desc-rendered ul, .tm-desc-rendered ol { margin: 6px 0 6px 22px; }
+    .tm-desc-rendered li { margin: 3px 0; line-height: 1.5; }
+    .tm-desc-rendered code { font-family: ui-monospace, monospace; font-size: 12px; background: var(--bg-card); padding: 1px 5px; border-radius: 4px; }
+    .tm-desc-rendered pre { background: var(--bg-card); padding: 10px 12px; border-radius: 6px; overflow-x: auto; }
+    .tm-desc-rendered pre code { background: none; padding: 0; }
+    .tm-desc-rendered a { color: var(--accent); }
+    .tm-ttdr { border-left: 3px solid var(--accent); background: var(--bg-card); padding: 8px 12px; border-radius: 0 6px 6px 0; margin: 0 0 10px; line-height: 1.5; }
+    .tm-desc-edit { width: 100%; min-height: 260px; resize: vertical; background: var(--bg-card); border: 1px solid var(--accent); border-radius: 8px; padding: 12px; color: var(--text-primary); font-family: ui-monospace, monospace; font-size: 13px; line-height: 1.55; outline: none; box-sizing: border-box; }
+    .tm-sub { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
+    .tm-sub .tm-sub-text { flex: 1; background: transparent; border: none; border-bottom: 1px solid transparent; color: var(--text-primary); font-family: inherit; font-size: 14px; outline: none; padding: 2px 0; }
+    .tm-sub .tm-sub-text:focus { border-bottom-color: var(--accent); }
+    .tm-sub .tm-sub-text.checked { text-decoration: line-through; color: var(--text-muted); }
+    .tm-sub-del { color: var(--text-muted); cursor: pointer; background: none; border: none; font-size: 16px; line-height: 1; }
+    .tm-sub-del:hover { color: var(--accent); }
+    .tm-add { color: var(--text-muted); cursor: pointer; font-style: italic; font-size: 13px; padding: 6px 0; }
+    .tm-add:hover { color: var(--accent); }
+    .tm-activity { list-style: none; padding: 0; margin: 0; }
+    .tm-activity li { font-size: 12.5px; color: var(--text-muted); padding: 5px 0; border-bottom: 1px dashed var(--border); font-family: ui-monospace, monospace; }
+    .tm-activity li:last-child { border-bottom: none; }
+    .tm-activity .tm-empty { font-style: italic; }
+    .tm-blocked { color: var(--accent); font-size: 13px; margin-top: 6px; font-family: ui-monospace, monospace; }
+    .task-card { cursor: pointer; }
+
+    /* ===== Freshness / staleness indicator ===== */
+    #freshness { font-family: ui-monospace, monospace; font-size: 11px; padding: 2px 9px; border-radius: 999px; white-space: nowrap; letter-spacing: 0.02em; }
+    #freshness.fresh { color: #fff; background: var(--accent); }
+    #freshness.aging { color: var(--text-muted); background: var(--bg-primary); border: 1px solid var(--border); }
+    #freshness.stale { color: #fff; background: #b3261e; }
+
+    /* Card "just changed" pulse + the FLIP ghost that glides between columns. */
+    @keyframes task-pulse {
+      0%   { box-shadow: 0 0 0 0 var(--accent); }
+      15%  { box-shadow: 0 0 0 3px var(--accent); }
+      100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
+    }
+    .task-card.just-changed { animation: task-pulse 1.05s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .task-card.flip-ghost { box-shadow: 0 12px 28px -10px rgba(0, 0, 0, 0.45); }
+    @media (prefers-reduced-motion: reduce) {
+      .task-card.just-changed { animation: none; }
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .form-group textarea {
+      width: 100%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      line-height: 1.5;
+      min-height: 300px;
+      resize: vertical;
+    }
+
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* Tab panel containers */
+    .tab-panel {
+      display: none;
+      flex: 1;
+      min-height: 0;
+      flex-direction: column;
+    }
+
+    .tab-panel.active {
+      display: flex;
+    }
+
+    /* Memory panel scrollable area */
+    .memory-content-area {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .memory-content-area::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .memory-content-area::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .memory-content-area::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    .memory-content-area::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    .file-card-content::-webkit-scrollbar,
+    .modal-body::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .file-card-content::-webkit-scrollbar-track,
+    .modal-body::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .file-card-content::-webkit-scrollbar-thumb,
+    .modal-body::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    .file-card-content::-webkit-scrollbar-thumb:hover,
+    .modal-body::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    /* File path display */
+    .file-path {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    /* ===== SHAUGHV TYPOGRAPHY LAYER ===== */
+    h1, .app-title { font-family: var(--font-display); font-weight: 700; text-transform: uppercase; letter-spacing: 0.005em; }
+    .app-title { font-size: 1.35rem; }
+    .stat-value { font-family: var(--font-display); font-weight: 700; }
+    .column-header, .list-section-header, .memory-tab, .view-toggle button,
+    .memory-flat-table th, .form-group label, .stat-label, .file-path,
+    .quick-add-section, .list-item-section, .count, .markdown-content th {
+      font-family: var(--font-mono);
+    }
+    button { letter-spacing: 0.01em; }
+    ::selection { background: var(--accent); color: var(--accent-contrast); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <shaughv-mark class="brand-mark" data-icon-only aria-label="SHAUGHV" style="height: 44px; width: 44px; margin-right: 16px; flex-shrink: 0; color: var(--accent);"></shaughv-mark>
+      <div>
+        <h1 class="app-title">Tasks</h1>
+        <div id="filePath" class="file-path"></div>
+      </div>
+      <div class="view-toggle" id="mainTabToggle">
+        <button id="tasksTabBtn" class="active">Tasks</button>
+        <button id="memoryTabBtn">Memory</button>
+      </div>
+      <div class="view-toggle" id="taskViewToggle">
+        <button id="boardViewBtn" class="active">Board</button>
+        <button id="listViewBtn">List</button>
+      </div>
+    </div>
+    <div class="buttons">
+      <button id="themeToggle" title="Toggle light / dark" aria-label="Toggle theme">Dark</button>
+      <button id="openTaskBtn">Select File</button>
+      <button id="openMemoryBtn" style="display: none;">Open Folder</button>
+      <button id="saveBtn" class="primary" disabled style="display: none;">Save</button>
+    </div>
+  </header>
+
+  <!-- TASKS TAB PANEL -->
+  <div class="tab-panel active" id="tasksPanel">
+    <div class="list-view" id="listView" style="display: none;"></div>
+    <div class="board" id="board">
+      <div class="empty-state" id="boardEmptyState" style="width: 100%;">
+        <shaughv-mark aria-label="SHAUGHV" style="display:block; height: 88px; width: 88px; color: var(--accent); margin: 0 auto 28px;"></shaughv-mark>
+        <p style="margin-bottom: 8px; font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.02em; font-size: 20px; color: var(--text-primary);">Your tasks, in focus</p>
+        <p style="margin-bottom: 24px; font-size: 15px; color: var(--text-muted);">Select your TASKS.md file to load the board.</p>
+        <button id="openBtnLarge">Select TASKS.md</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MEMORY TAB PANEL -->
+  <div class="tab-panel" id="memoryPanel">
+    <div id="memoryEmptyState" class="empty-state">
+      <shaughv-mark aria-label="SHAUGHV" style="display:block; height: 88px; width: 88px; color: var(--accent); margin: 0 auto 28px;"></shaughv-mark>
+      <p style="margin-bottom: 8px; font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.02em; font-size: 20px; color: var(--text-primary);">Workplace memory</p>
+      <p style="margin-bottom: 24px; font-size: 15px; color: var(--text-muted);">Select your project folder to browse what I know.</p>
+      <button id="openMemoryBtnLarge">Select Folder</button>
+    </div>
+    <div id="memoryMainContent" style="display: none; flex-direction: column; min-height: 0; flex: 1;">
+      <div class="memory-tabs" id="memoryTabsContainer"></div>
+      <div class="memory-content-area">
+        <div id="memoryContentContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL (shared for memory) -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">Edit</h3>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-footer">
+        <button id="modalCancel">Cancel</button>
+        <button id="modalSave" class="primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASK MODAL (rich view + edit for a single task: description, notes, subtasks, activity) -->
+  <div class="modal-overlay" id="taskModalOverlay">
+    <div class="modal task-modal">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
+          <span class="checkbox" id="tmCheckbox" title="Toggle done" style="flex-shrink:0;"></span>
+          <input type="text" class="tm-title-input" id="tmTitle" placeholder="Task title">
+        </div>
+        <div style="display:flex; align-items:center; gap:14px; flex-shrink:0;">
+          <span class="tm-id" id="tmId"></span>
+          <button class="modal-close" id="tmClose">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body" id="tmBody"></div>
+      <div class="modal-footer">
+        <button class="tm-btn" id="tmDelete" style="margin-right:auto; color:#b3261e; border-color:#b3261e;">Delete task</button>
+        <button id="tmDoneBtn" class="primary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-bar" id="status"></div>
+
+  <script>
+    // ===== SHAUGHV THEME TOGGLE =====
+    (function () {
+      var KEY = 'shaughv-tasks-theme';
+      var root = document.documentElement;
+      var btn = document.getElementById('themeToggle');
+      function syncLabel() {
+        if (btn) btn.textContent = root.getAttribute('data-theme') === 'dark' ? 'Light' : 'Dark';
+      }
+      syncLabel();
+      if (btn) btn.addEventListener('click', function () {
+        var isDark = root.getAttribute('data-theme') === 'dark';
+        if (isDark) root.removeAttribute('data-theme');
+        else root.setAttribute('data-theme', 'dark');
+        try { localStorage.setItem(KEY, isDark ? 'light' : 'dark'); } catch (e) {}
+        syncLabel();
+      });
+    })();
+
+    // ===== SHARED STATE =====
+    let activeMainTab = 'tasks'; // 'tasks' or 'memory'
+
+    // When this page is served by board-server.mjs over http(s), we talk to its REST + SSE
+    // API and the files live server-side (clean, reliable, auto-loading). When it's opened
+    // as a file:// page, we fall back to the File System Access API (the legacy flow with
+    // manual "Select TASKS.md" / "Select Folder" pickers + 1s polling). Everything below
+    // branches on this one flag.
+    const SERVER_MODE = location.protocol === 'http:' || location.protocol === 'https:';
+
+    const statusEl = document.getElementById('status');
+    const filePathEl = document.getElementById('filePath');
+
+    function showStatus(msg) {
+      statusEl.textContent = msg;
+      statusEl.classList.add('visible');
+      setTimeout(() => statusEl.classList.remove('visible'), 2000);
+    }
+
+    // ===== MAIN TAB SWITCHING =====
+    const tasksTabBtn = document.getElementById('tasksTabBtn');
+    const memoryTabBtn = document.getElementById('memoryTabBtn');
+    const tasksPanel = document.getElementById('tasksPanel');
+    const memoryPanel = document.getElementById('memoryPanel');
+    const taskViewToggle = document.getElementById('taskViewToggle');
+    const openTaskBtn = document.getElementById('openTaskBtn');
+    const openMemoryBtn = document.getElementById('openMemoryBtn');
+    const saveBtn = document.getElementById('saveBtn');
+
+    function switchMainTab(tab) {
+      activeMainTab = tab;
+
+      tasksTabBtn.classList.toggle('active', tab === 'tasks');
+      memoryTabBtn.classList.toggle('active', tab === 'memory');
+
+      tasksPanel.classList.toggle('active', tab === 'tasks');
+      memoryPanel.classList.toggle('active', tab === 'memory');
+
+      // Show/hide view toggle for tasks
+      taskViewToggle.style.display = tab === 'tasks' ? 'flex' : 'none';
+
+      // Show/hide appropriate buttons
+      openTaskBtn.style.display = tab === 'tasks' ? 'inline-flex' : 'none';
+      openMemoryBtn.style.display = tab === 'memory' ? 'inline-flex' : 'none';
+      saveBtn.style.display = tab === 'tasks' ? 'inline-flex' : 'none';
+
+      // Update file path display
+      if (tab === 'tasks') {
+        filePathEl.textContent = SERVER_MODE
+          ? (taskFileName ? 'TASKS.md' : '')
+          : (taskFileHandle ? taskFileName : '');
+      } else {
+        filePathEl.textContent = SERVER_MODE
+          ? '.tasks/ memory'
+          : (memoryDirHandle ? memoryDirHandle.name : '');
+      }
+    }
+
+    tasksTabBtn.addEventListener('click', () => switchMainTab('tasks'));
+    memoryTabBtn.addEventListener('click', () => switchMainTab('memory'));
+
+    // ============================================================
+    // ===== TASKS FUNCTIONALITY =====
+    // ============================================================
+
+    let taskFileHandle = null;
+    let taskFileName = '';
+    let sections = [];
+    let tasks = {};
+    let hasChanges = false;
+    let currentView = 'board';
+    let quickAddSection = null;
+
+    const board = document.getElementById('board');
+    const listView = document.getElementById('listView');
+    const listViewBtn = document.getElementById('listViewBtn');
+    const boardViewBtn = document.getElementById('boardViewBtn');
+
+    function taskSectionId(name) {
+      return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    }
+
+    // ===== Task IDs + prerequisites =====
+    // Every task carries a short, stable, random base-36 id (e.g. "a3f") so it can be
+    // referenced as a prerequisite by another task. A task is "blocked" while any of its
+    // prerequisites is not yet done.
+    function genTaskId(used) {
+      let id;
+      do { id = (Math.random().toString(36) + '000').slice(2, 5); } while (!id || used.has(id));
+      used.add(id);
+      return id;
+    }
+    function currentTaskIds() {
+      const s = new Set();
+      for (const sec of sections) for (const t of (tasks[sec.id] || [])) if (t.id) s.add(t.id);
+      return s;
+    }
+    function taskById(id) {
+      for (const sec of sections) for (const t of (tasks[sec.id] || [])) if (t.id === id) return t;
+      return null;
+    }
+    function unmetNeeds(task) {
+      if (!task.needs || !task.needs.length) return [];
+      // A prerequisite is "unmet" only if it exists and isn't done. Unknown/dangling ids
+      // are treated as satisfied so a card can never get permanently stuck.
+      return task.needs.filter(nid => { const t = taskById(nid); return t && !t.checked; });
+    }
+    function isBlocked(task) { return unmetNeeds(task).length > 0; }
+
+    function parseTaskMarkdown(content) {
+      const resultSections = [];
+      const resultTasks = {};
+      let currentSection = null;
+      let currentSectionId = null;
+
+      const lines = content.split('\n');
+      let currentTask = null;
+
+      for (const line of lines) {
+        const headerMatch = line.match(/^## \*{0,2}(.+?)\*{0,2}$/);
+        if (headerMatch) {
+          if (currentTask && currentSectionId) {
+            resultTasks[currentSectionId].push(currentTask);
+            currentTask = null;
+          }
+
+          const sectionName = headerMatch[1].trim();
+          currentSectionId = taskSectionId(sectionName);
+          currentSection = sectionName;
+
+          if (!resultTasks[currentSectionId]) {
+            resultSections.push({ id: currentSectionId, name: sectionName });
+            resultTasks[currentSectionId] = [];
+          }
+        } else if (currentSectionId && line.match(/^- \[[ xX]\]/)) {
+          if (currentTask) {
+            resultTasks[currentSectionId].push(currentTask);
+          }
+          const checked = line.match(/\[[xX]\]/) !== null;
+          let text = line.replace(/^- \[[ xX]\]\s*/, '');
+
+          // Pull out the prerequisite list "(needs #a3f, #k2p)" and the task's own
+          // trailing id "#a3f" before parsing title/note. Order matters: needs first
+          // (it also contains #ids), then the trailing id.
+          let needs = [];
+          const needsMatch = text.match(/\(needs\s+([^)]*)\)/i);
+          if (needsMatch) {
+            needs = (needsMatch[1].match(/[0-9a-z]{2,}/gi) || []).map(s => s.toLowerCase());
+            text = text.replace(needsMatch[0], '').trim();
+          }
+          let id = null;
+          const idMatch = text.match(/#([0-9a-z]{2,})\s*$/i);
+          if (idMatch) { id = idMatch[1].toLowerCase(); text = text.replace(/\s*#[0-9a-z]{2,}\s*$/i, '').trim(); }
+
+          let title = text;
+          let note = '';
+          const boldMatch = text.match(/^\*\*(.+?)\*\*(.*)$/);
+          if (boldMatch) {
+            title = boldMatch[1];
+            note = boldMatch[2].replace(/^\s*-\s*/, '').trim();
+          }
+
+          currentTask = {
+            id,
+            needs,
+            title,
+            note,
+            checked,
+            subtasks: [],
+            section: currentSectionId
+          };
+        } else if (currentTask && line.match(/^\s+- \[[ xX]\]/)) {
+          const checked = line.match(/\[[xX]\]/) !== null;
+          const text = line.replace(/^\s+- \[[ xX]\]\s*/, '');
+          currentTask.subtasks.push({ text, checked });
+        }
+      }
+
+      if (currentTask && currentSectionId) {
+        resultTasks[currentSectionId].push(currentTask);
+      }
+
+      // Backfill stable short ids for any task missing one and de-dupe collisions, so
+      // every task can be referenced as a prerequisite. (Backfilled ids persist on next save.)
+      const used = new Set();
+      const flat = [];
+      for (const sid in resultTasks) for (const t of resultTasks[sid]) flat.push(t);
+      for (const t of flat) { if (t.id && !used.has(t.id)) used.add(t.id); else if (t.id) t.id = null; }
+      for (const t of flat) { if (!t.id) t.id = genTaskId(used); }
+
+      return { sections: resultSections, tasks: resultTasks };
+    }
+
+    function toMarkdown() {
+      let md = '# Tasks\n';
+
+      sections.forEach((section, idx) => {
+        md += `\n## ${section.name}\n`;
+        const sectionTasks = tasks[section.id] || [];
+        sectionTasks.forEach(t => {
+          const checkbox = t.checked ? '[x]' : '[ ]';
+          const note = t.note ? ` - ${t.note}` : '';
+          const needs = (t.needs && t.needs.length) ? ` (needs ${t.needs.map(n => '#' + n).join(', ')})` : '';
+          const idTag = t.id ? ` #${t.id}` : '';
+          md += `- ${checkbox} **${t.title}**${note}${needs}${idTag}\n`;
+          t.subtasks.forEach(st => {
+            const stCheckbox = st.checked ? '[x]' : '[ ]';
+            md += `  - ${stCheckbox} ${st.text}\n`;
+          });
+        });
+      });
+
+      return md.trimEnd() + '\n';
+    }
+
+    // Cards are READ-ONLY surfaces: a click anywhere opens the rich task modal where ALL
+    // editing happens (title, note, description, subtasks, prerequisites, done, delete).
+    // The card itself only displays state + supports drag-to-move. (A real drag is
+    // distinguished from a click so dropping a card never also opens the modal.)
+    function createCard(task) {
+      const card = document.createElement('div');
+      card.className = 'task-card';
+      card.draggable = true;
+      card.dataset.id = task.id;
+
+      const unmet = unmetNeeds(task);
+      const blocked = unmet.length > 0;
+      if (blocked) card.style.opacity = '0.6';
+
+      const subDone = task.subtasks.filter(s => s.checked).length;
+      const subTotal = task.subtasks.length;
+
+      let html = `
+        <div style="display: flex; align-items: flex-start; gap: 10px;">
+          <span class="checkbox ${task.checked ? 'checked' : ''}" style="pointer-events: none; flex-shrink: 0; margin-top: 1px;"></span>
+          <div class="card-title" style="flex: 1; min-width: 0; ${task.checked ? 'text-decoration: line-through; opacity: 0.55;' : ''}">${escapeHtml(task.title)}</div>
+          <span title="task id" style="font-family: ui-monospace, monospace; font-size: 11px; color: var(--text-muted); opacity: 0.75; white-space: nowrap;">#${task.id}</span>
+        </div>
+      `;
+
+      if (task.note) {
+        html += `<div class="card-note" style="margin-left: 26px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(task.note)}</div>`;
+      }
+
+      const metaBits = [];
+      if (subTotal) metaBits.push(`<span title="subtasks done">☑ ${subDone}/${subTotal}</span>`);
+      if (blocked) metaBits.push(`<span style="color: var(--accent);" title="Blocked until prerequisites are done">🔒 needs ${unmet.map(id => '#' + id).join(', ')}</span>`);
+      if (metaBits.length) {
+        html += `<div style="margin-left: 26px; margin-top: 6px; display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); font-family: ui-monospace, monospace;">${metaBits.join('')}</div>`;
+      }
+
+      card.innerHTML = html;
+
+      // Distinguish a genuine drag from a click: only open the modal if the pointer didn't
+      // move far between mousedown and click (a drag sets `dragged`).
+      let dragged = false;
+      card.addEventListener('dragstart', (e) => {
+        dragged = true;
+        card.classList.add('dragging');
+        e.dataTransfer.setData('text/plain', task.id);
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        setTimeout(() => { dragged = false; }, 60);
+      });
+      card.addEventListener('click', () => { if (!dragged) openTaskModal(task); });
+
+      return card;
+    }
+
+    function startEditingTitle(titleEl, task) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = task.title;
+      input.style.cssText = 'width: 100%; background: var(--bg-card); border: 2px solid var(--accent); border-radius: 6px; padding: 6px 10px; color: var(--text-primary); font-size: 14px; font-family: inherit; outline: none;';
+
+      titleEl.replaceWith(input);
+      input.focus();
+      input.select();
+
+      let saved = false;
+      const saveEdit = () => {
+        if (saved) return;
+        saved = true;
+        const newTitle = input.value.trim();
+        if (newTitle && newTitle !== task.title) {
+          task.title = newTitle;
+          markChanged();
+        }
+        renderTasks();
+      };
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
+        else if (e.key === 'Escape') { saved = true; renderTasks(); }
+      });
+      input.addEventListener('blur', saveEdit);
+    }
+
+    function startEditingNote(noteEl, task) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = task.note || '';
+      input.placeholder = 'Add a note...';
+      input.style.cssText = 'width: 100%; background: var(--bg-card); border: 2px solid var(--accent); border-radius: 6px; padding: 4px 8px; color: var(--text-primary); font-size: 13px; font-family: inherit; outline: none;';
+
+      noteEl.replaceWith(input);
+      input.focus();
+
+      let saved = false;
+      const saveEdit = () => {
+        if (saved) return;
+        saved = true;
+        task.note = input.value.trim();
+        markChanged();
+        renderTasks();
+      };
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
+        else if (e.key === 'Escape') { saved = true; renderTasks(); }
+      });
+      input.addEventListener('blur', saveEdit);
+    }
+
+    function startEditingSubtask(subtaskEl, task, idx) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = task.subtasks[idx].text;
+      input.style.cssText = 'width: calc(100% - 30px); background: var(--bg-card); border: 2px solid var(--accent); border-radius: 4px; padding: 2px 6px; color: var(--text-primary); font-size: 13px; font-family: inherit; outline: none;';
+
+      subtaskEl.replaceWith(input);
+      input.focus();
+      input.select();
+
+      let saved = false;
+      const saveEdit = () => {
+        if (saved) return;
+        saved = true;
+        const newText = input.value.trim();
+        if (newText) { task.subtasks[idx].text = newText; }
+        else { task.subtasks.splice(idx, 1); }
+        markChanged();
+        renderTasks();
+      };
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
+        else if (e.key === 'Escape') { saved = true; renderTasks(); }
+      });
+      input.addEventListener('blur', saveEdit);
+    }
+
+    function startAddingSubtask(el, task) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'New subtask...';
+      input.style.cssText = 'width: calc(100% - 10px); background: var(--bg-card); border: 2px solid var(--accent); border-radius: 4px; padding: 2px 6px; color: var(--text-primary); font-size: 13px; font-family: inherit; outline: none;';
+
+      el.replaceWith(input);
+      input.focus();
+
+      let saved = false;
+      const saveEdit = () => {
+        if (saved) return;
+        saved = true;
+        const text = input.value.trim();
+        if (text) { task.subtasks.push({ text, checked: false }); markChanged(); }
+        renderTasks();
+      };
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
+        else if (e.key === 'Escape') { saved = true; renderTasks(); }
+      });
+      input.addEventListener('blur', saveEdit);
+    }
+
+    function startEditingColumnTitle(titleEl, colId) {
+      const section = sections.find(s => s.id === colId);
+      if (!section) return;
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = section.name;
+      input.style.cssText = 'width: 180px; background: var(--bg-card); border: 2px solid var(--accent); border-radius: 6px; padding: 4px 10px; color: var(--text-primary); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-family: inherit; outline: none;';
+
+      titleEl.replaceWith(input);
+      input.focus();
+      input.select();
+
+      let saved = false;
+      const saveEdit = () => {
+        if (saved) return;
+        saved = true;
+        const newName = input.value.trim();
+        if (newName && newName !== section.name) {
+          const oldId = section.id;
+          section.name = newName;
+          const newId = taskSectionId(newName);
+          if (newId !== oldId) {
+            tasks[newId] = tasks[oldId] || [];
+            delete tasks[oldId];
+            tasks[newId].forEach(t => t.section = newId);
+            section.id = newId;
+          }
+          markChanged();
+        }
+        renderTasks();
+      };
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
+        else if (e.key === 'Escape') { saved = true; renderTasks(); }
+      });
+      input.addEventListener('blur', saveEdit);
+    }
+
+    function createColumn(id, title, items) {
+      const col = document.createElement('div');
+      col.className = 'column';
+      col.innerHTML = `
+        <div class="column-header">
+          <span class="column-title" data-section-id="${id}" style="cursor: pointer;">${title}</span>
+          <span class="count" data-count-for="${id}">${items.length}</span>
+        </div>
+        <div class="cards" data-column="${id}"></div>
+        <div class="add-card">
+          <button data-add="${id}">+ Add task</button>
+        </div>
+      `;
+
+      col.querySelector('.column-title').addEventListener('click', (e) => {
+        if (!col.dragging) { startEditingColumnTitle(e.target, id); }
+      });
+
+      const header = col.querySelector('.column-header');
+      header.draggable = true;
+
+      header.addEventListener('dragstart', (e) => {
+        e.stopPropagation();
+        col.classList.add('dragging-column');
+        e.dataTransfer.setData('text/column', id);
+        e.dataTransfer.effectAllowed = 'move';
+      });
+
+      header.addEventListener('dragend', () => {
+        col.classList.remove('dragging-column');
+        board.querySelectorAll('.column-drop-indicator').forEach(el => el.remove());
+      });
+
+      col.addEventListener('dragover', (e) => {
+        if (e.dataTransfer.types.includes('text/column')) {
+          e.preventDefault();
+          e.stopPropagation();
+          board.querySelectorAll('.column-drop-indicator').forEach(el => el.remove());
+          const indicator = document.createElement('div');
+          indicator.className = 'column-drop-indicator';
+          const rect = col.getBoundingClientRect();
+          if (e.clientX < rect.left + rect.width / 2) { col.before(indicator); }
+          else { col.after(indicator); }
+        }
+      });
+
+      col.addEventListener('drop', (e) => {
+        if (e.dataTransfer.types.includes('text/column')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const fromId = e.dataTransfer.getData('text/column');
+          const toId = id;
+          if (fromId !== toId) {
+            const rect = col.getBoundingClientRect();
+            const insertBefore = e.clientX < rect.left + rect.width / 2;
+            moveSection(fromId, toId, insertBefore);
+          }
+          board.querySelectorAll('.column-drop-indicator').forEach(el => el.remove());
+        }
+      });
+
+      const cardsContainer = col.querySelector('.cards');
+      items.forEach(task => { cardsContainer.appendChild(createCard(task)); });
+
+      const getDropPosition = (e) => {
+        const allCards = [...cardsContainer.querySelectorAll('.task-card')];
+        const visibleCards = allCards.filter(c => !c.classList.contains('dragging'));
+        let insertBeforeCard = null;
+        let dropIndex = visibleCards.length;
+        for (let i = 0; i < visibleCards.length; i++) {
+          const rect = visibleCards[i].getBoundingClientRect();
+          if (e.clientY < rect.top + rect.height / 2) {
+            insertBeforeCard = visibleCards[i];
+            dropIndex = i;
+            break;
+          }
+        }
+        return { insertBeforeCard, dropIndex };
+      };
+
+      const showDropIndicator = (e) => {
+        col.querySelectorAll('.drop-indicator').forEach(el => el.remove());
+        const { insertBeforeCard } = getDropPosition(e);
+        const indicator = document.createElement('div');
+        indicator.className = 'drop-indicator';
+        indicator.style.cssText = 'height: 3px; background: var(--accent); border-radius: 2px; margin: 5px 0;';
+        if (insertBeforeCard) { cardsContainer.insertBefore(indicator, insertBeforeCard); }
+        else { cardsContainer.appendChild(indicator); }
+      };
+
+      col.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        cardsContainer.classList.add('drag-over');
+        showDropIndicator(e);
+      });
+
+      col.addEventListener('dragleave', (e) => {
+        if (!col.contains(e.relatedTarget)) {
+          cardsContainer.classList.remove('drag-over');
+          col.querySelectorAll('.drop-indicator').forEach(el => el.remove());
+        }
+      });
+
+      col.addEventListener('drop', (e) => {
+        e.preventDefault();
+        cardsContainer.classList.remove('drag-over');
+        col.querySelectorAll('.drop-indicator').forEach(el => el.remove());
+        const taskId = e.dataTransfer.getData('text/plain');
+        const { dropIndex } = getDropPosition(e);
+        moveTask(taskId, id, dropIndex);
+      });
+
+      col.querySelector(`[data-add="${id}"]`).addEventListener('click', () => {
+        addNewTask(id, col.querySelector('.cards'));
+      });
+
+      return col;
+    }
+
+    function addNewTask(sectionId, container) {
+      const existing = container.querySelector('.new-task-input');
+      if (existing) return;
+
+      const input = document.createElement('textarea');
+      input.className = 'new-task-input';
+      input.placeholder = 'What needs to be done?';
+      input.rows = 2;
+      container.appendChild(input);
+      input.focus();
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          const title = input.value.trim();
+          if (title) {
+            if (!tasks[sectionId]) tasks[sectionId] = [];
+            tasks[sectionId].push({
+              id: genTaskId(currentTaskIds()),
+              needs: [],
+              title,
+              note: '',
+              checked: false,
+              subtasks: [],
+              section: sectionId
+            });
+            markChanged();
+            renderTasks();
+          } else { input.remove(); }
+        } else if (e.key === 'Escape') { input.remove(); }
+      });
+
+      input.addEventListener('blur', () => { setTimeout(() => input.remove(), 100); });
+    }
+
+    function moveSection(fromId, toId, insertBefore) {
+      const fromIdx = sections.findIndex(s => s.id === fromId);
+      const toIdx = sections.findIndex(s => s.id === toId);
+      if (fromIdx === -1 || toIdx === -1) return;
+      const [section] = sections.splice(fromIdx, 1);
+      let newIdx = sections.findIndex(s => s.id === toId);
+      if (!insertBefore) newIdx++;
+      sections.splice(newIdx, 0, section);
+      markChanged();
+      renderTasks();
+    }
+
+    function moveTask(taskId, toSectionId, dropIndex = -1) {
+      // Locate the task first WITHOUT removing it, so a blocked move can be refused cleanly.
+      let task = null, fromSectionId = null, fromIdx = -1;
+      for (const section of sections) {
+        const sectionTasks = tasks[section.id] || [];
+        const idx = sectionTasks.findIndex(t => t.id === taskId);
+        if (idx !== -1) { task = sectionTasks[idx]; fromSectionId = section.id; fromIdx = idx; break; }
+      }
+      if (!task) return;
+
+      // Gate: a blocked task can't be moved INTO the Active column until its prerequisites
+      // are done. (Reordering within a column, or moving elsewhere, is always allowed.)
+      if (toSectionId === 'active' && fromSectionId !== toSectionId && isBlocked(task)) {
+        const unmet = unmetNeeds(task).map(id => '#' + id).join(', ');
+        showStatus(`Blocked — finish ${unmet} before moving this to Active`);
+        renderTasks(); // snap the card back
+        return;
+      }
+
+      tasks[fromSectionId].splice(fromIdx, 1);
+      task.section = toSectionId;
+      if (!tasks[toSectionId]) tasks[toSectionId] = [];
+      if (dropIndex >= 0 && dropIndex <= tasks[toSectionId].length) {
+        tasks[toSectionId].splice(dropIndex, 0, task);
+      } else {
+        tasks[toSectionId].push(task);
+      }
+      markChanged();
+      renderTasks();
+    }
+
+    function deleteTask(task) {
+      if (!confirm(`Delete "${task.title}"?`)) return;
+      for (const section of sections) {
+        const sectionTasks = tasks[section.id] || [];
+        const idx = sectionTasks.findIndex(t => t.id === task.id);
+        if (idx !== -1) { sectionTasks.splice(idx, 1); break; }
+      }
+      // Drop the per-task detail file so it can't outlive the task (or bleed into a future
+      // task that reuses the id). Fire-and-forget; server mode only.
+      if (SERVER_MODE && task.id) {
+        fetch('/api/task?id=' + encodeURIComponent(task.id), { method: 'DELETE' }).catch(() => {});
+      }
+      markChanged();
+      renderTasks();
+    }
+
+    let saveTimeout = null;
+    let lastModified = 0;
+    let watchInterval = null;
+    let isSaving = false;
+
+    function markChanged() {
+      hasChanges = true;
+      saveBtn.disabled = false;
+      markBoardUpdated();              // any edit resets the freshness clock to "live"
+      if (saveTimeout) clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(autoSave, 500);
+    }
+
+    async function autoSave() {
+      if (!hasChanges) return;
+      if (SERVER_MODE) { await saveTasksToServer(); return; }
+      if (!taskFileHandle || isSaving) return;
+      isSaving = true;
+      try {
+        const writable = await taskFileHandle.createWritable();
+        const content = toMarkdown();
+        await writable.write(content);
+        await writable.close();
+        const file = await taskFileHandle.getFile();
+        lastModified = file.lastModified;
+        hasChanges = false;
+        saveBtn.disabled = true;
+        showStatus('Saved');
+      } catch (e) {
+        showStatus('Save failed: ' + e.message);
+      }
+      isSaving = false;
+    }
+
+    // ===== SERVER MODE: live task I/O via board-server.mjs (fetch + SSE) =====
+    let evtSource = null;
+
+    async function loadTasksFromServer(initial) {
+      try {
+        const res = await fetch('/api/tasks');
+        const content = await res.text();
+        lastModified = Number(res.headers.get('X-Board-Mtime')) || 0;
+        const result = parseTaskMarkdown(content);
+        sections = result.sections;
+        tasks = result.tasks;
+        taskFileName = 'TASKS.md';
+        if (activeMainTab === 'tasks') filePathEl.textContent = 'TASKS.md';
+        if (initial) switchTaskView('board'); else renderTasks();
+        markBoardUpdated();             // an agent (or reload) just refreshed the board
+        showStatus(initial ? 'Live board connected' : 'Reloaded');
+      } catch (e) { showStatus('Board load failed: ' + e.message); }
+    }
+
+    async function saveTasksToServer() {
+      if (isSaving) return;
+      isSaving = true;
+      try {
+        const res = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/markdown', 'X-Base-Mtime': String(lastModified) },
+          body: toMarkdown(),
+        });
+        if (res.status === 409) {
+          // An agent changed TASKS.md under us — reload latest rather than stomp its write.
+          const latest = await res.text();
+          lastModified = Number(res.headers.get('X-Board-Mtime')) || lastModified;
+          const result = parseTaskMarkdown(latest);
+          sections = result.sections;
+          tasks = result.tasks;
+          hasChanges = false;
+          saveBtn.disabled = true;
+          renderTasks();
+          showStatus('Board changed on disk — reloaded. Re-apply your edit.');
+          return;
+        }
+        lastModified = Number(res.headers.get('X-Board-Mtime')) || lastModified;
+        hasChanges = false;
+        saveBtn.disabled = true;
+        showStatus('Saved');
+      } catch (e) {
+        showStatus('Save failed: ' + e.message);
+      } finally {
+        isSaving = false;
+      }
+    }
+
+    function startServerWatch() {
+      if (evtSource) evtSource.close();
+      try {
+        evtSource = new EventSource('/api/events');
+        evtSource.addEventListener('change', (e) => {
+          let kind = 'tasks';
+          try { kind = (JSON.parse(e.data) || {}).kind || 'tasks'; } catch (_) {}
+          if (kind === 'tasks') {
+            if (!hasChanges && !isSaving) loadTasksFromServer(false);
+          } else if (kind === 'memory' && activeMainTab === 'memory') {
+            loadMemoryFromServer();
+          }
+        });
+      } catch (e) { /* SSE unavailable — board still works, just not live */ }
+    }
+
+    async function checkForExternalChanges() {
+      if (!taskFileHandle || hasChanges || isSaving) return;
+      try {
+        const file = await taskFileHandle.getFile();
+        if (file.lastModified > lastModified) {
+          lastModified = file.lastModified;
+          const content = await file.text();
+          const result = parseTaskMarkdown(content);
+          sections = result.sections;
+          tasks = result.tasks;
+          renderTasks();
+          markBoardUpdated();
+          showStatus('Reloaded');
+        }
+      } catch (e) { console.log('Watch error:', e); }
+    }
+
+    function startWatching() {
+      if (SERVER_MODE) { startServerWatch(); return; }
+      if (watchInterval) clearInterval(watchInterval);
+      watchInterval = setInterval(checkForExternalChanges, 1000);
+    }
+
+    function stopWatching() {
+      if (watchInterval) { clearInterval(watchInterval); watchInterval = null; }
+    }
+
+    function renderTasks() {
+      if (currentView === 'board') {
+        // FLIP: snapshot card positions BEFORE the DOM is rebuilt, then animate the deltas.
+        const prevRects = (board && board.children.length > 0) ? captureCardRects() : null;
+        renderBoard();
+        playBoardAnimations(prevRects);
+        rollCounts(board);
+      } else {
+        renderList();
+        rollCounts(listView);
+      }
+    }
+
+    function renderBoard() {
+      board.innerHTML = '';
+      sections.forEach(section => {
+        const sectionTasks = tasks[section.id] || [];
+        board.appendChild(createColumn(section.id, section.name, sectionTasks));
+      });
+
+      const addSectionBtn = document.createElement('div');
+      addSectionBtn.className = 'column';
+      addSectionBtn.style.cssText = 'background: transparent; border: 2px dashed var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; min-height: 120px;';
+      addSectionBtn.innerHTML = '<span style="color: var(--text-muted); font-size: 14px; font-weight: 500;">+ Add Section</span>';
+      addSectionBtn.addEventListener('click', () => startAddingSection(addSectionBtn));
+      board.appendChild(addSectionBtn);
+    }
+
+    function renderList() {
+      listView.innerHTML = '';
+
+      if (!quickAddSection && sections.length > 0) {
+        quickAddSection = sections[0].id;
+      }
+
+      // Quick add at top
+      const quickAdd = document.createElement('div');
+      quickAdd.className = 'quick-add';
+      quickAdd.style.cssText = 'border-bottom: 2px solid var(--border); margin-bottom: 24px; padding-bottom: 16px;';
+
+      const sectionName = sections.find(s => s.id === quickAddSection)?.name || 'Select section';
+      quickAdd.innerHTML = `
+        <span class="checkbox" style="opacity: 0.3;"></span>
+        <input type="text" class="quick-add-input" placeholder="Add a task..." id="quickAddInput">
+        <span class="quick-add-section" id="quickAddSectionBtn">${sectionName}</span>
+      `;
+      listView.appendChild(quickAdd);
+
+      const quickInput = document.getElementById('quickAddInput');
+      const sectionBtn = document.getElementById('quickAddSectionBtn');
+
+      quickInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && quickInput.value.trim()) {
+          const title = quickInput.value.trim();
+          if (!tasks[quickAddSection]) tasks[quickAddSection] = [];
+          tasks[quickAddSection].unshift({
+            id: genTaskId(currentTaskIds()),
+            needs: [],
+            title,
+            note: '',
+            checked: false,
+            subtasks: [],
+            section: quickAddSection
+          });
+          quickInput.value = '';
+          markChanged();
+          renderTasks();
+          setTimeout(() => document.getElementById('quickAddInput')?.focus(), 10);
+        }
+      });
+
+      sectionBtn.addEventListener('click', (e) => { showSectionPicker(e.target); });
+
+      // Render each section
+      sections.forEach(section => {
+        const sectionTasks = tasks[section.id] || [];
+        const sectionEl = document.createElement('div');
+        sectionEl.className = 'list-section';
+        sectionEl.dataset.sectionId = section.id;
+
+        const header = document.createElement('div');
+        header.className = 'list-section-header';
+        header.innerHTML = `
+          <span class="section-title" data-section-id="${section.id}">${section.name}</span>
+          <span class="count" data-count-for="${section.id}">${sectionTasks.length}</span>
+        `;
+
+        header.querySelector('.section-title').addEventListener('click', (e) => {
+          startEditingListSectionTitle(e.target, section);
+        });
+
+        sectionEl.appendChild(header);
+
+        const tasksContainer = document.createElement('div');
+        tasksContainer.className = 'list-tasks-container';
+        tasksContainer.dataset.sectionId = section.id;
+
+        sectionTasks.forEach(task => {
+          tasksContainer.appendChild(createListItem(task, section));
+        });
+
+        sectionEl.appendChild(tasksContainer);
+
+        // Drag-and-drop handlers for section
+        const getDropPosition = (e, container) => {
+          const items = [...container.querySelectorAll('.list-item:not(.dragging)')];
+          let insertBeforeEl = null;
+          let dropIndex = items.length;
+          for (let i = 0; i < items.length; i++) {
+            const rect = items[i].getBoundingClientRect();
+            if (e.clientY < rect.top + rect.height / 2) {
+              insertBeforeEl = items[i];
+              dropIndex = i;
+              break;
+            }
+          }
+          return { insertBeforeEl, dropIndex };
+        };
+
+        const showDropIndicator = (e) => {
+          tasksContainer.querySelectorAll('.list-drop-indicator').forEach(el => el.remove());
+          const { insertBeforeEl } = getDropPosition(e, tasksContainer);
+          const indicator = document.createElement('div');
+          indicator.className = 'list-drop-indicator';
+          if (insertBeforeEl) { tasksContainer.insertBefore(indicator, insertBeforeEl); }
+          else { tasksContainer.appendChild(indicator); }
+        };
+
+        sectionEl.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          sectionEl.classList.add('drag-over');
+          showDropIndicator(e);
+        });
+
+        sectionEl.addEventListener('dragleave', (e) => {
+          if (!sectionEl.contains(e.relatedTarget)) {
+            sectionEl.classList.remove('drag-over');
+            tasksContainer.querySelectorAll('.list-drop-indicator').forEach(el => el.remove());
+          }
+        });
+
+        sectionEl.addEventListener('drop', (e) => {
+          e.preventDefault();
+          sectionEl.classList.remove('drag-over');
+          tasksContainer.querySelectorAll('.list-drop-indicator').forEach(el => el.remove());
+          const taskId = e.dataTransfer.getData('text/plain');
+          if (!taskId) return;
+          const { dropIndex } = getDropPosition(e, tasksContainer);
+          moveTask(taskId, section.id, dropIndex);
+        });
+
+        listView.appendChild(sectionEl);
+      });
+
+      // Add Section button
+      const addSectionBtn = document.createElement('div');
+      addSectionBtn.className = 'list-add-section';
+      addSectionBtn.textContent = '+ Add Section';
+      addSectionBtn.addEventListener('click', () => { startAddingListSection(addSectionBtn); });
+      listView.appendChild(addSectionBtn);
+    }
+
+    function startEditingListSectionTitle(titleEl, section) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = section.name;
+      input.style.cssText = 'width: 200px; background: var(--bg-card); border: 2px solid var(--accent); border-radius: 6px; padding: 4px 10px; color: var(--text-primary); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-family: inherit; outline: none;';
+
+      titleEl.replaceWith(input);
+      input.focus();
+      input.select();
+
+      let saved = false;
+      const saveEdit = () => {
+        if (saved) return;
+        saved = true;
+        const newName = input.value.trim();
+        if (newName && newName !== section.name) {
+          const oldId = section.id;
+          section.name = newName;
+          const newId = taskSectionId(newName);
+          if (newId !== oldId) {
+            tasks[newId] = tasks[oldId] || [];
+            delete tasks[oldId];
+            tasks[newId].forEach(t => t.section = newId);
+            section.id = newId;
+          }
+          markChanged();
+        }
+        renderTasks();
+      };
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
+        else if (e.key === 'Escape') { saved = true; renderTasks(); }
+      });
+      input.addEventListener('blur', saveEdit);
+    }
+
+    function startAddingListSection(btn) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'Section name...';
+      input.style.cssText = 'width: 100%; background: var(--bg-card); border: 2px solid var(--accent); border-radius: 8px; padding: 12px 16px; color: var(--text-primary); font-size: 14px; font-family: inherit; outline: none; text-align: left;';
+
+      btn.innerHTML = '';
+      btn.style.border = '2px solid var(--accent)';
+      btn.style.cursor = 'default';
+      btn.appendChild(input);
+      input.focus();
+
+      let saved = false;
+      const saveSection = () => {
+        if (saved) return;
+        saved = true;
+        const name = input.value.trim();
+        if (name) {
+          const id = taskSectionId(name);
+          if (!tasks[id]) {
+            sections.push({ id, name });
+            tasks[id] = [];
+            markChanged();
+          }
+        }
+        renderTasks();
+      };
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); saveSection(); }
+        else if (e.key === 'Escape') { saved = true; renderTasks(); }
+      });
+      input.addEventListener('blur', saveSection);
+    }
+
+    // Like the board card, the list row is READ-ONLY + click-to-open-modal + drag. All
+    // editing lives in the task modal.
+    function createListItem(task, section) {
+      const item = document.createElement('div');
+      item.className = 'list-item';
+      item.draggable = true;
+      item.dataset.taskId = task.id;
+
+      let dragged = false;
+      item.addEventListener('dragstart', (e) => {
+        dragged = true;
+        item.classList.add('dragging');
+        e.dataTransfer.setData('text/plain', task.id);
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      item.addEventListener('dragend', () => {
+        item.classList.remove('dragging');
+        document.querySelectorAll('.list-drop-indicator').forEach(el => el.remove());
+        document.querySelectorAll('.list-section.drag-over').forEach(el => el.classList.remove('drag-over'));
+        setTimeout(() => { dragged = false; }, 60);
+      });
+      item.addEventListener('click', () => { if (!dragged) openTaskModal(task); });
+
+      const checkbox = document.createElement('span');
+      checkbox.className = `checkbox ${task.checked ? 'checked' : ''}`;
+      checkbox.style.pointerEvents = 'none';
+
+      const content = document.createElement('div');
+      content.className = 'list-item-content';
+
+      const title = document.createElement('div');
+      title.className = `list-item-title ${task.checked ? 'checked' : ''}`;
+      title.textContent = task.title;
+      content.appendChild(title);
+
+      if (task.note) {
+        const note = document.createElement('div');
+        note.className = 'list-item-note';
+        note.textContent = task.note;
+        content.appendChild(note);
+      }
+
+      // id + subtask progress + (if any) blocked-by-prerequisites meta row
+      const unmet = unmetNeeds(task);
+      const subDone = task.subtasks.filter(s => s.checked).length;
+      const metaRow = document.createElement('div');
+      metaRow.style.cssText = 'font-size: 11px; font-family: ui-monospace, monospace; color: var(--text-muted); margin-top: 2px;';
+      metaRow.textContent = '#' + task.id
+        + (task.subtasks.length ? '   ☑ ' + subDone + '/' + task.subtasks.length : '')
+        + (unmet.length ? '   🔒 needs ' + unmet.map(id => '#' + id).join(', ') : '');
+      if (unmet.length) { metaRow.style.color = 'var(--accent)'; item.style.opacity = '0.6'; }
+      content.appendChild(metaRow);
+
+      item.appendChild(checkbox);
+      item.appendChild(content);
+
+      return item;
+    }
+
+    function startEditingListNote(noteEl, task) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = task.note || '';
+      input.placeholder = 'Add a note...';
+      input.style.cssText = 'width: 100%; background: var(--bg-card); border: 2px solid var(--accent); border-radius: 6px; padding: 4px 8px; color: var(--text-primary); font-size: 13px; font-family: inherit; outline: none;';
+
+      noteEl.replaceWith(input);
+      input.focus();
+
+      let saved = false;
+      const saveEdit = () => {
+        if (saved) return;
+        saved = true;
+        task.note = input.value.trim();
+        markChanged();
+        renderTasks();
+      };
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
+        else if (e.key === 'Escape') { saved = true; renderTasks(); }
+      });
+      input.addEventListener('blur', saveEdit);
+    }
+
+    function startEditingListSubtask(subtaskEl, task, idx) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = task.subtasks[idx].text;
+      input.style.cssText = 'width: calc(100% - 30px); background: var(--bg-card); border: 2px solid var(--accent); border-radius: 4px; padding: 2px 6px; color: var(--text-primary); font-size: 13px; font-family: inherit; outline: none;';
+
+      subtaskEl.replaceWith(input);
+      input.focus();
+      input.select();
+
+      let saved = false;
+      const saveEdit = () => {
+        if (saved) return;
+        saved = true;
+        const newText = input.value.trim();
+        if (newText) { task.subtasks[idx].text = newText; }
+        else { task.subtasks.splice(idx, 1); }
+        markChanged();
+        renderTasks();
+      };
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
+        else if (e.key === 'Escape') { saved = true; renderTasks(); }
+      });
+      input.addEventListener('blur', saveEdit);
+    }
+
+    function startAddingListSubtask(el, task) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'New subtask...';
+      input.style.cssText = 'width: calc(100% - 10px); background: var(--bg-card); border: 2px solid var(--accent); border-radius: 4px; padding: 2px 6px; color: var(--text-primary); font-size: 13px; font-family: inherit; outline: none;';
+
+      el.replaceWith(input);
+      input.focus();
+
+      let saved = false;
+      const saveEdit = () => {
+        if (saved) return;
+        saved = true;
+        const text = input.value.trim();
+        if (text) {
+          if (!task.subtasks) task.subtasks = [];
+          task.subtasks.push({ text, checked: false });
+          markChanged();
+        }
+        renderTasks();
+      };
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
+        else if (e.key === 'Escape') { saved = true; renderTasks(); }
+      });
+      input.addEventListener('blur', saveEdit);
+    }
+
+    function startEditingListItem(titleEl, task) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = task.title;
+      input.style.cssText = 'width: 100%; background: var(--bg-card); border: 2px solid var(--accent); border-radius: 6px; padding: 8px 12px; color: var(--text-primary); font-size: 15px; font-family: inherit; outline: none;';
+
+      titleEl.replaceWith(input);
+      input.focus();
+      input.select();
+
+      let saved = false;
+      const saveEdit = () => {
+        if (saved) return;
+        saved = true;
+        const newTitle = input.value.trim();
+        if (newTitle && newTitle !== task.title) {
+          task.title = newTitle;
+          markChanged();
+        }
+        renderTasks();
+      };
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
+        else if (e.key === 'Escape') { saved = true; renderTasks(); }
+      });
+      input.addEventListener('blur', saveEdit);
+    }
+
+    function showSectionPicker(anchorEl) {
+      document.querySelectorAll('.section-picker').forEach(el => el.remove());
+      const picker = document.createElement('div');
+      picker.className = 'section-picker';
+      const rect = anchorEl.getBoundingClientRect();
+      picker.style.top = (rect.bottom + 4) + 'px';
+      picker.style.right = (window.innerWidth - rect.right) + 'px';
+
+      sections.forEach(section => {
+        const btn = document.createElement('button');
+        btn.textContent = section.name;
+        btn.addEventListener('click', () => {
+          quickAddSection = section.id;
+          picker.remove();
+          renderTasks();
+          setTimeout(() => document.getElementById('quickAddInput')?.focus(), 10);
+        });
+        picker.appendChild(btn);
+      });
+
+      document.body.appendChild(picker);
+      setTimeout(() => {
+        document.addEventListener('click', function closeHandler(e) {
+          if (!picker.contains(e.target)) {
+            picker.remove();
+            document.removeEventListener('click', closeHandler);
+          }
+        });
+      }, 10);
+    }
+
+    function switchTaskView(view) {
+      currentView = view;
+      if (view === 'list') {
+        listView.style.display = 'block';
+        board.style.display = 'none';
+        listViewBtn.classList.add('active');
+        boardViewBtn.classList.remove('active');
+      } else {
+        listView.style.display = 'none';
+        board.style.display = 'flex';
+        listViewBtn.classList.remove('active');
+        boardViewBtn.classList.add('active');
+      }
+      renderTasks();
+    }
+
+    listViewBtn.addEventListener('click', () => switchTaskView('list'));
+    boardViewBtn.addEventListener('click', () => switchTaskView('board'));
+
+    function startAddingSection(btn) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'Section name...';
+      input.style.cssText = 'width: 220px; background: var(--bg-card); border: 2px solid var(--accent); border-radius: 8px; padding: 10px 14px; color: var(--text-primary); font-size: 14px; font-family: inherit; outline: none;';
+
+      btn.innerHTML = '';
+      btn.style.cssText = 'background: var(--bg-secondary); border: 2px dashed var(--accent); display: flex; align-items: center; justify-content: center; cursor: default; min-height: 120px; min-width: 340px; border-radius: 12px;';
+      btn.appendChild(input);
+      input.focus();
+
+      let saved = false;
+      const saveSection = () => {
+        if (saved) return;
+        saved = true;
+        const name = input.value.trim();
+        if (name) {
+          const id = taskSectionId(name);
+          if (!tasks[id]) {
+            sections.push({ id, name });
+            tasks[id] = [];
+            markChanged();
+          }
+        }
+        renderTasks();
+      };
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); saveSection(); }
+        else if (e.key === 'Escape') { saved = true; renderTasks(); }
+      });
+      input.addEventListener('blur', saveSection);
+    }
+
+    async function openTaskFile() {
+      if (SERVER_MODE) { await loadTasksFromServer(true); return; }
+      try {
+        [taskFileHandle] = await window.showOpenFilePicker({
+          types: [{ description: 'Markdown', accept: { 'text/markdown': ['.md'] } }]
+        });
+        const file = await taskFileHandle.getFile();
+        const content = await file.text();
+        lastModified = file.lastModified;
+        const result = parseTaskMarkdown(content);
+        sections = result.sections;
+        tasks = result.tasks;
+        switchTaskView('board');
+        startWatching();
+        taskFileName = file.name;
+        filePathEl.textContent = file.name;
+        showStatus('Loaded ' + file.name);
+      } catch (e) {
+        if (e.name !== 'AbortError') { showStatus('Error: ' + e.message); }
+      }
+    }
+
+    openTaskBtn.addEventListener('click', openTaskFile);
+    document.getElementById('openBtnLarge')?.addEventListener('click', openTaskFile);
+
+    saveBtn.addEventListener('click', async () => {
+      if (SERVER_MODE) { await saveTasksToServer(); return; }
+      if (!taskFileHandle) return;
+      try {
+        const writable = await taskFileHandle.createWritable();
+        await writable.write(toMarkdown());
+        await writable.close();
+        hasChanges = false;
+        saveBtn.disabled = true;
+        showStatus('Saved');
+      } catch (e) { showStatus('Error: ' + e.message); }
+    });
+
+    window.addEventListener('beforeunload', (e) => {
+      if (hasChanges) { e.preventDefault(); e.returnValue = ''; }
+    });
+
+    // ============================================================
+    // ===== MEMORY FUNCTIONALITY =====
+    // ============================================================
+
+    let memoryDirHandle = null;
+    let memoryData = {
+      claudeMd: null,
+      memoryFiles: [],
+      memoryDirs: {}
+    };
+
+    const memoryEmptyState = document.getElementById('memoryEmptyState');
+    const memoryMainContent = document.getElementById('memoryMainContent');
+    const memoryTabsContainer = document.getElementById('memoryTabsContainer');
+    const memoryContentContainer = document.getElementById('memoryContentContainer');
+    const modalOverlay = document.getElementById('modalOverlay');
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text || '';
+      return div.innerHTML;
+    }
+
+    function parseMemoryMarkdown(content) {
+      const parsed = {
+        title: '',
+        fields: {},
+        sections: {},
+        tables: [],
+        rawContent: content
+      };
+
+      const lines = content.split('\n');
+      let currentSection = '_intro';
+      parsed.sections[currentSection] = [];
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        if (line.match(/^# /)) {
+          parsed.title = line.replace(/^# /, '').trim();
+          continue;
+        }
+
+        if (line.match(/^## /)) {
+          currentSection = line.replace(/^## /, '').trim();
+          parsed.sections[currentSection] = [];
+          continue;
+        }
+
+        const kvMatch = line.match(/^\*\*(.+?):\*\*\s*(.*)$/);
+        if (kvMatch) {
+          parsed.fields[kvMatch[1]] = kvMatch[2];
+          continue;
+        }
+
+        parsed.sections[currentSection].push(line);
+      }
+
+      for (const key in parsed.sections) {
+        parsed.sections[key] = parsed.sections[key].join('\n').trim();
+      }
+
+      const tableRegex = /\|(.+)\|\n\|[-| ]+\|\n((?:\|.+\|\n?)+)/g;
+      let match;
+      while ((match = tableRegex.exec(content)) !== null) {
+        const headers = match[1].split('|').map(h => h.trim()).filter(h => h);
+        const rowLines = match[2].trim().split('\n');
+        const rows = rowLines.map(row => row.split('|').map(c => c.trim()).filter(c => c));
+        parsed.tables.push({ headers, rows });
+      }
+
+      return parsed;
+    }
+
+    function getPreview(content, maxLength = 150) {
+      let preview = content
+        .replace(/^#+ .+$/gm, '')
+        .replace(/\*\*(.+?):\*\*.*/g, '')
+        .replace(/\|.+\|/g, '')
+        .replace(/[-=]{3,}/g, '')
+        .trim()
+        .substring(0, maxLength);
+      if (content.length > maxLength) preview += '...';
+      return preview;
+    }
+
+    function getDisplayName(filename) {
+      return filename
+        .replace('.md', '')
+        .split(/[-_]/)
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+    }
+
+    // ===== SERVER MODE: live memory I/O via board-server.mjs =====
+    async function loadMemoryFromServer() {
+      try {
+        const tree = await (await fetch('/api/memory/tree')).json();
+        memoryData = { claudeMd: null, memoryFiles: [], memoryDirs: {} };
+        const fetchFile = async (sp) =>
+          (await fetch('/api/memory/file?path=' + encodeURIComponent(sp))).text();
+
+        if (tree.claudeMd) {
+          memoryData.claudeMd = { content: await fetchFile('CLAUDE.md'), serverPath: 'CLAUDE.md' };
+        }
+        for (const name of (tree.files || [])) {
+          memoryData.memoryFiles.push({ name, content: await fetchFile('memory/' + name), serverPath: 'memory/' + name });
+        }
+        for (const [dir, files] of Object.entries(tree.dirs || {})) {
+          memoryData.memoryDirs[dir] = [];
+          for (const fname of files) {
+            const sp = 'memory/' + dir + '/' + fname;
+            const content = await fetchFile(sp);
+            memoryData.memoryDirs[dir].push({ name: fname, content, serverPath: sp, parsed: parseMemoryMarkdown(content) });
+          }
+        }
+
+        const hasAny = memoryData.claudeMd || memoryData.memoryFiles.length || Object.keys(memoryData.memoryDirs).length;
+        if (!hasAny) return; // nothing yet — leave the empty state until memory exists
+        renderMemory();
+        memoryEmptyState.style.display = 'none';
+        memoryMainContent.style.display = 'flex';
+        if (activeMainTab === 'memory') filePathEl.textContent = '.tasks/ memory · live';
+      } catch (e) { showStatus('Memory load failed: ' + e.message); }
+    }
+
+    async function saveMemoryToServer(serverPath, content) {
+      await fetch('/api/memory/file?path=' + encodeURIComponent(serverPath), {
+        method: 'POST', headers: { 'Content-Type': 'text/markdown' }, body: content,
+      });
+    }
+
+    async function loadMemoryDirectory() {
+      if (SERVER_MODE) { await loadMemoryFromServer(); return; }
+      try {
+        memoryDirHandle = await window.showDirectoryPicker();
+
+        memoryData = { claudeMd: null, memoryFiles: [], memoryDirs: {} };
+
+        try {
+          const claudeFileHandle = await memoryDirHandle.getFileHandle('CLAUDE.md');
+          const file = await claudeFileHandle.getFile();
+          memoryData.claudeMd = { content: await file.text(), fileHandle: claudeFileHandle };
+        } catch (e) { console.log('No CLAUDE.md found'); }
+
+        try {
+          const memoryDir = await memoryDirHandle.getDirectoryHandle('memory');
+          for await (const entry of memoryDir.values()) {
+            if (entry.kind === 'file' && entry.name.endsWith('.md')) {
+              const file = await entry.getFile();
+              memoryData.memoryFiles.push({
+                name: entry.name,
+                content: await file.text(),
+                fileHandle: entry
+              });
+            } else if (entry.kind === 'directory') {
+              memoryData.memoryDirs[entry.name] = [];
+              const subDirHandle = entry;
+              for await (const subEntry of subDirHandle.values()) {
+                if (subEntry.kind === 'file' && subEntry.name.endsWith('.md')) {
+                  const file = await subEntry.getFile();
+                  const content = await file.text();
+                  memoryData.memoryDirs[entry.name].push({
+                    name: subEntry.name,
+                    content: content,
+                    fileHandle: subEntry,
+                    dirHandle: subDirHandle,
+                    parsed: parseMemoryMarkdown(content)
+                  });
+                }
+              }
+            }
+          }
+        } catch (e) { console.log('No memory/ directory found'); }
+
+        renderMemory();
+        memoryEmptyState.style.display = 'none';
+        memoryMainContent.style.display = 'flex';
+        filePathEl.textContent = memoryDirHandle.name;
+        showStatus('Loaded memory from ' + memoryDirHandle.name);
+
+      } catch (e) {
+        if (e.name !== 'AbortError') { showStatus('Error: ' + e.message); }
+      }
+    }
+
+    function renderMemory() {
+      renderMemoryTabs();
+      renderMemoryContent();
+    }
+
+    function renderMemoryTabs() {
+      let html = '';
+
+      if (memoryData.claudeMd) {
+        html += `<button class="memory-tab active" data-tab="overview">Overview</button>`;
+      }
+
+      for (const file of memoryData.memoryFiles) {
+        const name = file.name.replace('.md', '');
+        html += `<button class="memory-tab${!memoryData.claudeMd && memoryData.memoryFiles[0] === file ? ' active' : ''}" data-tab="file-${name}">${name}</button>`;
+      }
+
+      for (const dirName of Object.keys(memoryData.memoryDirs).sort()) {
+        const files = memoryData.memoryDirs[dirName];
+        let count;
+        if (dirName === 'context') {
+          count = 0;
+          for (const file of files) {
+            const p = file.parsed;
+            count += Object.keys(p.fields).length;
+            for (const table of p.tables) {
+              count += table.rows.length;
+            }
+            for (const [sName, sContent] of Object.entries(p.sections)) {
+              if (sContent && sName !== '_intro') {
+                count += sContent.split('\n').filter(l => l.trim() && !l.trim().startsWith('|')).length;
+              }
+            }
+          }
+        } else {
+          count = files.length;
+        }
+        html += `<button class="memory-tab" data-tab="dir-${dirName}">${dirName} <span class="count">${count}</span></button>`;
+      }
+
+      memoryTabsContainer.innerHTML = html;
+
+      memoryTabsContainer.querySelectorAll('.memory-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          memoryTabsContainer.querySelectorAll('.memory-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          renderMemoryContent();
+        });
+      });
+    }
+
+    function renderMemoryContent() {
+      const activeTab = memoryTabsContainer.querySelector('.memory-tab.active');
+      if (!activeTab) return;
+
+      const tabId = activeTab.dataset.tab;
+
+      if (tabId === 'overview') { renderMemoryOverview(); }
+      else if (tabId.startsWith('file-')) {
+        const fileName = tabId.replace('file-', '') + '.md';
+        renderMemoryFile(fileName);
+      } else if (tabId.startsWith('dir-')) {
+        const dirName = tabId.replace('dir-', '');
+        renderMemoryDirectory(dirName);
+      }
+    }
+
+    function renderMemoryOverview() {
+      if (!memoryData.claudeMd) return;
+
+      let statsHtml = '<div class="stats">';
+      for (const [dirName, files] of Object.entries(memoryData.memoryDirs)) {
+        let count;
+        if (dirName === 'context') {
+          count = 0;
+          for (const file of files) {
+            const p = file.parsed;
+            count += Object.keys(p.fields).length;
+            for (const table of p.tables) { count += table.rows.length; }
+            for (const [sName, sContent] of Object.entries(p.sections)) {
+              if (sContent && sName !== '_intro') {
+                count += sContent.split('\n').filter(l => l.trim() && !l.trim().startsWith('|')).length;
+              }
+            }
+          }
+        } else {
+          count = files.length;
+        }
+        statsHtml += `
+          <div class="stat">
+            <div class="stat-value">${count}</div>
+            <div class="stat-label">${dirName}</div>
+          </div>
+        `;
+      }
+      statsHtml += '</div>';
+
+      const claudeContent = renderMarkdownToHtml(memoryData.claudeMd.content);
+
+      memoryContentContainer.innerHTML = `
+        ${statsHtml}
+        <div class="file-card">
+          <div class="file-card-header" onclick="this.nextElementSibling.classList.toggle('expanded'); this.querySelector('.toggle').textContent = this.nextElementSibling.classList.contains('expanded') ? '\u2212' : '+'">
+            <span class="file-card-title">CLAUDE.md</span>
+            <span class="toggle" style="color: var(--text-muted);">&minus;</span>
+          </div>
+          <div class="file-card-content expanded markdown-content">${claudeContent}</div>
+        </div>
+        <button onclick="openEditModal('CLAUDE.md', 'claudeMd')" style="margin-top: 10px;">Edit CLAUDE.md</button>
+      `;
+    }
+
+    function renderMemoryFile(fileName) {
+      const file = memoryData.memoryFiles.find(f => f.name === fileName);
+      if (!file) return;
+
+      const content = renderMarkdownToHtml(file.content);
+
+      memoryContentContainer.innerHTML = `
+        <div class="file-card">
+          <div class="file-card-header">
+            <span class="file-card-title">${fileName}</span>
+          </div>
+          <div class="file-card-content expanded markdown-content">${content}</div>
+        </div>
+        <button onclick="openEditModal('${fileName}', 'memoryFile')" style="margin-top: 10px;">Edit ${fileName}</button>
+      `;
+    }
+
+    function renderMemoryDirectory(dirName) {
+      const files = memoryData.memoryDirs[dirName] || [];
+
+      // Context directory uses flat list view
+      if (dirName === 'context') {
+        renderMemoryDirectoryFlat(dirName, files);
+        return;
+      }
+
+      // All other directories use card grid view
+      let html = `
+        <div class="search-box">
+          <span style="color: var(--text-muted);">&#128269;</span>
+          <input type="text" placeholder="Search ${dirName}..." id="dirSearch" oninput="filterMemoryDirectory('${dirName}', this.value)">
+        </div>
+        <div class="memory-grid" id="dirGrid">
+      `;
+
+      for (const file of files) {
+        const p = file.parsed;
+        const title = p.title || getDisplayName(file.name);
+
+        let fieldsHtml = '';
+        const fieldEntries = Object.entries(p.fields).slice(0, 3);
+        if (fieldEntries.length > 0) {
+          fieldsHtml = '<div class="memory-card-fields">';
+          for (const [key, value] of fieldEntries) {
+            fieldsHtml += `
+              <div class="memory-card-field">
+                <span class="memory-card-field-label">${escapeHtml(key)}</span>
+                <span class="memory-card-field-value">${escapeHtml(value)}</span>
+              </div>
+            `;
+          }
+          fieldsHtml += '</div>';
+        }
+
+        let preview = '';
+        for (const [sectionName, sectionContent] of Object.entries(p.sections)) {
+          if (sectionContent && sectionName !== '_intro') {
+            preview = getPreview(sectionContent, 100);
+            break;
+          }
+        }
+        if (!preview) preview = getPreview(p.rawContent, 100);
+
+        html += `
+          <div class="memory-card" onclick="openFileModal('${dirName}', '${file.name}')" data-search="${escapeHtml((title + ' ' + JSON.stringify(p.fields) + ' ' + p.rawContent).toLowerCase())}">
+            <div class="memory-card-title">${escapeHtml(title)}</div>
+            ${fieldsHtml}
+            <div class="memory-card-preview">${escapeHtml(preview)}</div>
+          </div>
+        `;
+      }
+
+      html += `
+        <div class="add-btn" onclick="openNewFileModal('${dirName}')">
+          + Add to ${dirName}
+        </div>
+      </div>`;
+
+      memoryContentContainer.innerHTML = html;
+    }
+
+    function renderMemoryDirectoryFlat(dirName, files) {
+      let html = `
+        <div class="search-box">
+          <span style="color: var(--text-muted);">&#128269;</span>
+          <input type="text" placeholder="Search ${dirName}..." id="dirSearch" oninput="filterMemoryDirectory('${dirName}', this.value)">
+        </div>
+        <div id="dirGrid">
+      `;
+
+      for (const file of files) {
+        const p = file.parsed;
+
+        // Render fields as a key-value table
+        const fieldEntries = Object.entries(p.fields);
+        if (fieldEntries.length > 0) {
+          html += `<div class="file-card" style="margin-bottom: 16px;"><table class="memory-flat-table"><tbody>`;
+          for (const [key, value] of fieldEntries) {
+            html += `<tr data-search="${escapeHtml((key + ' ' + value).toLowerCase())}"><td>${escapeHtml(key)}</td><td>${escapeHtml(value)}</td></tr>`;
+          }
+          html += `</tbody></table></div>`;
+        }
+
+        // Render parsed tables (teams, tools, etc.) as proper HTML tables
+        for (const table of p.tables) {
+          html += `<div class="file-card" style="margin-bottom: 16px;"><table class="memory-flat-table"><thead><tr>`;
+          for (const h of table.headers) {
+            html += `<th>${escapeHtml(h)}</th>`;
+          }
+          html += `</tr></thead><tbody>`;
+          for (const row of table.rows) {
+            const searchData = row.join(' ').toLowerCase();
+            html += `<tr data-search="${escapeHtml(searchData)}">`;
+            for (const cell of row) {
+              html += `<td>${escapeHtml(cell)}</td>`;
+            }
+            html += `</tr>`;
+          }
+          html += `</tbody></table></div>`;
+        }
+
+        // Render non-table section content as list items
+        for (const [sectionName, sectionContent] of Object.entries(p.sections)) {
+          if (!sectionContent || sectionName === '_intro') continue;
+          const lines = sectionContent.split('\n').filter(l => l.trim() && !l.trim().startsWith('|'));
+          if (lines.length === 0) continue;
+          html += `<div class="file-card" style="margin-bottom: 16px;"><table class="memory-flat-table"><thead><tr><th colspan="2">${escapeHtml(sectionName)}</th></tr></thead><tbody>`;
+          for (const line of lines) {
+            const cleanLine = line.replace(/^[-*]\s*/, '').replace(/\*\*(.+?)\*\*/g, '$1').trim();
+            if (!cleanLine) continue;
+            html += `<tr data-search="${escapeHtml((sectionName + ' ' + cleanLine).toLowerCase())}"><td colspan="2">${escapeHtml(cleanLine)}</td></tr>`;
+          }
+          html += `</tbody></table></div>`;
+        }
+      }
+
+      html += `</div>`;
+      memoryContentContainer.innerHTML = html;
+    }
+
+    function filterMemoryDirectory(dirName, searchTerm) {
+      const grid = document.getElementById('dirGrid');
+      const items = grid.querySelectorAll('.memory-card, tr[data-search]');
+      const search = searchTerm.toLowerCase();
+      items.forEach(item => {
+        const searchData = item.dataset.search || '';
+        item.style.display = (!search || searchData.includes(search)) ? '' : 'none';
+      });
+    }
+
+    function renderMarkdownToHtml(md) {
+      let html = escapeHtml(md);
+
+      html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+      html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+      html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+      html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+      html = html.replace(/```[\s\S]*?```/g, match => {
+        const code = match.replace(/```\w*\n?/g, '');
+        return '<pre><code>' + code + '</code></pre>';
+      });
+      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+      html = html.replace(/(\|.+\|\n\|[-| ]+\|\n(?:\|.+\|\n?)+)/g, match => {
+        const lines = match.trim().split('\n');
+        const headers = lines[0].split('|').filter(c => c.trim());
+        const rows = lines.slice(2).map(row => row.split('|').filter(c => c.trim()));
+        let table = '<table><thead><tr>';
+        headers.forEach(h => table += `<th>${h.trim()}</th>`);
+        table += '</tr></thead><tbody>';
+        rows.forEach(row => {
+          table += '<tr>';
+          row.forEach(cell => table += `<td>${cell.trim()}</td>`);
+          table += '</tr>';
+        });
+        table += '</tbody></table>';
+        return table;
+      });
+      html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+      html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+      html = html.replace(/^(?!<[hupol]|<li|<table|<pre)(.+)$/gm, '<p>$1</p>');
+      html = html.replace(/<p><\/p>/g, '');
+      html = html.replace(/<p>\s*<\/p>/g, '');
+
+      return html;
+    }
+
+    // Modal functions
+    function openFileModal(dirName, fileName) {
+      const files = memoryData.memoryDirs[dirName];
+      const file = files.find(f => f.name === fileName);
+      if (!file) return;
+
+      document.getElementById('modalTitle').textContent = getDisplayName(fileName);
+      document.getElementById('modalBody').innerHTML = `
+        <div class="markdown-content" style="margin-bottom: 20px;">
+          ${renderMarkdownToHtml(file.content)}
+        </div>
+        <div class="form-group">
+          <label>Edit Raw Markdown</label>
+          <textarea id="editContent">${escapeHtml(file.content)}</textarea>
+        </div>
+      `;
+
+      modalOverlay.classList.add('visible');
+      modalOverlay.dataset.type = 'dirFile';
+      modalOverlay.dataset.dirName = dirName;
+      modalOverlay.dataset.fileName = fileName;
+    }
+
+    function openNewFileModal(dirName) {
+      document.getElementById('modalTitle').textContent = `Add to ${dirName}`;
+
+      let template = '# New Entry\n\n';
+      const existingFiles = memoryData.memoryDirs[dirName];
+      if (existingFiles && existingFiles.length > 0) {
+        const sample = existingFiles[0].parsed;
+        for (const key of Object.keys(sample.fields)) {
+          template += `**${key}:** \n`;
+        }
+        template += '\n';
+        for (const section of Object.keys(sample.sections)) {
+          if (section !== '_intro') {
+            template += `## ${section}\n\n`;
+          }
+        }
+      }
+
+      document.getElementById('modalBody').innerHTML = `
+        <div class="form-group">
+          <label>Filename (without .md)</label>
+          <input type="text" id="newFileName" placeholder="my-new-entry" style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text-primary); font-size: 14px; font-family: inherit; margin-bottom: 16px;">
+        </div>
+        <div class="form-group">
+          <label>Content</label>
+          <textarea id="editContent">${escapeHtml(template)}</textarea>
+        </div>
+      `;
+
+      modalOverlay.classList.add('visible');
+      modalOverlay.dataset.type = 'newDirFile';
+      modalOverlay.dataset.dirName = dirName;
+    }
+
+    function openEditModal(fileName, type) {
+      let content = '';
+      if (type === 'claudeMd') {
+        content = memoryData.claudeMd.content;
+      } else if (type === 'memoryFile') {
+        const file = memoryData.memoryFiles.find(f => f.name === fileName);
+        if (file) content = file.content;
+      }
+
+      document.getElementById('modalTitle').textContent = `Edit ${fileName}`;
+      document.getElementById('modalBody').innerHTML = `
+        <div class="form-group">
+          <label>Content</label>
+          <textarea id="editContent" style="min-height: 400px;">${escapeHtml(content)}</textarea>
+        </div>
+      `;
+
+      modalOverlay.classList.add('visible');
+      modalOverlay.dataset.type = type;
+      modalOverlay.dataset.fileName = fileName;
+    }
+
+    function closeModal() {
+      modalOverlay.classList.remove('visible');
+    }
+
+    async function saveModal() {
+      const type = modalOverlay.dataset.type;
+      const content = document.getElementById('editContent').value;
+
+      try {
+        if (type === 'claudeMd') {
+          memoryData.claudeMd.content = content;
+          if (SERVER_MODE) {
+            await saveMemoryToServer(memoryData.claudeMd.serverPath, content);
+          } else {
+            const writable = await memoryData.claudeMd.fileHandle.createWritable();
+            await writable.write(content);
+            await writable.close();
+          }
+          showStatus('Saved CLAUDE.md');
+
+        } else if (type === 'memoryFile') {
+          const fileName = modalOverlay.dataset.fileName;
+          const file = memoryData.memoryFiles.find(f => f.name === fileName);
+          if (file) {
+            file.content = content;
+            if (SERVER_MODE) {
+              await saveMemoryToServer(file.serverPath, content);
+            } else {
+              const writable = await file.fileHandle.createWritable();
+              await writable.write(content);
+              await writable.close();
+            }
+            showStatus('Saved ' + fileName);
+          }
+
+        } else if (type === 'dirFile') {
+          const dirName = modalOverlay.dataset.dirName;
+          const fileName = modalOverlay.dataset.fileName;
+          const files = memoryData.memoryDirs[dirName];
+          const file = files.find(f => f.name === fileName);
+          if (file) {
+            file.content = content;
+            file.parsed = parseMemoryMarkdown(content);
+            if (SERVER_MODE) {
+              await saveMemoryToServer(file.serverPath, content);
+            } else {
+              const writable = await file.fileHandle.createWritable();
+              await writable.write(content);
+              await writable.close();
+            }
+            showStatus('Saved ' + fileName);
+          }
+
+        } else if (type === 'newDirFile') {
+          const dirName = modalOverlay.dataset.dirName;
+          let fileName = document.getElementById('newFileName').value.trim();
+          if (!fileName) { showStatus('Please enter a filename'); return; }
+          if (!fileName.endsWith('.md')) fileName += '.md';
+
+          if (SERVER_MODE) {
+            const sp = 'memory/' + dirName + '/' + fileName;
+            await saveMemoryToServer(sp, content);
+            memoryData.memoryDirs[dirName].push({
+              name: fileName,
+              content: content,
+              serverPath: sp,
+              parsed: parseMemoryMarkdown(content)
+            });
+          } else {
+            const memoryDir = await memoryDirHandle.getDirectoryHandle('memory');
+            const subDir = await memoryDir.getDirectoryHandle(dirName, { create: true });
+            const fileHandle = await subDir.getFileHandle(fileName, { create: true });
+
+            const writable = await fileHandle.createWritable();
+            await writable.write(content);
+            await writable.close();
+
+            memoryData.memoryDirs[dirName].push({
+              name: fileName,
+              content: content,
+              fileHandle: fileHandle,
+              dirHandle: subDir,
+              parsed: parseMemoryMarkdown(content)
+            });
+          }
+
+          showStatus('Created ' + fileName);
+        }
+
+        closeModal();
+        renderMemory();
+
+      } catch (e) {
+        showStatus('Error saving: ' + e.message);
+      }
+    }
+
+    // Memory event listeners
+    openMemoryBtn.addEventListener('click', loadMemoryDirectory);
+    document.getElementById('openMemoryBtnLarge').addEventListener('click', loadMemoryDirectory);
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+    document.getElementById('modalCancel').addEventListener('click', closeModal);
+    document.getElementById('modalSave').addEventListener('click', saveModal);
+
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) closeModal();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (taskModalOverlay.classList.contains('visible')) closeTaskModal();
+        else closeModal();
+      }
+    });
+
+    // ============================================================
+    // ===== TASK MODAL (rich view + edit) — v0.22.0 =====
+    // ============================================================
+    // Clicking a card opens this modal; ALL task editing happens here (title, note,
+    // description, subtasks, prerequisites, column, done, delete). The rich per-task
+    // description + activity log live in a server-side file (.tasks/tasks/<id>.md) fetched
+    // on open and saved via /api/task — server mode only (file:// has nowhere to write it).
+    const taskModalOverlay = document.getElementById('taskModalOverlay');
+    const tmTitleEl = document.getElementById('tmTitle');
+    const tmIdEl = document.getElementById('tmId');
+    const tmCheckboxEl = document.getElementById('tmCheckbox');
+    const tmBodyEl = document.getElementById('tmBody');
+
+    let tmTask = null;                       // live ref into `tasks` for the open card
+    let tmDetail = { description: '', activity: [] };
+    let tmDescEditing = false;
+    let tmDescDirty = false;
+
+    function nowStamp() {
+      const d = new Date();
+      const p = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+    }
+
+    // A detail file = a TT;DR-led markdown description, optionally followed by a
+    // "## Activity" section the agent appends one-line entries to.
+    function splitDetail(text) {
+      const m = (text || '').match(/^##\s+Activity\s*$/im);
+      if (!m) return { description: (text || '').trim(), activity: [] };
+      const description = text.slice(0, m.index).trim();
+      const activity = text.slice(m.index + m[0].length)
+        .split('\n').map(l => l.trim())
+        .filter(l => l.startsWith('- ')).map(l => l.replace(/^-\s+/, ''));
+      return { description, activity };
+    }
+    function joinDetail(description, activity) {
+      let out = (description || '').trim();
+      if (activity && activity.length) out += '\n\n## Activity\n' + activity.map(a => '- ' + a).join('\n');
+      return out.trim() + '\n';
+    }
+
+    // Minimal, dependency-free markdown → HTML for the description pane: TT;DR callout,
+    // #/##/### headings, -, * and 1. lists, **bold**, _italic_, `code`, ```fences```,
+    // [links](url). Everything is escaped before any tag is introduced.
+    function renderTaskMarkdown(md) {
+      if (!md || !md.trim()) {
+        return '<p style="color: var(--text-muted); font-style: italic;">No description yet. Click <strong>Edit</strong> to add a plan — lead with a one-glance <code>TT;DR:</code> summary.</p>';
+      }
+      const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const inline = (s) => esc(s)
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>')
+        .replace(/(^|[^_\w])_([^_\n]+)_/g, '$1<em>$2</em>')
+        .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+      const lines = md.replace(/\r\n/g, '\n').split('\n');
+      let html = '', inList = false, listTag = 'ul', inCode = false, code = '';
+      const closeList = () => { if (inList) { html += `</${listTag}>`; inList = false; } };
+      for (const raw of lines) {
+        if (/^\s*```/.test(raw)) {
+          if (inCode) { html += `<pre><code>${esc(code)}</code></pre>`; inCode = false; code = ''; }
+          else { closeList(); inCode = true; code = ''; }
+          continue;
+        }
+        if (inCode) { code += raw + '\n'; continue; }
+        const ttdr = raw.match(/^\s*TT;DR:\s*(.*)$/i);
+        if (ttdr) { closeList(); html += `<div class="tm-ttdr"><strong>TT;DR:</strong> ${inline(ttdr[1])}</div>`; continue; }
+        let m;
+        if (m = raw.match(/^###\s+(.*)$/)) { closeList(); html += `<h4>${inline(m[1])}</h4>`; }
+        else if (m = raw.match(/^##\s+(.*)$/)) { closeList(); html += `<h3>${inline(m[1])}</h3>`; }
+        else if (m = raw.match(/^#\s+(.*)$/)) { closeList(); html += `<h2>${inline(m[1])}</h2>`; }
+        else if (m = raw.match(/^\s*[-*]\s+(.*)$/)) {
+          if (!inList || listTag !== 'ul') { closeList(); html += '<ul>'; inList = true; listTag = 'ul'; }
+          html += `<li>${inline(m[1])}</li>`;
+        } else if (m = raw.match(/^\s*\d+\.\s+(.*)$/)) {
+          if (!inList || listTag !== 'ol') { closeList(); html += '<ol>'; inList = true; listTag = 'ol'; }
+          html += `<li>${inline(m[1])}</li>`;
+        } else if (/^\s*$/.test(raw)) { closeList(); }
+        else { closeList(); html += `<p>${inline(raw)}</p>`; }
+      }
+      if (inCode) html += `<pre><code>${esc(code)}</code></pre>`;
+      closeList();
+      return html;
+    }
+
+    async function openTaskModal(task) {
+      tmTask = task;
+      tmDescEditing = false;
+      tmDescDirty = false;
+      tmDetail = { description: '', activity: [] };
+      tmTitleEl.value = task.title;
+      tmIdEl.textContent = '#' + task.id;
+      tmCheckboxEl.className = 'checkbox ' + (task.checked ? 'checked' : '');
+      taskModalOverlay.classList.add('visible');
+      renderTaskModalBody();
+      if (SERVER_MODE) {
+        try {
+          const res = await fetch('/api/task?id=' + encodeURIComponent(task.id));
+          tmDetail = splitDetail(await res.text());
+        } catch (_) { tmDetail = { description: '', activity: [] }; }
+        if (tmTask === task) renderTaskModalBody();
+      }
+    }
+
+    function closeTaskModal() {
+      if (tmDescEditing && tmDescDirty && !confirm('Discard unsaved description edits?')) return;
+      taskModalOverlay.classList.remove('visible');
+      tmTask = null;
+      tmDescEditing = false;
+      tmDescDirty = false;
+    }
+
+    // Persist the per-task detail file (description + activity). Server mode only.
+    async function saveTaskDetail(activityNote) {
+      if (!SERVER_MODE || !tmTask) return;
+      if (activityNote) tmDetail.activity.push(`${nowStamp()} — ${activityNote}`);
+      try {
+        await fetch('/api/task?id=' + encodeURIComponent(tmTask.id), {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/markdown' },
+          body: joinDetail(tmDetail.description, tmDetail.activity),
+        });
+        markBoardUpdated();
+      } catch (e) { showStatus('Detail save failed: ' + e.message); }
+    }
+
+    function renderTaskModalBody() {
+      const task = tmTask;
+      if (!task) return;
+
+      const sectionOptions = sections.map(s =>
+        `<option value="${s.id}"${s.id === task.section ? ' selected' : ''}>${escapeHtml(s.name)}</option>`).join('');
+      const unmet = unmetNeeds(task);
+      const blockedLine = unmet.length
+        ? `<div class="tm-blocked">🔒 Blocked — waiting on ${unmet.map(id => {
+            const t = taskById(id);
+            return '#' + id + (t ? ' (' + escapeHtml(t.title) + ')' : '');
+          }).join(', ')}</div>`
+        : '';
+      const needsStr = (task.needs || []).map(n => '#' + n).join(', ');
+      const liveOnly = ' <span style="text-transform:none; letter-spacing:0; color:var(--text-muted); font-weight:normal;">— live board only</span>';
+
+      tmBodyEl.innerHTML = `
+        <div class="tm-section-label">Column</div>
+        <select id="tmSection" class="tm-note-input">${sectionOptions}</select>
+
+        <div class="tm-section-label">Note <span style="text-transform:none; letter-spacing:0; color:var(--text-muted); font-weight:normal;">— one-line context</span></div>
+        <input type="text" id="tmNote" class="tm-note-input" placeholder="Short context (one line)" value="${escapeHtml(task.note || '')}">
+
+        <div class="tm-section-label">Prerequisites <span style="text-transform:none; letter-spacing:0; color:var(--text-muted); font-weight:normal;">— task ids, comma-separated</span></div>
+        <input type="text" id="tmNeeds" class="tm-note-input" placeholder="#a3f, #k2p" value="${escapeHtml(needsStr)}">
+        ${blockedLine}
+
+        <div class="tm-section-label tm-row-between"><span>Description${SERVER_MODE ? '' : liveOnly}</span>${SERVER_MODE ? `<button class="tm-btn" id="tmDescToggle">${tmDescEditing ? 'Preview' : 'Edit'}</button>` : ''}</div>
+        <div id="tmDescArea"></div>
+
+        <div class="tm-section-label">Subtasks</div>
+        <div id="tmSubtasks"></div>
+
+        <div class="tm-section-label">Activity</div>
+        <ul class="tm-activity" id="tmActivity"></ul>
+      `;
+
+      renderTmDesc();
+      renderTmSubtasks();
+      renderTmActivity();
+
+      const secSel = document.getElementById('tmSection');
+      secSel.addEventListener('change', () => {
+        const to = secSel.value;
+        if (to !== task.section) {
+          moveTask(task.id, to);            // honours the Active-block gate; sets task.section on success
+          secSel.value = task.section;      // reflect reality (revert if the move was refused)
+          tmCheckboxEl.className = 'checkbox ' + (task.checked ? 'checked' : '');
+        }
+      });
+
+      const noteInput = document.getElementById('tmNote');
+      noteInput.addEventListener('change', () => {
+        const v = noteInput.value.trim();
+        if (v !== (task.note || '')) { task.note = v; commitBoard(); }
+      });
+
+      const needsInput = document.getElementById('tmNeeds');
+      needsInput.addEventListener('change', () => {
+        const ids = [...new Set((needsInput.value.match(/[0-9a-z]{2,}/gi) || [])
+          .map(s => s.toLowerCase()).filter(id => id !== task.id))];   // no self-dependency
+        if (JSON.stringify(ids) !== JSON.stringify(task.needs || [])) {
+          task.needs = ids;
+          commitBoard();
+          renderTaskModalBody();             // refresh the blocked-line
+        }
+      });
+    }
+
+    function renderTmDesc() {
+      const area = document.getElementById('tmDescArea');
+      if (!area) return;
+      // The header Edit/Preview toggle only governs entry into edit mode; while editing, the
+      // in-area Cancel/Save buttons govern exit, so hide the header toggle to avoid a dead,
+      // mislabeled control.
+      const toggle = document.getElementById('tmDescToggle');
+      if (toggle) toggle.style.display = tmDescEditing ? 'none' : '';
+      if (tmDescEditing) {
+        area.innerHTML = '';
+        const ta = document.createElement('textarea');
+        ta.className = 'tm-desc-edit';
+        ta.value = tmDetail.description || '';
+        ta.placeholder = 'TT;DR: one or two plain-English sentences on what this task is and where it stands.\n\nThen the full plan: what to build, which files/areas to touch, edge cases, acceptance criteria…';
+        ta.addEventListener('input', () => { tmDescDirty = true; });
+        area.appendChild(ta);
+        const actions = document.createElement('div');
+        actions.style.cssText = 'display:flex; gap:8px; margin-top:8px; justify-content:flex-end;';
+        actions.innerHTML = '<button class="tm-btn" id="tmDescCancel">Cancel</button><button class="tm-btn" id="tmDescSave" style="border-color:var(--accent); color:var(--accent);">Save description</button>';
+        area.appendChild(actions);
+        ta.focus();
+        document.getElementById('tmDescCancel').addEventListener('click', () => {
+          tmDescEditing = false; tmDescDirty = false; renderTaskModalBody();
+        });
+        document.getElementById('tmDescSave').addEventListener('click', async () => {
+          tmDetail.description = ta.value;
+          tmDescEditing = false; tmDescDirty = false;
+          await saveTaskDetail('description edited (operator)');
+          renderTaskModalBody();
+          showStatus('Description saved');
+        });
+      } else {
+        area.innerHTML = '';
+        const div = document.createElement('div');
+        div.className = 'tm-desc-rendered';
+        div.innerHTML = renderTaskMarkdown(tmDetail.description);
+        area.appendChild(div);
+        if (toggle) toggle.onclick = () => { tmDescEditing = true; renderTmDesc(); };
+      }
+    }
+
+    function renderTmSubtasks() {
+      const wrap = document.getElementById('tmSubtasks');
+      if (!wrap || !tmTask) return;
+      wrap.innerHTML = '';
+      (tmTask.subtasks || []).forEach((st, idx) => {
+        const row = document.createElement('div');
+        row.className = 'tm-sub';
+        const cb = document.createElement('span');
+        cb.className = 'checkbox ' + (st.checked ? 'checked' : '');
+        cb.style.flexShrink = '0';
+        cb.addEventListener('click', () => { st.checked = !st.checked; commitBoard(); renderTmSubtasks(); });
+        const txt = document.createElement('input');
+        txt.type = 'text';
+        txt.className = 'tm-sub-text' + (st.checked ? ' checked' : '');
+        txt.value = st.text;
+        txt.addEventListener('change', () => {
+          const v = txt.value.trim();
+          if (!v) { tmTask.subtasks.splice(idx, 1); commitBoard(); renderTmSubtasks(); }
+          else if (v !== st.text) { st.text = v; commitBoard(); }
+        });
+        const del = document.createElement('button');
+        del.className = 'tm-sub-del';
+        del.title = 'Remove subtask';
+        del.textContent = '×';
+        del.addEventListener('click', () => { tmTask.subtasks.splice(idx, 1); commitBoard(); renderTmSubtasks(); });
+        row.appendChild(cb); row.appendChild(txt); row.appendChild(del);
+        wrap.appendChild(row);
+      });
+      const add = document.createElement('div');
+      add.className = 'tm-add';
+      add.textContent = '+ Add subtask';
+      add.addEventListener('click', () => {
+        const row = document.createElement('div');
+        row.className = 'tm-sub';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'tm-sub-text';
+        input.placeholder = 'New subtask…';
+        let committed = false;
+        const commit = () => {
+          if (committed) return; committed = true;
+          const v = input.value.trim();
+          if (v) { if (!tmTask.subtasks) tmTask.subtasks = []; tmTask.subtasks.push({ text: v, checked: false }); commitBoard(); }
+          renderTmSubtasks();
+        };
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); commit(); }
+          else if (e.key === 'Escape') { committed = true; renderTmSubtasks(); }
+        });
+        input.addEventListener('blur', commit);
+        row.appendChild(input);
+        wrap.insertBefore(row, add);
+        input.focus();
+      });
+      wrap.appendChild(add);
+    }
+
+    function renderTmActivity() {
+      const ul = document.getElementById('tmActivity');
+      if (!ul) return;
+      ul.innerHTML = '';
+      if (!tmDetail.activity || !tmDetail.activity.length) {
+        const li = document.createElement('li');
+        li.className = 'tm-empty';
+        li.textContent = SERVER_MODE
+          ? 'No recorded activity yet — agents append a line here as they work.'
+          : 'Activity log is available on the live board.';
+        ul.appendChild(li);
+        return;
+      }
+      [...tmDetail.activity].reverse().forEach(a => {   // newest first
+        const li = document.createElement('li');
+        li.textContent = a;
+        ul.appendChild(li);
+      });
+    }
+
+    // A board mutation made inside the modal: autosave TASKS.md + re-render (with FLIP),
+    // and keep the modal header checkbox in sync.
+    function commitBoard() {
+      markChanged();
+      renderTasks();
+      if (tmTask) tmCheckboxEl.className = 'checkbox ' + (tmTask.checked ? 'checked' : '');
+    }
+
+    tmCheckboxEl.addEventListener('click', () => {
+      if (!tmTask) return;
+      tmTask.checked = !tmTask.checked;
+      commitBoard();
+    });
+    tmTitleEl.addEventListener('change', () => {
+      if (!tmTask) return;
+      const v = tmTitleEl.value.trim();
+      if (v && v !== tmTask.title) { tmTask.title = v; commitBoard(); }
+      else tmTitleEl.value = tmTask.title;
+    });
+    document.getElementById('tmClose').addEventListener('click', closeTaskModal);
+    document.getElementById('tmDoneBtn').addEventListener('click', closeTaskModal);
+    document.getElementById('tmDelete').addEventListener('click', () => {
+      if (!tmTask) return;
+      const t = tmTask;
+      taskModalOverlay.classList.remove('visible');
+      tmTask = null;
+      deleteTask(t);
+    });
+    taskModalOverlay.addEventListener('click', (e) => { if (e.target === taskModalOverlay) closeTaskModal(); });
+
+    // ============================================================
+    // ===== FRESHNESS INDICATOR ("live" → seconds → "stale") =====
+    // ============================================================
+    // One 1/sec interval compares now against the last board update. < 2min → "live";
+    // 2min..45min → counts up in seconds; ≥ 45min → "stale". Cheap: a single timer plus a
+    // couple of class swaps — nothing per-card.
+    let lastBoardUpdate = Date.now();
+    let freshnessEl = null;
+    let freshSlot = null;
+    let lastFreshText = '';
+    const FRESH_WINDOW_MS = 120000;        // 2 min "live"
+    const STALE_AFTER_MS = 45 * 60000;     // 45 min → stale
+
+    function markBoardUpdated() { lastBoardUpdate = Date.now(); updateFreshness(); }
+
+    function updateFreshness() {
+      if (!freshnessEl) return;
+      const elapsed = Date.now() - lastBoardUpdate;
+      let text, cls, title;
+      if (elapsed < FRESH_WINDOW_MS) {
+        text = 'live'; cls = 'fresh'; title = 'Board updated within the last 2 minutes';
+      } else if (elapsed < STALE_AFTER_MS) {
+        text = Math.floor(elapsed / 1000) + 's'; cls = 'aging'; title = 'Seconds since the last board change';
+      } else {
+        text = 'stale'; cls = 'stale'; title = 'No board changes in 45+ minutes — may be out of sync';
+      }
+      freshnessEl.classList.remove('fresh', 'aging', 'stale');
+      freshnessEl.classList.add(cls);
+      freshnessEl.title = title;
+      if (text !== lastFreshText) {
+        lastFreshText = text;
+        if (freshSlot) freshSlot.set(text, { color: null });   // quiet odometer roll (no arrival flash)
+        else freshnessEl.textContent = text;
+      }
+    }
+
+    function startFreshnessClock() {
+      if (!freshnessEl) {
+        freshnessEl = document.createElement('span');
+        freshnessEl.id = 'freshness';
+        freshnessEl.style.marginLeft = '8px';
+        freshnessEl.classList.add('fresh');
+        if (filePathEl && filePathEl.parentElement) {
+          filePathEl.parentElement.insertBefore(freshnessEl, filePathEl.nextSibling);
+        } else {
+          document.body.appendChild(freshnessEl);
+        }
+        freshSlot = attachSlotText(freshnessEl, 'live', { color: null });
+        lastFreshText = 'live';
+      }
+      updateFreshness();
+      setInterval(updateFreshness, 1000);
+    }
+
+    // ============================================================
+    // ===== SLOT ROLL — short labels that change in place =====
+    // ============================================================
+    // Vanilla port of the QubeTX "slot roll" (DESIGN_SYSTEM § Slot roll), itself adapted
+    // from slot-text v0.2.2 (MIT · textmotion.dev). Each character sits in its own clipped
+    // cell; the new glyph rolls in while the old rolls out, landing with a small spring.
+    // Themed for SHAUGHV: arrival flash is var(--accent) settling to ink (pass color:null for a
+    // quiet odometer roll). Used on the column count badges (accent flash when a task moves) and
+    // the freshness counter (quiet ticks). Respects prefers-reduced-motion — it snaps to the final
+    // value. The per-glyph roll runs through a driver seam: when anime.js has loaded (full/vendor
+    // tier) it drives the transform/rotate/color from the SAME computed tuple; otherwise the
+    // built-in CSS-transition driver runs — identical motion, zero deps. FLIP stays on WAAPI.
+    const SLOT_EASE = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
+    const SLOT_DEFAULTS = {
+      direction: 'down', stagger: 40, duration: 240, exitOffset: 50, easing: SLOT_EASE,
+      bounce: 0.3, color: 'var(--accent)', colorFade: 280, skipUnchanged: true, interrupt: true,
+    };
+    const SLOT_NBSP = ' ';
+    const slotGlyph = (c) => (c === ' ' ? SLOT_NBSP : c);
+    const slotStates = new WeakMap();
+
+    function slotStyleContainer(el) {
+      el.setAttribute('data-slot-text', '');
+      el.style.display = 'inline-flex';
+      el.style.whiteSpace = 'pre';
+    }
+    function slotMakeSr(text) {
+      const sr = document.createElement('span');
+      sr.setAttribute('data-slot-sr', '');
+      Object.assign(sr.style, { position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0 0 0 0)', clipPath: 'inset(50%)', whiteSpace: 'nowrap' });
+      sr.textContent = text;
+      return sr;
+    }
+    function slotMakeFace(char) {
+      const face = document.createElement('span');
+      face.setAttribute('data-slot-face', '');
+      Object.assign(face.style, { position: 'absolute', inset: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'pre' });
+      face.textContent = slotGlyph(char);
+      return face;
+    }
+    function slotBuildCell(char) {
+      const slot = document.createElement('span');
+      slot.setAttribute('data-slot-cell', '');
+      slot.dataset.char = char;
+      Object.assign(slot.style, { position: 'relative', display: 'inline-flex', flex: 'none', justifyContent: 'center', overflowX: 'visible', overflowY: 'clip', verticalAlign: 'bottom' });
+      const sizer = document.createElement('span');
+      sizer.setAttribute('data-slot-sizer', '');
+      Object.assign(sizer.style, { visibility: 'hidden', whiteSpace: 'pre' });
+      sizer.textContent = slotGlyph(char);
+      slot.append(sizer, slotMakeFace(char));
+      return slot;
+    }
+    function slotSettle(container) {
+      const state = slotStates.get(container);
+      if (!state) return;
+      state.timers.forEach((t) => clearTimeout(t));
+      slotStates.delete(container);
+      buildSlotText(container, state.target);
+    }
+    function buildSlotText(container, text) {
+      slotStyleContainer(container);
+      const cells = Array.from(text, slotBuildCell);
+      cells.forEach((c) => c.setAttribute('aria-hidden', 'true'));
+      container.replaceChildren(slotMakeSr(text), ...cells);
+    }
+    // Driver seam — the per-glyph roll is computed into a backend-agnostic tuple, then APPLIED by
+    // one of two drivers. anime.js (when loaded) and the built-in CSS-transition driver receive the
+    // exact same numbers, so the motion is identical and "which library loaded" is invisible. We
+    // re-check window.anime per call so a late-arriving anime.js is picked up without a reload.
+    function slotUseAnime() { return typeof window !== 'undefined' && typeof window.anime === 'function'; }
+    function animeEase(cssEasing) {
+      const m = /cubic-bezier\(\s*([\d.+-]+)\s*,\s*([\d.+-]+)\s*,\s*([\d.+-]+)\s*,\s*([\d.+-]+)\s*\)/.exec(cssEasing || '');
+      return m ? `cubicBezier(${m[1]}, ${m[2]}, ${m[3]}, ${m[4]})` : 'easeOutQuad';
+    }
+    // CSS driver: the original transform/rotate transitions + color fade, completion via
+    // transitionend. This is the reference behaviour and the always-correct default.
+    function slotDriveCss(roll, ctx) {
+      const { oldFace, newFace, finishGlyph, timers } = ctx;
+      const rollTrans = `transform ${roll.duration}ms ${roll.easing}`;
+      const trans = roll.restColor != null ? `${rollTrans}, color ${roll.colorFade}ms linear ${roll.duration}ms` : rollTrans;
+      if (oldFace) {
+        timers.push(setTimeout(() => {
+          oldFace.style.willChange = 'transform';
+          oldFace.style.transition = rollTrans;
+          oldFace.style.transform = `translateY(${roll.outY}px) rotate(${-Number(roll.tilt)}deg)`;
+        }, roll.outDelay));
+      }
+      timers.push(setTimeout(() => {
+        newFace.style.transition = trans;
+        newFace.style.transform = 'translateY(0) rotate(0deg)';
+        if (roll.restColor != null) newFace.style.color = roll.restColor;
+        const done = (e) => {
+          if (e.propertyName !== 'transform') return;
+          newFace.removeEventListener('transitionend', done);
+          finishGlyph();
+        };
+        newFace.addEventListener('transitionend', done);
+      }, roll.inDelay));
+    }
+    // anime.js driver: same translateY/rotate endpoints, duration, delay and easing curve, fed to
+    // anime() instead of CSS transitions. Completion fires finishGlyph (parity with transitionend).
+    function slotDriveAnime(roll, ctx) {
+      const { oldFace, newFace, finishGlyph, timers } = ctx;
+      const ease = animeEase(roll.easing);
+      if (oldFace) {
+        oldFace.style.willChange = 'transform';
+        window.anime({ targets: oldFace, translateY: [0, roll.outY], rotate: [0, -Number(roll.tilt)],
+          duration: roll.duration, delay: roll.outDelay, easing: ease });
+      }
+      newFace.style.willChange = 'transform';
+      window.anime({ targets: newFace, translateY: [roll.inStart, 0], rotate: [Number(roll.tilt), 0],
+        duration: roll.duration, delay: roll.inDelay, easing: ease, complete: finishGlyph });
+      if (roll.restColor != null && roll.tint != null) {
+        window.anime({ targets: newFace, color: [roll.tint, roll.restColor],
+          duration: roll.colorFade, delay: roll.inDelay + roll.duration, easing: 'linear' });
+      }
+    }
+    function animateSlotText(container, toText, options = {}) {
+      const { direction, stagger, duration, exitOffset, easing, bounce, color, colorFade, skipUnchanged, interrupt } = { ...SLOT_DEFAULTS, ...options };
+      if (prefersReducedMotion) { slotSettle(container); buildSlotText(container, toText); return; }
+      const running = slotStates.get(container);
+      if (running && !interrupt) {
+        if (toText !== running.target) running.pending = { text: toText, options };
+        return;
+      }
+      slotSettle(container);
+      if (!container.querySelector('[data-slot-cell]')) { buildSlotText(container, toText); return; }
+      slotStyleContainer(container);
+      const sr = container.querySelector('[data-slot-sr]');
+      if (sr) sr.textContent = toText;
+      const slots = Array.from(container.querySelectorAll('[data-slot-cell]'));
+      const fromText = slots.map((s) => s.dataset.char || '').join('');
+      if (!interrupt && fromText === toText) return;
+      const maxLen = Math.max(fromText.length, toText.length);
+      const sample = slots.find((s) => (s.dataset.char || '') !== '') || slots[0];
+      const cs = getComputedStyle(container);
+      const H = Math.ceil(
+        (sample && sample.getBoundingClientRect().height) || (sample && sample.offsetHeight) ||
+        container.getBoundingClientRect().height || parseFloat(cs.lineHeight) || 0
+      ) || Math.ceil(parseFloat(cs.fontSize) * 1.3) || 18;
+      const restColor = color ? cs.color : '';
+      for (let i = slots.length; i < maxLen; i++) {
+        const slot = slotBuildCell('');
+        slot.setAttribute('aria-hidden', 'true');
+        container.appendChild(slot);
+        slots.push(slot);
+      }
+      const timers = [];
+      const state = { timers, target: toText };
+      slotStates.set(container, state);
+      const outY = direction === 'down' ? H : -H;
+      const inStart = direction === 'down' ? -H : H;
+      const wobble = (i, salt) => {
+        const n = Math.sin((i + 1) * 12.9898 + salt * 78.233) * 43758.5453;
+        return (n - Math.floor(n)) * 2 - 1;
+      };
+      let maxEnd = 0;
+      for (let i = 0; i < maxLen; i++) {
+        const fromChar = fromText[i] || '';
+        const toChar = toText[i] || '';
+        if (fromChar === toChar && (skipUnchanged || fromChar === '')) continue;
+        const slot = slots[i];
+        const sizer = slot.querySelector('[data-slot-sizer]');
+        const oldFace = slot.querySelector('[data-slot-face]');
+        const oldW = slot.getBoundingClientRect().width;
+        sizer.textContent = slotGlyph(toChar);
+        const newW = sizer.getBoundingClientRect().width;
+        const widthChanges = Math.abs(newW - oldW) > 0.5;
+        if (widthChanges) slot.style.width = `${oldW}px`;
+        if (fromChar === '' || toChar === '') slot.style.overflowX = 'clip';
+        const tint = typeof color === 'function' ? color(i, maxLen) : color;
+        const isTail = toChar === '';
+        const d = Math.round(duration * (isTail ? 0.75 : 1) * (1 + bounce * 0.45 * wobble(i, 1)));
+        const staggerIndex = isTail ? toText.length * 0.5 + (i - toText.length) * 0.25 : i;
+        const base = Math.round(staggerIndex * stagger * (1 + bounce * 0.25 * wobble(i, 2)));
+        const tilt = (bounce * 5 * wobble(i, 3)).toFixed(2);
+        const newFace = slotMakeFace(toChar);
+        newFace.style.willChange = 'transform';
+        newFace.style.transformOrigin = '50% 50%';
+        newFace.style.transform = `translateY(${inStart}px) rotate(${tilt}deg)`;
+        if (tint) newFace.style.color = tint;
+        slot.appendChild(newFace);
+        void slot.offsetWidth;
+        if (widthChanges) {
+          let wDelay = base, wDur = d;
+          if (isTail) { wDelay = base + Math.round(d * 0.55); wDur = Math.max(140, Math.round(d * 0.6)); }
+          else if (fromChar === '') { wDur = Math.max(140, Math.round(d * 0.45)); }
+          timers.push(setTimeout(() => {
+            slot.style.transition = `width ${wDur}ms cubic-bezier(0.2, 0, 0, 1)`;
+            slot.style.width = `${newW}px`;
+          }, wDelay));
+          maxEnd = Math.max(maxEnd, wDelay + wDur);
+        }
+        maxEnd = Math.max(maxEnd, base + exitOffset + d + (color ? colorFade : 0));
+        // Backend-agnostic per-glyph roll tuple — IDENTICAL whether anime.js drives it or the
+        // built-in CSS driver does (window.__slotTuples lets a test assert the parity). The driver
+        // only chooses HOW to apply these numbers; cleanup (finishGlyph) is shared.
+        const roll = {
+          duration: d, outDelay: base, inDelay: base + exitOffset, easing,
+          inStart, outY, tilt, colorFade,
+          tint: color ? tint : null, restColor: color ? restColor : null,
+        };
+        if (typeof window !== 'undefined' && window.__slotTuples) window.__slotTuples.push(roll);
+        const finishGlyph = () => {
+          slot.dataset.char = toChar;
+          slot.style.removeProperty('transition');
+          slot.style.removeProperty('width');
+          slot.style.overflowX = 'visible';
+          slot.querySelectorAll('[data-slot-face]').forEach((f) => { if (f !== newFace) f.remove(); });
+        };
+        const driverCtx = { slot, oldFace, newFace, finishGlyph, timers };
+        if (slotUseAnime()) slotDriveAnime(roll, driverCtx);
+        else slotDriveCss(roll, driverCtx);
+      }
+      const total = maxEnd + 80;
+      timers.push(setTimeout(() => {
+        const pending = state.pending;
+        slotStates.delete(container);
+        buildSlotText(container, toText);
+        if (pending) animateSlotText(container, pending.text, pending.options);
+      }, total));
+    }
+    function attachSlotText(element, initialText, options = {}) {
+      let value = initialText;
+      buildSlotText(element, initialText);
+      return {
+        element,
+        get value() { return value; },
+        set(text, nextOptions = {}) { value = text; animateSlotText(element, text, { ...options, ...nextOptions }); },
+      };
+    }
+
+    // Roll the column / section count badges from their previous value to the current one
+    // whenever a task move changes a count. Persisted map (like the card signatures) so we
+    // know the "before" value without a pre-render snapshot.
+    let lastSectionCounts = {};
+    function rollCounts(container) {
+      const seen = {};
+      sections.forEach((s) => {
+        const cur = (tasks[s.id] || []).length;
+        seen[s.id] = cur;
+        const el = container && container.querySelector(`[data-count-for="${s.id}"]`);
+        if (!el) return;
+        const prev = lastSectionCounts[s.id];
+        if (!prefersReducedMotion && prev !== undefined && prev !== cur) {
+          buildSlotText(el, String(prev));
+          animateSlotText(el, String(cur), { color: 'var(--accent)' });
+        }
+      });
+      lastSectionCounts = seen;
+    }
+
+    // ============================================================
+    // ===== CARD MOVE / CHANGE ANIMATIONS (FLIP, dependency-free) =====
+    // ============================================================
+    // Native Web Animations API — framer-motion is React-only and anime.js would add a CDN
+    // runtime dep; WAAPI gives the same board-quality motion while keeping this a single
+    // self-contained file. A card that changes column glides via a position:fixed ghost
+    // clone on a top-level overlay, so it isn't clipped by the column's own scroll box.
+    const prefersReducedMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    let lastCardSignatures = new Map();
+
+    function taskSignature(t) {
+      const subs = (t.subtasks || []).map(s => (s.checked ? '1' : '0') + s.text).join('|');
+      return [t.checked ? 1 : 0, t.section, t.title, t.note, (t.needs || []).join(','), subs].join('¦');
+    }
+    function captureCardRects() {
+      const map = new Map();
+      document.querySelectorAll('#board .task-card[data-id]').forEach(c => {
+        map.set(c.dataset.id, c.getBoundingClientRect());
+      });
+      return map;
+    }
+    function playBoardAnimations(prevRects) {
+      const cards = document.querySelectorAll('#board .task-card[data-id]');
+      // Skip motion while the task modal is open — the board is behind it, and a fixed
+      // ghost (z-index 9000) would otherwise fly OVER the z-100 modal. Still refresh the
+      // signature map so the next visible render diffs correctly.
+      const modalOpen = !!(taskModalOverlay && taskModalOverlay.classList.contains('visible'));
+      const nextSignatures = new Map();
+      cards.forEach(card => {
+        const id = card.dataset.id;
+        const task = taskById(id);
+        const newSig = task ? taskSignature(task) : undefined;
+        if (newSig !== undefined) nextSignatures.set(id, newSig);
+        if (prefersReducedMotion || modalOpen) return;
+
+        const prev = prevRects && prevRects.get(id);
+        const next = card.getBoundingClientRect();
+
+        if (!prev) {
+          // new (or first-paint) card — gentle fade/pop in place
+          card.animate(
+            [{ opacity: 0, transform: 'translateY(8px) scale(0.97)' }, { opacity: 1, transform: 'none' }],
+            { duration: 240, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' });
+          return;
+        }
+
+        const dx = prev.left - next.left, dy = prev.top - next.top;
+        if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+          // moved (column change or reorder): fly a ghost clone on a fixed overlay so it
+          // glides over the gap between columns without being clipped by overflow.
+          const ghost = card.cloneNode(true);
+          ghost.classList.add('flip-ghost');
+          ghost.style.cssText += `position:fixed; margin:0; left:${prev.left}px; top:${prev.top}px; width:${prev.width}px; height:${prev.height}px; z-index:9000; pointer-events:none;`;
+          document.body.appendChild(ghost);
+          card.style.visibility = 'hidden';
+          const anim = ghost.animate(
+            [{ transform: 'translate(0, 0)' }, { transform: `translate(${next.left - prev.left}px, ${next.top - prev.top}px)` }],
+            { duration: 380, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' });
+          const cleanup = () => { ghost.remove(); if (card.isConnected) card.style.visibility = ''; };
+          anim.addEventListener('finish', cleanup);
+          anim.addEventListener('cancel', cleanup);
+        } else {
+          // same place but content changed (e.g. an agent ticked it done) — brief pulse
+          const prevSig = lastCardSignatures.get(id);
+          if (prevSig !== undefined && newSig !== undefined && prevSig !== newSig) {
+            card.classList.remove('just-changed');
+            void card.offsetWidth;             // restart the keyframe animation
+            card.classList.add('just-changed');
+            card.addEventListener('animationend', () => card.classList.remove('just-changed'), { once: true });
+          }
+        }
+      });
+      lastCardSignatures = nextSignatures;
+    }
+
+    // Expose functions to onclick handlers
+    window.openFileModal = openFileModal;
+    window.openNewFileModal = openNewFileModal;
+    window.openEditModal = openEditModal;
+    window.filterMemoryDirectory = filterMemoryDirectory;
+
+    // ===== SERVER MODE: boot the live board automatically =====
+    // Served by board-server.mjs → no manual file pickers: auto-load tasks + memory and
+    // open the live (SSE) connection. The pickers become "Reload" buttons.
+    startFreshnessClock();              // live/seconds/stale badge (both modes)
+
+    if (SERVER_MODE) {
+      openTaskBtn.textContent = 'Reload';
+      openMemoryBtn.textContent = 'Reload';
+      loadTasksFromServer(true);
+      startWatching();
+      loadMemoryFromServer();
+    }
+  </script>
+</body>
+</html>

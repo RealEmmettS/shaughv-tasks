@@ -1,0 +1,25 @@
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+
+# Local plugin settings
+.claude/*.local.md
+
+# A task board created by running /tasks-start *inside this repo* while testing.
+# The plugin CREATES .tasks/ in consuming repos; the plugin's own repo must never
+# commit one (it would pollute skills/ and the generated Codex mirror).
+.tasks/
+
+# Scratch dirs inside skills
+skills/**/.tmp/
+
+# Playwright MCP session snapshots (page/console dumps from browser automation)
+.playwright-mcp/
+
+# Python bytecode cache (e.g. from running skill scripts locally)
+__pycache__/
+*.pyc

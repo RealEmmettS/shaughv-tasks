@@ -1,0 +1,36 @@
+{
+  "name": "shaughv-tasks",
+  "owner": {
+    "name": "Emmett Shaughnessy",
+    "email": "hey@emmetts.dev",
+    "url": "https://github.com/RealEmmettS"
+  },
+  "plugins": [
+    {
+      "name": "shaughv-tasks",
+      "source": "./",
+      "description": "Emmett Shaughnessy's standalone task + workplace-memory plugin — the SHAUGHV tasks-* skills with a live localhost board, persistent cross-session memory, and resume-where-you-left-off.",
+      "version": "0.1.0",
+      "homepage": "https://github.com/RealEmmettS/shaughv-tasks",
+      "keywords": [
+        "shaughv",
+        "personal",
+        "skills",
+        "tasks",
+        "task-management",
+        "todo",
+        "todos",
+        "productivity",
+        "memory",
+        "workplace-memory",
+        "kanban",
+        "board",
+        "dashboard",
+        "planning",
+        "handoff",
+        "resume",
+        "persistence"
+      ]
+    }
+  ]
+}

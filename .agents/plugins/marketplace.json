@@ -1,0 +1,20 @@
+{
+  "name": "shaughv-tasks",
+  "interface": {
+    "displayName": "shaughv-tasks"
+  },
+  "plugins": [
+    {
+      "name": "shaughv-tasks",
+      "source": {
+        "source": "local",
+        "path": "./plugins/shaughv-tasks"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "NONE"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

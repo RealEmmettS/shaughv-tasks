@@ -1,0 +1,34 @@
+{
+  "name": "shaughv-tasks",
+  "version": "0.1.0",
+  "description": "Emmett Shaughnessy's standalone task + workplace-memory plugin — the SHAUGHV tasks-* skills (/tasks-start, /tasks-update, /tasks-remove, plus the tasks-management and tasks-memory reference skills) extracted from shaughv-code into their own focused bundle. /tasks-start stands up a self-contained `.tasks/` folder in any repo — a TASKS.md Kanban list, CLAUDE.md working memory, a memory/ deep store, per-task `.tasks/tasks/<id>.md` handoff + activity files, and a SHAUGHV-branded live dashboard — backed by a zero-dependency Node board server with two-way sync, rich per-task descriptions, a click-to-open task detail modal, a freshness indicator, animated card transitions, and a tiered offline-capable asset loader (npm → CDN → plugin-bundled → fully offline, identical behavior at every tier) with a manifest-tracked, fully reversible install plus opt-in board-maintenance hooks. Built for two audiences: the agent (tracking what it must do, is doing, and has done, plus durable repo learnings, across sessions and months) and the operator (a visibility board to watch, add, and reorganize work). Tasks and memory persist across sessions: run /tasks-start, plan work, return days later, and resume exactly where you left off.",
+  "author": {
+    "name": "Emmett Shaughnessy",
+    "email": "hey@emmetts.dev",
+    "url": "https://emmetts.dev"
+  },
+  "homepage": "https://github.com/RealEmmettS/shaughv-tasks",
+  "repository": "https://github.com/RealEmmettS/shaughv-tasks",
+  "license": "UNLICENSED",
+  "keywords": [
+    "shaughv",
+    "personal",
+    "skills",
+    "tasks",
+    "task-management",
+    "todo",
+    "todos",
+    "productivity",
+    "memory",
+    "workplace-memory",
+    "kanban",
+    "board",
+    "dashboard",
+    "planning",
+    "notes",
+    "handoff",
+    "resume",
+    "persistence",
+    "agent-memory"
+  ]
+}

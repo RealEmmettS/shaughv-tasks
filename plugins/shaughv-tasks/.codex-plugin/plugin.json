@@ -1,0 +1,56 @@
+{
+  "name": "shaughv-tasks",
+  "version": "0.1.0",
+  "description": "Emmett Shaughnessy's standalone Codex task + workplace-memory skill bundle. The SHAUGHV tasks-* skills (tasks-start / tasks-update / tasks-remove plus the tasks-management and tasks-memory reference skills): stand up a self-contained .tasks/ task board + workplace memory in any repo, with a live localhost dashboard (zero-dependency Node server), rich per-task handoff descriptions + activity log, a task detail modal, a freshness indicator, animated cards, and a tiered offline-capable asset loader with a manifest-tracked, fully reversible install plus opt-in board-maintenance hooks. Built for two audiences: the agent (tracking what it must do, is doing, and has done, plus durable repo learnings, across sessions) and the operator (a visibility board to watch and reorganize work). Tasks and memory persist across sessions — resume exactly where you left off.",
+  "author": {
+    "name": "Emmett Shaughnessy",
+    "email": "hey@emmetts.dev",
+    "url": "https://emmetts.dev"
+  },
+  "homepage": "https://github.com/RealEmmettS/shaughv-tasks",
+  "repository": "https://github.com/RealEmmettS/shaughv-tasks",
+  "license": "UNLICENSED",
+  "keywords": [
+    "shaughv",
+    "codex",
+    "personal",
+    "skills",
+    "tasks",
+    "task-management",
+    "todo",
+    "todos",
+    "productivity",
+    "memory",
+    "workplace-memory",
+    "kanban",
+    "board",
+    "dashboard",
+    "planning",
+    "notes",
+    "handoff",
+    "resume",
+    "persistence",
+    "agent-memory"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "shaughv-tasks",
+    "shortDescription": "Emmett's standalone task + workplace-memory skill bundle.",
+    "longDescription": "Run /tasks-start to stand up a self-contained .tasks/ task board and workplace memory in any repo, with a live localhost dashboard, persistent cross-session memory, and resume-where-you-left-off. /tasks-update syncs and triages tasks and fills memory gaps; /tasks-remove folds the memory back into the repo. Skills-only — this bundle ships no MCP servers (the board is a local Node HTTP server the skill launches, not an MCP server). Codex installs from the tracked, self-contained package under plugins/shaughv-tasks/, regenerated from repo root by build-codex-plugin.ps1.",
+    "developerName": "Emmett Shaughnessy",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/RealEmmettS/shaughv-tasks",
+    "defaultPrompt": [
+      "Run /tasks-start to set up my task board and workplace memory.",
+      "Use /tasks-update to sync and triage my tasks and fill memory gaps.",
+      "Use /tasks-remove to fold my tasks memory back into the repo."
+    ],
+    "brandColor": "#FF5E1A",
+    "screenshots": []
+  }
+}
