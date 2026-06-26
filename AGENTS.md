@@ -42,7 +42,8 @@ for Claude Code). So the Codex surface is a tracked, generated package:
 - **`.agents/plugins/marketplace.json`** is the Codex marketplace entry. Its source is
   `{ "source": "local", "path": "./plugins/shaughv-tasks" }` — a subdirectory, not the repo
   root (Codex does not list a plugin whose local source path is the marketplace root itself).
-  `authentication` is `NONE` (no OAuth-gated MCP to authenticate).
+  `authentication` is `ON_INSTALL` because Codex currently accepts only `ON_INSTALL` or
+  `ON_USE`; this skills-only bundle still has no secrets or OAuth-gated MCP to authenticate.
 - **`.codex-plugin/plugin.json`** is the Codex manifest (source of truth, copied verbatim into
   the package). Keep it lowercase. It points at `./skills/` and carries **no** `mcpServers`
   key — this surface is skills-only.

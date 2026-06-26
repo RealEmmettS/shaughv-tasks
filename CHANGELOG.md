@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 A plain-English companion lives at [HUMAN_CHANGELOG.md](./HUMAN_CHANGELOG.md) and is kept in lockstep with this file — see the changelog rule in [CLAUDE.md](./CLAUDE.md).
 
+## [0.1.1] — 2026-06-26
+
+### Fixed
+- `.agents/plugins/marketplace.json` — changed the Codex marketplace policy from unsupported `authentication: NONE` to the accepted `authentication: ON_INSTALL`, so `codex plugin marketplace add RealEmmettS/shaughv-tasks` can ingest the marketplace cleanly. The Claude Code plugin surface is unchanged apart from the matching patch version bump.
+
 ## [0.1.0] — 2026-06-25
 
 Initial release. The five SHAUGHV `tasks-*` skills — previously bundled inside [`shaughv-code`](https://github.com/RealEmmettS/shaughv-code) — extracted into their own standalone, dual-surface (Claude Code + Codex) plugin so the task + workplace-memory system is installable on its own in any agent.
@@ -14,7 +19,7 @@ Initial release. The five SHAUGHV `tasks-*` skills — previously bundled inside
 ### Added
 - `skills/tasks-start`, `skills/tasks-update`, `skills/tasks-management`, `skills/tasks-memory`, `skills/tasks-remove` — the full task + workplace-memory system, lifted byte-for-byte from `shaughv-code` (including `tasks-start`'s `assets/board-server.mjs`, `assets/dashboard.html`, and the 8 sha256-pinned `assets/vendor/**` board assets).
 - `.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json` — the Claude Code plugin + single-plugin marketplace manifests, `v0.1.0`, scoped to task management.
-- `.codex-plugin/plugin.json` + `.agents/plugins/marketplace.json` — the Codex plugin manifest (skills-only, **no `mcpServers`**) and Codex marketplace entry (`path: ./plugins/shaughv-tasks`, `authentication: NONE`).
+- `.codex-plugin/plugin.json` + `.agents/plugins/marketplace.json` — the Codex plugin manifest (skills-only, **no `mcpServers`**) and Codex marketplace entry (`path: ./plugins/shaughv-tasks`; authentication policy fixed to `ON_INSTALL` in `0.1.1`).
 - `build-codex-plugin.ps1` — regenerates the tracked Codex package `plugins/shaughv-tasks/` (manifest + `skills/` copied verbatim; no `.mcp.json` to wrap, since this bundle ships no MCP servers). `-Check` validates the committed package is in sync and byte-exact.
 - `.github/workflows/validate.yml` — CI: JSON-validate the four manifests + the package manifest, `build-codex-plugin.ps1 -Check`, and version lockstep across the three manifests + CHANGELOG.
 - `.gitattributes` — pins `skills/tasks-start/assets/vendor/**` (root + Codex mirror) as `binary` so the sha256-pinned board assets stay byte-exact across OS checkout.

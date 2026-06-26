@@ -6,6 +6,11 @@ For the technical version with versions, file paths, and links, see CHANGELOG.md
 
 ---
 
+## Codex install fix — late June 2026
+
+**Fixed**
+- Codex now accepts this plugin from the GitHub marketplace URL without stopping on an invalid install metadata value. The Claude Code install path is unchanged.
+
 ## First release — late June 2026
 
 **Added**
