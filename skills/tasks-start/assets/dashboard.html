@@ -1216,10 +1216,12 @@
     .tm-desc-rendered a { color: var(--accent); }
     .tm-ttdr { border-left: 3px solid var(--accent); background: var(--bg-card); padding: 8px 12px; border-radius: 0 6px 6px 0; margin: 0 0 10px; line-height: 1.5; }
     .tm-desc-edit { width: 100%; min-height: 260px; resize: vertical; background: var(--bg-card); border: 1px solid var(--accent); border-radius: 8px; padding: 12px; color: var(--text-primary); font-family: ui-monospace, monospace; font-size: 13px; line-height: 1.55; outline: none; box-sizing: border-box; }
-    .tm-sub { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
+    .tm-sub { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 10px; row-gap: 6px; align-items: start; padding: 8px 0; }
     .tm-sub .tm-sub-text { flex: 1; background: transparent; border: none; border-bottom: 1px solid transparent; color: var(--text-primary); font-family: inherit; font-size: 14px; outline: none; padding: 2px 0; }
     .tm-sub .tm-sub-text:focus { border-bottom-color: var(--accent); }
     .tm-sub .tm-sub-text.checked { text-decoration: line-through; color: var(--text-muted); }
+    .tm-sub-desc { grid-column: 2 / 4; width: 100%; min-height: 42px; resize: vertical; box-sizing: border-box; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; padding: 7px 9px; color: var(--text-secondary); font-family: inherit; font-size: 12.5px; line-height: 1.45; outline: none; }
+    .tm-sub-desc:focus { border-color: var(--accent); color: var(--text-primary); }
     .tm-sub-del { color: var(--text-muted); cursor: pointer; background: none; border: none; font-size: 16px; line-height: 1; }
     .tm-sub-del:hover { color: var(--accent); }
     .tm-add { color: var(--text-muted); cursor: pointer; font-style: italic; font-size: 13px; padding: 6px 0; }
@@ -1577,6 +1579,7 @@
       return task.needs.filter(nid => { const t = taskById(nid); return t && !t.checked; });
     }
     function isBlocked(task) { return unmetNeeds(task).length > 0; }
+    function openSubtasks(task) { return (task.subtasks || []).filter(st => !st.checked); }
 
     function parseTaskMarkdown(content) {
       const resultSections = [];
@@ -1586,6 +1589,7 @@
 
       const lines = content.split('\n');
       let currentTask = null;
+      let currentSubtask = null;
 
       for (const line of lines) {
         const headerMatch = line.match(/^## \*{0,2}(.+?)\*{0,2}$/);
@@ -1593,6 +1597,7 @@
           if (currentTask && currentSectionId) {
             resultTasks[currentSectionId].push(currentTask);
             currentTask = null;
+            currentSubtask = null;
           }
 
           const sectionName = headerMatch[1].trim();
@@ -1640,10 +1645,15 @@
             subtasks: [],
             section: currentSectionId
           };
+          currentSubtask = null;
         } else if (currentTask && line.match(/^\s+- \[[ xX]\]/)) {
           const checked = line.match(/\[[xX]\]/) !== null;
           const text = line.replace(/^\s+- \[[ xX]\]\s*/, '');
-          currentTask.subtasks.push({ text, checked });
+          currentSubtask = { text, checked, description: '' };
+          currentTask.subtasks.push(currentSubtask);
+        } else if (currentTask && currentSubtask && line.match(/^\s{4,}/)) {
+          const descLine = line.replace(/^\s{4,}>?\s?/, '');
+          currentSubtask.description = [currentSubtask.description, descLine].filter(Boolean).join('\n');
         }
       }
 
@@ -1677,6 +1687,11 @@
           t.subtasks.forEach(st => {
             const stCheckbox = st.checked ? '[x]' : '[ ]';
             md += `  - ${stCheckbox} ${st.text}\n`;
+            if (st.description && st.description.trim()) {
+              st.description.replace(/\r\n/g, '\n').split('\n').forEach(line => {
+                md += `    > ${line}\n`;
+              });
+            }
           });
         });
       });
@@ -1837,7 +1852,7 @@
         if (saved) return;
         saved = true;
         const text = input.value.trim();
-        if (text) { task.subtasks.push({ text, checked: false }); markChanged(); }
+        if (text) { task.subtasks.push({ text, checked: false, description: '' }); markChanged(); }
         renderTasks();
       };
 
@@ -2071,6 +2086,19 @@
         showStatus(`Blocked — finish ${unmet} before moving this to Active`);
         renderTasks(); // snap the card back
         return;
+      }
+      if (toSectionId === 'done' && fromSectionId !== toSectionId) {
+        const unmet = unmetNeeds(task);
+        if (unmet.length) {
+          showStatus(`Blocked — finish ${unmet.map(id => '#' + id).join(', ')} before moving this to Done`);
+          renderTasks(); // snap the card back
+          return;
+        }
+        if (openSubtasks(task).length) {
+          showStatus('Blocked — finish or remove open subtasks before moving this to Done');
+          renderTasks(); // snap the card back
+          return;
+        }
       }
 
       tasks[fromSectionId].splice(fromIdx, 1);
@@ -2593,7 +2621,7 @@
         const text = input.value.trim();
         if (text) {
           if (!task.subtasks) task.subtasks = [];
-          task.subtasks.push({ text, checked: false });
+          task.subtasks.push({ text, checked: false, description: '' });
           markChanged();
         }
         renderTasks();
@@ -3702,7 +3730,15 @@
         del.title = 'Remove subtask';
         del.textContent = '×';
         del.addEventListener('click', () => { tmTask.subtasks.splice(idx, 1); commitBoard(); renderTmSubtasks(); });
-        row.appendChild(cb); row.appendChild(txt); row.appendChild(del);
+        const desc = document.createElement('textarea');
+        desc.className = 'tm-sub-desc';
+        desc.placeholder = 'Subtask description or handoff note...';
+        desc.value = st.description || '';
+        desc.addEventListener('change', () => {
+          const v = desc.value.trim();
+          if (v !== (st.description || '')) { st.description = v; commitBoard(); }
+        });
+        row.appendChild(cb); row.appendChild(txt); row.appendChild(del); row.appendChild(desc);
         wrap.appendChild(row);
       });
       const add = document.createElement('div');
@@ -3715,11 +3751,12 @@
         input.type = 'text';
         input.className = 'tm-sub-text';
         input.placeholder = 'New subtask…';
+        input.style.gridColumn = '1 / 4';
         let committed = false;
         const commit = () => {
           if (committed) return; committed = true;
           const v = input.value.trim();
-          if (v) { if (!tmTask.subtasks) tmTask.subtasks = []; tmTask.subtasks.push({ text: v, checked: false }); commitBoard(); }
+          if (v) { if (!tmTask.subtasks) tmTask.subtasks = []; tmTask.subtasks.push({ text: v, checked: false, description: '' }); commitBoard(); }
           renderTmSubtasks();
         };
         input.addEventListener('keydown', (e) => {
@@ -3764,6 +3801,17 @@
 
     tmCheckboxEl.addEventListener('click', () => {
       if (!tmTask) return;
+      if (!tmTask.checked) {
+        const unmet = unmetNeeds(tmTask);
+        if (unmet.length) {
+          showStatus(`Blocked — finish ${unmet.map(id => '#' + id).join(', ')} before marking done`);
+          return;
+        }
+        if (openSubtasks(tmTask).length) {
+          showStatus('Blocked — finish or remove open subtasks before marking done');
+          return;
+        }
+      }
       tmTask.checked = !tmTask.checked;
       commitBoard();
     });
@@ -4101,7 +4149,7 @@
     let lastCardSignatures = new Map();
 
     function taskSignature(t) {
-      const subs = (t.subtasks || []).map(s => (s.checked ? '1' : '0') + s.text).join('|');
+      const subs = (t.subtasks || []).map(s => (s.checked ? '1' : '0') + s.text + '>' + (s.description || '')).join('|');
       return [t.checked ? 1 : 0, t.section, t.title, t.note, (t.needs || []).join(','), subs].join('¦');
     }
     function captureCardRects() {

@@ -137,6 +137,7 @@ The dashboard parses/serializes this exact shape; the server only moves the byte
 ## To-Do
 - [ ] **Task title** - optional note (needs #b2c) #a3f
   - [x] subtask
+    > optional subtask detail
 
 ## Active
 - [ ] **Other task** #b2c
@@ -151,7 +152,10 @@ The dashboard parses/serializes this exact shape; the server only moves the byte
   ` (needs #id, #id)` prerequisites, then the task's own short base-36 ` #id` LAST.
 - A task with an unfinished prerequisite is **blocked** (badge + can't move into Active).
   Every task gets an id automatically; missing ids are backfilled on load.
-- Subtasks: 2-space-indented `  - [ ]` lines, plain text.
+- Subtasks: 2-space-indented `  - [ ]` lines with a title/check state. Optional subtask
+  descriptions are 4-space-indented continuation lines below the subtask; the dashboard emits
+  them as blockquote-style lines (`    > detail`) and round-trips them into the modal's
+  subtask description field.
 - Serialize always emits `[x]`/`[ ]`, bold titles, `(needs …)` before the trailing `#id`,
   and `## Section` headers without bold.
 

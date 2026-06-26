@@ -6,6 +6,17 @@ For the technical version with versions, file paths, and links, see CHANGELOG.md
 
 ---
 
+## Clearer subtasks — late June 2026
+
+**Improved**
+- Agents now get clearer instructions about the difference between a task description, a real subtask, and a separate linked task. Small steps that should be visible on the board belong in the Subtasks area, not hidden in the task's long description.
+- Subtasks can now have their own notes, so an agent can explain what a specific step means without cluttering the parent task description.
+- When the task system is opened in a repo, it now makes sure that repo's own agent instructions explain how to use the task board, which skills to reference, and how to keep in-progress work resumable.
+- The board treats unfinished subtasks as unfinished work when someone tries to mark the parent task done.
+
+**Fixed**
+- One example showed dependency tags in the wrong order. It now matches the format the board actually writes.
+
 ## Codex install fix — late June 2026
 
 **Fixed**

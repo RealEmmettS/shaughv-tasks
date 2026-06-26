@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 A plain-English companion lives at [HUMAN_CHANGELOG.md](./HUMAN_CHANGELOG.md) and is kept in lockstep with this file — see the changelog rule in [CLAUDE.md](./CLAUDE.md).
 
+## [0.1.2] — 2026-06-26
+
+### Improved
+- `skills/tasks-management/SKILL.md` — clarified the three-way task breakdown contract: parent task descriptions are for handoff context and reasoning, proper subtasks are the dashboard/modal checkbox items stored as indented rows in `TASKS.md`, and larger dependent work should be separate top-level tasks linked with `(needs #id)`.
+- `skills/tasks-start/SKILL.md` — `/tasks-start` now checks the target repo's root `CLAUDE.md` and `AGENTS.md` on setup/resume and adds or offers a concise "Task management system" section so future agents know which `tasks-*` skills to use and how to keep `.tasks/` current.
+- `skills/tasks-start/assets/dashboard.html` — modal subtasks now support their own optional descriptions, stored as indented blockquote-style continuation lines under each subtask in `TASKS.md` and round-tripped through the live board.
+- `skills/tasks-start/assets/dashboard.html` — marking a task done or moving it into Done is blocked while prerequisites or proper subtasks remain unfinished, so visible subtasks count as real work.
+- `README.md` and `skills/tasks-start/references/board-server.md` — documented UI-backed subtasks, subtask descriptions, and the corrected `TASKS.md` serialization contract.
+
+### Fixed
+- `skills/tasks-management/SKILL.md` — fixed the prerequisite example so `(needs …)` appears before the trailing task id, matching the documented "id LAST" rule.
+
 ## [0.1.1] — 2026-06-26
 
 ### Fixed

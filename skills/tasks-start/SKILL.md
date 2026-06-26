@@ -54,7 +54,8 @@ First look in the **current working directory** for a `.tasks/` folder:
   its `.tasks/tasks/<id>.md` (`## Status` + the most-recent `## Activity` line) so you can
   resume mid-task. Then skip straight to **step 3 (Launch the live board)** — `/tasks-start`
   is idempotent and doubles as "relaunch / repair my board." Re-verify the hook in step 4 too
-  (safe to re-run), and lead your orientation in step 5 with "here's where we left off."
+  (safe to re-run), ensure repo instructions in step 5, and lead your orientation in step 6
+  with "here's where we left off."
 
 If there's no `.tasks/` in cwd, **walk up the parent directories** (to the repo root / a
 filesystem boundary) and look for an ancestor `.tasks/`:
@@ -96,7 +97,7 @@ Create the `.tasks/` folder and populate it:
   (so `/tasks-remove` can fully undo it). **It always succeeds**: the board looks and behaves
   identically at every tier; lower tiers just source fewer bytes externally (Makira, a
   commercial font, is never bundled and falls back to the system stack offline). It prints a
-  one-line `tier=…` summary you can surface in step 9. Re-running it is safe and idempotent.
+  one-line `tier=…` summary you can surface in step 10. Re-running it is safe and idempotent.
 - **`.tasks/CLAUDE.md` + `.tasks/memory/` (scaffold now, enrich later)** — if absent, this is
   a fresh setup. Create the persistent skeleton **immediately**, before any interactive
   bootstrapping, so a durable memory + config scaffold exists even if the operator stops here:
@@ -108,7 +109,7 @@ Create the `.tasks/` folder and populate it:
     operator commits `.tasks/`).
 
   The actual *enrichment* (decoding the operator's real shorthand) still happens interactively
-  in steps 6–8 after the board is up. The install manifest (above) and the board hooks
+  in steps 7–9 after the board is up. The install manifest (above) and the board hooks
   (step 4) are the rest of the persistent **configuration** — all created before the Q&A, so
   the task list + memory + config are guaranteed to exist on every init.
 
@@ -189,7 +190,55 @@ If yes, merge the hook block from
 
 Skip silently if the user declines — the board still works, it just won't self-maintain.
 
-### 5. Orient the user
+### 5. Ensure repo instructions mention the task system
+
+On every setup or relaunch, check the target repo's **root `CLAUDE.md` and `AGENTS.md`**. These
+files are what future agents read before they discover `.tasks/`, so they need a concise
+top-level description of how this repo uses the task system.
+
+- Read both files if they exist. If one is missing, treat it as needing the section.
+- If either file is missing a clear "Task management system" / "Tasks" section, offer to add
+  one; if the operator asked for unattended setup, add it directly. Never clobber existing
+  instructions — append or update only the task-system section.
+- The section should explain:
+  - `.tasks/TASKS.md` is the board/list source of truth.
+  - `.tasks/tasks/<id>.md` holds each task's rich handoff, `## Status`, and `## Activity`.
+  - Proper subtasks are the dashboard modal's **Subtasks** items / indented checkbox rows in
+    `TASKS.md`, not "sub-items" and not plain checklist text buried in the parent description.
+  - Subtasks can have their own indented description lines for agent-facing detail:
+    `    > detail for this subtask`.
+  - Parent task descriptions are for reasoning, implementation sequence, context, impact,
+    acceptance, and resume notes.
+  - Large dependent work should be a separate top-level task linked with `(needs #id)`.
+  - Keep Active task `## Status` and `## Activity` current as work happens so `/tasks-start`
+    can resume from the board.
+  - Reference `tasks-start`, `tasks-management`, `tasks-update`, `tasks-memory`, and
+    `tasks-remove`; mention companion skills such as `ttdr`, `personal-productivity`,
+    `iterative-plan`, or `git-workflow` only as optional if installed.
+
+Suggested section:
+
+```markdown
+## Task management system
+
+This repo uses the SHAUGHV `tasks-*` system. The board source of truth is
+`.tasks/TASKS.md`; each task's rich handoff lives at `.tasks/tasks/<id>.md` with `## Status`
+and `## Activity` kept current while work is in flight.
+
+Use proper subtasks for small required steps that should be visible and checkable in the
+dashboard modal: indented checkbox rows under the parent task in `.tasks/TASKS.md`, optionally
+followed by indented description lines (`    > detail for this subtask`). Do not bury those
+board-trackable steps as plain text in the parent task description, and do not call them
+"sub-items." Use the parent description for reasoning, context, plan, impact, acceptance, and
+resume notes. If related work is large enough to need its own status, activity log, or owner,
+make it a separate top-level task and link it with `(needs #id)`.
+
+Relevant skills: `tasks-start`, `tasks-management`, `tasks-update`, `tasks-memory`,
+`tasks-remove`. Companion skills such as `ttdr`, `personal-productivity`, `iterative-plan`, or
+`git-workflow` are optional if installed.
+```
+
+### 6. Orient the user
 
 If everything was already initialized (the relaunch path), **lead with where we left off** — a
 short summary built from the state you loaded in step 1: the **Active** tasks and, for each, its
@@ -207,10 +256,10 @@ Task system loaded from .tasks/. Live board: http://localhost:4317
 - /tasks-remove           decommission, remove the board hooks, fold memory into the repo
 ```
 
-If the memory marker still reads `<!-- tasks-bootstrap: pending -->`, continue to step 6 (offer
+If the memory marker still reads `<!-- tasks-bootstrap: pending -->`, continue to step 7 (offer
 to finish the bootstrap); if it reads `done`, skip it.
 
-### 6. Bootstrap memory (first run only)
+### 7. Bootstrap memory (first run only)
 
 Only if the `.tasks/CLAUDE.md` marker still reads `<!-- tasks-bootstrap: pending -->` (the
 skeleton from step 2 exists, but the real shorthand hasn't been decoded yet). The best source of
@@ -238,7 +287,7 @@ A few terms I want to get right:
 
 Only ask about terms you haven't already decoded. See `tasks-memory` for the full model.
 
-### 7. Optional comprehensive scan
+### 8. Optional comprehensive scan
 
 After decoding the task list, offer:
 
@@ -252,7 +301,7 @@ Google), docs (Notion / Drive), project tracker (Asana / Linear / Jira). Present
 grouped by confidence: **Ready to add** (offer to add directly), **Needs clarification**
 (ask), **Low frequency** (note for later).
 
-### 8. Write memory files
+### 9. Write memory files
 
 From everything gathered, fill in the skeleton created in step 2 (formats in `tasks-memory`):
 
@@ -267,7 +316,7 @@ From everything gathered, fill in the skeleton created in step 2 (formats in `ta
 Name memory files in kebab-case (`todd-martinez.md`, `project-phoenix.md`) per Emmett's
 naming conventions.
 
-### 9. Report
+### 10. Report
 
 ```
 Task system ready in .tasks/:

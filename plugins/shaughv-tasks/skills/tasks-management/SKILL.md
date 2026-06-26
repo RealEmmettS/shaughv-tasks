@@ -5,8 +5,8 @@ description: >
   this whenever the user asks about their tasks, wants to add or complete tasks, asks
   "what's on my plate", "what am I waiting on", "what's due", or wants commitments tracked —
   inside a repo that uses the tasks-* system. Defines the TASKS.md format, the interaction
-  verbs, and how to surface overdue / due-today / priority items. Set up by /tasks-start and
-  kept current by /tasks-update.
+  verbs, the task/subtask breakdown rules, and how to surface overdue / due-today / priority
+  items. Set up by /tasks-start and kept current by /tasks-update.
 user-invocable: false
 ---
 
@@ -53,7 +53,8 @@ unfinished prerequisite (see IDs & prerequisites below).
 ### Task format
 
 - `- [ ] **Task title** - context, for whom, due date #a3f`
-- Sub-bullets (indented `- [ ]`) for subtasks
+- Proper subtasks are indented checkbox rows under the task line: `  - [ ] small required step`
+  with optional description lines indented beneath them: `    > detail for this subtask`
 - Completed: `- [x] **Task** - ... (done YYYY-MM-DD) #a3f`
 
 The dashboard parses `## Section` headings into columns and `- [ ] **Bold**` into cards, so
@@ -65,13 +66,49 @@ keep titles bold and one task per line. Keep the `#id` LAST on the line.
   It's assigned automatically (the dashboard backfills any task missing one). When you
   create a task, append a fresh `#xxx` that isn't already used in the file.
 - **Prerequisites** go in `(needs #b2c, #d4e)` just before the id:
-  `- [ ] **Deploy to prod** #a3f (needs #b2c, #d4e)`. A task whose prerequisites aren't all
+  `- [ ] **Deploy to prod** (needs #b2c, #d4e) #a3f`. A task whose prerequisites aren't all
   done is **blocked** — the board shows a 🔒 badge and refuses to move it into Active until
   they're checked off. This is how "waiting on" works now: a task waits on whatever it
   depends on, anywhere on the board (no dedicated column needed).
 - **When creating a task that depends on others:** if those prerequisite tasks don't exist
   yet, create them first (each gets an id), then reference their ids in the new task's
   `(needs …)`. Link by id, not by title.
+
+### Breakdown discipline: plan steps vs subtasks vs linked tasks
+
+Use the smallest structure that gives the operator and the next agent the right visibility:
+
+- **Description plan/checklist** — belongs in `.tasks/tasks/<id>.md` when the steps are part
+  of the parent task's handoff narrative: reasoning, implementation sequence, notes,
+  constraints, commands, acceptance detail, or "how to do this" context. A plan in the
+  description explains the work; it is not the board-visible checklist.
+- **Proper subtasks** — belong as indented checkbox rows in `.tasks/TASKS.md` and are
+  visible/editable in the dashboard modal's **Subtasks** section. Use these for small,
+  directly required steps that should be checked off on the board before the parent task is
+  considered finished. Each subtask can also carry its own indented description lines for
+  agent-facing detail or handoff notes specific to that subtask. Call these **subtasks**,
+  not "sub-items."
+- **Separate linked tasks** — use a top-level task with `(needs #...)` when the work is large
+  enough to need its own owner, status, rich detail file, activity log, scheduling, or separate
+  board movement. This is for real dependent work, not tiny checklist steps.
+
+Agent rule: when creating or decomposing work, do **not** bury board-trackable small steps as
+plain text inside the parent task description. Put them in the task's proper subtasks, and put
+any details for a specific subtask in that subtask's own description. Parent descriptions may
+include a plan, but should not duplicate the operational subtask checklist unless extra
+explanation is needed. When updating an existing task, if you find obvious checklist-only lines
+in the parent description and they are safe to move, migrate them into proper subtasks and move
+subtask-specific detail into subtask descriptions.
+
+Markdown example:
+
+```markdown
+- [ ] **Ship installer fix** - Windows setup reliability (needs #b2c) #a3f
+  - [ ] Add MSVC detection
+    > Use vswhere.exe and require Microsoft.VisualStudio.Component.VC.Tools.x86.x64.
+  - [ ] Update install panel copy
+    > Keep TR-300, SD-300, and ND-300 wording aligned.
+```
 
 ### Task descriptions & activity log (rich detail)
 
@@ -89,7 +126,9 @@ order** ("operator asked for X") or was **derived** — and if derived, the reas
 that led here (options considered, what was chosen and rejected, and why).
 
 ## Plan
-The full approach: steps, files/areas/commands involved, the design, constraints, edge cases.
+The full approach: reasoning, implementation sequence, files/areas/commands involved, the
+design, constraints, edge cases. Board-trackable small steps belong in proper subtasks, not
+only here.
 
 ## Impact
 What completing this changes in the system — **intended** effects, and **possible unintended**
@@ -125,6 +164,9 @@ What's already done vs. what's left, and exactly where to resume.
     unintended** impact (side-effects, risks, what it must not break).
   - **Plan & context** — the approach, files/areas/commands, constraints, edge cases, acceptance
     criteria, and links — everything an independent agent needs to act without re-deriving it.
+    If the task has small board-trackable steps, keep those as proper subtasks in `TASKS.md`;
+    subtask-specific details belong under the subtask, and the parent description can explain
+    why the checklist matters without duplicating it.
   - **Where it stands** — what's done vs. left, so the handoff is seamless.
   `TASKS.md` is just the one-line index; the description is where the thinking lives.
 - **Append a one-line `## Activity` entry** as you make meaningful changes to a task (start,
@@ -152,13 +194,17 @@ What's already done vs. what's left, and exactly where to resume.
 and **lead with anything overdue or due today** before the rest.
 
 **"Add a task" / "remind me to":** add to To-Do as `- [ ] **Task** … #id` with a fresh id
-and context (who it's for, due date). If it depends on other tasks, add `(needs #…)` —
-creating any missing prerequisite tasks first so you can reference their ids. For anything
-non-trivial, seed `.tasks/tasks/<id>.md` with a `TT;DR:`-led description (see above). Move it
-to Active when work actually starts — and add an `## Activity` line when you do.
+and context (who it's for, due date). If it has small board-visible steps, add them as
+indented subtasks under the task line and include subtask descriptions when the next agent needs
+more than the subtask title. If it depends on other tasks, add `(needs #…)` — creating any
+missing prerequisite tasks first so you can reference their ids. For anything non-trivial, seed
+`.tasks/tasks/<id>.md` with a `TT;DR:`-led description (see above). Move it to Active when work
+actually starts — and add an `## Activity` line when you do.
 
-**"Done with X" / "finished X":** find it, flip `[ ]`→`[x]`, append `(done YYYY-MM-DD)`,
-move to Done, and append a closing `## Activity` line to its detail file noting what landed.
+**"Done with X" / "finished X":** find it and verify any proper subtasks are checked off. If
+subtasks remain open, finish them, ask whether they should be dropped, or leave the parent open.
+Only then flip `[ ]`→`[x]`, append `(done YYYY-MM-DD)`, move to Done, and append a closing
+`## Activity` line to its detail file noting what landed.
 
 **"What's next" / "my queue":** read To-Do (queued-up work) and surface the next items to
 pull into Active. Park not-now ideas in Backlog.
@@ -168,7 +214,9 @@ pull into Active. Park not-now ideas in Backlog.
 - **Bold** the task title for scannability.
 - Include `for [person]` when it's a commitment to someone.
 - Include `due [date]` for deadlines and `since [date]` to track how long something's parked.
-- Sub-bullets for extra context.
+- Proper subtasks are for small required steps the operator should see and check off in the
+  board UI; use each subtask's own description for subtask-specific detail, and the parent
+  task description for context and reasoning.
 - Keep Done for ~1 week, then clear old items (or let `/tasks-update` triage them).
 
 ## Surfacing what matters (light prioritization)

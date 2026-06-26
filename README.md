@@ -8,7 +8,7 @@ into their own focused bundle so the task system is installable on its own, in a
 SHAUGHV-branded board:
 
 - **A Kanban task list** (`.tasks/TASKS.md`) — Backlog → To-Do → Active → Done, with stable
-  task ids and prerequisites.
+  task ids, prerequisites, and UI-backed subtasks with optional per-subtask descriptions.
 - **Per-task handoff files** (`.tasks/tasks/<id>.md`) — a TT;DR-led description, a plan, and a
   timestamped activity log, so any agent can pick a task up cold.
 - **Two-tier workplace memory** (`.tasks/CLAUDE.md` hot cache + `.tasks/memory/` deep store) —
@@ -84,7 +84,7 @@ claude --plugin-dir C:/Users/hey/git/shaughv-tasks
 
 | Skill | Purpose |
 |---|---|
-| `tasks-start` | Stand up a self-contained `.tasks/` task + workplace-memory system (TASKS.md, working memory, deep memory, and a SHAUGHV-branded board/list/memory `dashboard.html` with a vintage-cream / brutalist-dark theme toggle), launch the live board, and bootstrap memory from your real task list and connected tools. Idempotent — re-run it to relaunch the board and resume where you left off. |
+| `tasks-start` | Stand up a self-contained `.tasks/` task + workplace-memory system (TASKS.md, working memory, deep memory, and a SHAUGHV-branded board/list/memory `dashboard.html` with a vintage-cream / brutalist-dark theme toggle), launch the live board, teach the target repo's CLAUDE.md/AGENTS.md how to use the task system, and bootstrap memory from your real task list and connected tools. Idempotent — re-run it to relaunch the board and resume where you left off. |
 | `tasks-update` | Sync tasks from a connected tracker (Asana/Linear/Jira/GitHub Issues), triage overdue and stale items, and fill memory gaps; `--comprehensive` deep-scans chat/email/calendar/docs for missed todos and new memories. |
 | `tasks-management` | Reference for the `.tasks/TASKS.md` contract and per-task `.tasks/tasks/<id>.md` detail files — the markdown task format, the read/write/complete verbs, the self-contained-handoff + activity-log discipline, and how to surface overdue / due-today / priority items. |
 | `tasks-memory` | The two-tier workplace-memory model (`.tasks/CLAUDE.md` hot cache + `.tasks/memory/` deep store) that lets the agent decode shorthand, nicknames, acronyms, and project codenames like a colleague. |
@@ -98,6 +98,11 @@ task's `.tasks/tasks/<id>.md` carries a `## Status` ("exactly where to resume") 
 off." A fresh `/tasks-start` always scaffolds the memory tree and configuration up front, so a
 persistent skeleton exists even before any interactive setup. Nothing lives in a database — it's
 all human-readable, diffable markdown under `.tasks/`.
+
+Small required steps belong in the dashboard's **Subtasks** field, not buried as plain text in a
+task description. Those subtasks are stored as indented checkbox rows in `TASKS.md`, and can carry
+their own indented description lines for agent handoff detail. Larger dependent work should be a
+separate top-level task linked with `(needs #id)`.
 
 ## A note on companion skills
 
