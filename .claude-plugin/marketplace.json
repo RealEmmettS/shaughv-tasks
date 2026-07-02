@@ -9,8 +9,8 @@
     {
       "name": "shaughv-tasks",
       "source": "./",
-      "description": "Emmett Shaughnessy's standalone task + workplace-memory plugin — the SHAUGHV tasks-* skills with a live localhost board, UI-backed subtasks, persistent cross-session memory, and resume-where-you-left-off.",
-      "version": "0.1.2",
+      "description": "Emmett Shaughnessy's standalone task + workplace-memory plugin — the SHAUGHV tasks-* skills with a live localhost board, milestones with derived progress, default-on verification checklists with recorded waivers, git-shareable boards, a gitignored secure store, persistent cross-session memory, and resume-where-you-left-off.",
+      "version": "0.2.0",
       "homepage": "https://github.com/RealEmmettS/shaughv-tasks",
       "keywords": [
         "shaughv",

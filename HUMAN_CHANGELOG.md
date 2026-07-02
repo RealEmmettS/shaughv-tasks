@@ -6,6 +6,28 @@ For the technical version with versions, file paths, and links, see CHANGELOG.md
 
 ---
 
+## Milestones, checklists, and shared boards — early July 2026
+
+**Added**
+- **Milestones.** You can now group tasks under a bigger, dated goal — "ship the launch by August 1" — and watch a progress bar fill as its tasks get done. The board grew a milestone strip across the top: each milestone shows its target date and progress, you can click one to see everything inside it, and you can filter the whole board down to just that milestone's work. A milestone can't be marked finished while any of its tasks is still open, and tidying old completed tasks off the board never makes a milestone's progress go backward — finished work is remembered.
+- **Verification checklists.** Every task can now carry a short list of concrete checks that must pass before it counts as done — "the tests pass," "the page loads," "you confirmed the wording." The board won't let a task be completed while a check is still open: each one has to be passed, or deliberately skipped. You can skip a check from the board with one click (it's stamped with your name and the date), but when the assistant skips one it has to write down *why*, so there's always a record of what was skipped and the reason.
+- **A guided way to add work.** There's a new helper that walks through creating things properly: is this a quick step inside an existing task, a task of its own, or a whole milestone? It picks the right level with you, connects the pieces, and writes the verification checklist by default.
+- **Share your board with your team — or keep it private.** The first time you set up, you're asked one question: should this board be saved into the project (so teammates and their assistants see and share the same tasks, memory, and dashboard) or kept just for you on your machine? Your answer is remembered and never asked again — reopening the board later is always instant and question-free. Shared boards even include the dashboard itself, so a teammate who downloads the project gets a working board without installing anything.
+- **A safe place for secrets.** Passwords, API keys, and private notes now have a dedicated folder that is never shared or saved into the project, no matter what — and the assistant is under standing instructions to never write secrets into tasks, notes, or memory in the first place. If your board is shared, your candid personal notes go there too, so only genuinely shareable facts reach the team.
+- **Tasks can name who's driving them.** On a shared board, each task can carry an owner, and assistants are told not to pick up someone else's in-progress work without checking first.
+
+**Fixed**
+- **Two boards on one computer no longer get confused.** Previously, if two projects each ran their own board, an assistant could accidentally talk to the *wrong* project's board (they both liked the same address) — and once, one actually edited the other project's tasks. Boards now identify themselves by which project they belong to, every check verifies that identity before trusting the address, and there are clear rules for assistants on finding the right board. Any number of boards can now safely run at once.
+- The dashboard could previously lose custom sections an assistant had written into a task's notes when you edited that task from the board. It now preserves everything it doesn't recognize, exactly where it was.
+
+**Improved**
+- The board got a polish pass in Emmett's brand style: crisp square edges and fine borders on the new pieces, proper icons instead of emoji, and a set of small, smooth animations — progress bars sweep instead of jumping, counters roll like an odometer, and a blocked action gives a brief, honest little head-shake instead of failing silently. Everything respects reduced-motion settings.
+- Each board's browser tab now shows which project it belongs to, so having two boards open never gets confusing.
+- The rulebooks the assistants follow were rewritten around all of the above: the three levels of work, the completion rules, how to keep a shared board tidy across several people and assistants, and how to resolve the rare conflict when two people edited the same thing.
+
+**Behind the scenes**
+- The plugin grew from five skills to seven, and all the packaging, documentation, and the Codex copy were brought along in step.
+
 ## Clearer subtasks — late June 2026
 
 **Improved**

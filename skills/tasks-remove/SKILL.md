@@ -26,8 +26,10 @@ explicit "yes" before deleting anything. `--dry-run` shows the plan and stops.
 If there's no `.tasks/` in the current working directory, say so and stop — nothing to
 remove.
 
-Read everything first: `.tasks/CLAUDE.md`, `.tasks/memory/**`, `.tasks/TASKS.md`, and — for a
-complete uninstall — **`.tasks/.install-manifest.json`** (written by `/tasks-start`'s
+Read everything first: `.tasks/CLAUDE.md`, `.tasks/memory/**`, `.tasks/TASKS.md`,
+`.tasks/MILESTONES.md` (+ `.tasks/milestones/`), `.tasks/config.json`, a listing of
+`.tasks/secure/` (names only — don't read secret contents), and — for a complete
+uninstall — **`.tasks/.install-manifest.json`** (written by `/tasks-start`'s
 installer). The manifest is the source of truth for everything provisioned: the vendored
 display assets, any npm installs, and crucially any **out-of-tree global changes** (e.g. a
 Node runtime installed because the machine didn't have one). If it's missing or unparseable,
@@ -45,7 +47,9 @@ Show the user exactly what will happen before touching anything:
   .tasks/CLAUDE.md      →  merge into ./CLAUDE.md  (## Memory section)
   .tasks/memory/        →  merge into ./memory/    (glossary.md, people/, projects/, context/)
   .tasks/TASKS.md       →  3 open items → ## Open threads in ./CLAUDE.md; Done items archived
-  .tasks/vendor/, .tasks/.install-manifest.json, board-server.mjs, dashboard.html → deleted with .tasks/
+  .tasks/MILESTONES.md  →  1 open milestone → ## Open threads (grouped with its open tasks)
+  .tasks/secure/        →  NOT promoted — you'll choose: delete or relocate (never folded into CLAUDE.md)
+  .tasks/vendor/, config.json, .install-manifest.json, milestones/, board-server.mjs, dashboard.html → deleted with .tasks/
   .tasks/               →  deleted after migration
   global Node install   →  OFFERED for reversal (default: KEEP) — only if the installer added one
 ```
@@ -99,8 +103,11 @@ open work:
 - **Default:** summarize remaining **Active** and **To-Do** items into an `## Open
   threads` list at the bottom of the repo's `CLAUDE.md` (or a short `TODO` note), so nothing
   in flight is lost. Drop the `Done`/`Backlog` archive unless asked to keep it.
-- **`--keep-tasks`:** instead, move `.tasks/TASKS.md` to the repo root as `TASKS.md` (or
-  append to an existing one) and leave it tracked.
+- **Open milestones get the same treatment**, grouped: an `## Open threads` entry per
+  still-open milestone — `Milestone: Phoenix GA (3/7 tasks done, target 2026-08-01)` — with
+  its still-open child tasks nested beneath it, so the grouping survives as prose.
+- **`--keep-tasks`:** instead, move `.tasks/TASKS.md` (and `.tasks/MILESTONES.md`) to the
+  repo root and keep the `tasks/` and `milestones/` detail dirs alongside them, tracked.
 
 ## 6. Stop the board, remove the hooks, delete `.tasks/`
 
@@ -115,15 +122,25 @@ Before deleting, tear down what `/tasks-start` set up **outside** `.tasks/`:
   then `hooks` if it empties, then the file itself if it becomes `{}`. **Never remove a hook
   you can't positively identify by that marker** — every other hook and key stays untouched.
 
-Then delete the `.tasks/` folder, including `dashboard.html`, `board-server.mjs`, and
-everything the installer provisioned **inside** it — `vendor/`, any `node_modules/` /
-`package.json`, and `.install-manifest.json`. Because all of that lives under `.tasks/`,
+- **Handle `secure/` first — never promote it.** `.tasks/secure/` holds secrets and
+  private notes; it is **never** folded into the repo's `CLAUDE.md` or `memory/`. If it's
+  non-empty, ask: delete it with the rest, or relocate it (move it outside `.tasks/` to a
+  path the operator names, e.g. a gitignored `./.secure/`)? Never silently delete and never
+  silently promote credentials.
+
+Then delete the `.tasks/` folder, including `dashboard.html`, `board-server.mjs`,
+`config.json`, `MILESTONES.md` + `milestones/`, and everything the installer provisioned
+**inside** it — `vendor/`, any `node_modules/` / `package.json`, and
+`.install-manifest.json`. Because all of that lives under `.tasks/`,
 deleting the folder removes it wholesale; the manifest's `created.files`/`created.dirs` lists
 are a cross-check, not a separate cleanup pass. Deleting files from a Cowork workspace requires
 permission — if a delete fails with "Operation not permitted", request it (the
 `allow_cowork_file_delete` flow) rather than telling the user it's impossible.
 
-Remove any `.tasks/` line you added to `.gitignore` during `/tasks-start`.
+Remove the repo-root `.gitignore`'s `.tasks/` line **only if `.tasks/config.json` records
+`"git": "ignored"`** — that's the only mode that added one; in `tracked` mode no root line
+exists, so touch nothing there. If `config.json` is missing (a legacy board), fall back to
+the old behavior: remove a `.tasks/` line if one is present.
 
 #### Reverse out-of-tree global changes (manifest-driven, opt-in)
 
@@ -151,10 +168,11 @@ the manifest's `global[]` with `wasPreexisting:false` and `succeeded:true`:
 
 ```
 Task system removed. Migrated into <repo>:
-- ./CLAUDE.md      ← working memory (X people, X terms, X projects) + 3 open threads
+- ./CLAUDE.md      ← working memory (X people, X terms, X projects) + 3 open threads (incl. 1 milestone)
 - ./memory/        ← glossary, X people, X projects, company context
+- secure/          ← deleted | relocated to <path> (your choice — never promoted)
 - board server     ← stopped; board-maintenance hooks removed from .claude/settings*.json
-- .tasks/          ← deleted (dashboard, board-server.mjs, vendor/, install manifest included)
+- .tasks/          ← deleted (dashboard, board-server.mjs, milestones, config, vendor/, install manifest included)
 - global Node      ← kept (or: removed via <command>) — only shown if setup installed one
 
 Your repo now carries the context directly. Re-run /tasks-start anytime to spin the
@@ -167,6 +185,9 @@ live board back up.
   `CLAUDE.md` / `memory/` to confirm the content landed, then delete `.tasks/`.
 - **Merge, don't overwrite.** The repo's existing memory always wins on conflict; surface
   conflicts instead of silently resolving them.
+- **Never promote `secure/`.** Secrets and private notes are relocated or deleted on the
+  operator's explicit choice — never merged into the repo's `CLAUDE.md` or `memory/`, and
+  never echoed into the report.
 - **Remove hooks by marker, never by position.** The board hooks are identified by the
   `board-server.mjs hook` string in their command — an unrelated `SessionStart` /
   `PostToolUse` / subagent hook in the same settings file is never touched.

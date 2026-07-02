@@ -29,17 +29,36 @@ To launch + open the board (what `/tasks-start` does): `node .tasks/board-server
 
 - Default port **4317**; if busy it picks the next free port and records the choice in
   `.tasks/.board-server.json` (`{port, pid, startedAt}`). "Is it running?" is verified by
-  hitting the `/api/ping` health endpoint (returns `shaughv-task-board`), not just a
-  PID-alive check — so a dead/reused PID never fools it.
+  hitting the `/api/ping` health endpoint, not just a PID-alive check — so a dead/reused
+  PID never fools it.
+- **Ping is an identity check, not just a liveness check.** `/api/ping` reports the
+  absolute path of the `.tasks/` folder the server serves (its **root**) alongside the
+  `shaughv-task-board` token. `ensure` only treats a responder as "already running" when
+  the root matches *this* board's `.tasks/` — a different root means **another repo's
+  board holds the port**, which is handled as a busy port: this board starts on the next
+  free port. `status` prints the root too. Multiple boards on one machine is a supported,
+  normal setup; agents must resolve ports from their own repo's state file and verify the
+  root before writing through any API (full rules: the `tasks-boards` skill).
 - HTTP API (the server stays **dumb** about markdown — the browser keeps all parse/serialize):
   - `GET /` → serves `dashboard.html`.
   - `GET /api/tasks` → raw `TASKS.md`; response carries `X-Board-Mtime`.
   - `POST /api/tasks` → atomic write. Send `X-Base-Mtime` (the mtime you loaded); if the
     file changed underneath you the server returns **409** with the latest content, so an
     agent's write is never silently stomped.
-  - `GET /api/events` → **SSE**; a `change` event fires when `TASKS.md` (or `memory/`)
-    changes on disk, so the browser updates live. Implemented with `fs.watchFile` on
-    `TASKS.md` (reliable cross-platform) plus a best-effort recursive `fs.watch`.
+  - `GET|POST /api/milestones` → raw `MILESTONES.md`, exactly the same semantics as
+    `/api/tasks` (mtime header, 409-with-latest, atomic write). GET returns the
+    `# Milestones` skeleton when the file doesn't exist yet; the file is only created on
+    first write.
+  - `GET|POST|DELETE /api/milestone?id=<id>` → a milestone's rich detail file at
+    `.tasks/milestones/<id>.md`, exactly the same semantics as `/api/task?id=` (same
+    `^[0-9a-z]{2,8}$` id validation, lazy files, atomic writes, delete-with-the-milestone).
+  - `GET /api/config` → raw `.tasks/config.json` bytes (`{}` if missing). **Read-only** —
+    the server never parses or writes it; setup (`/tasks-start`) owns it.
+  - `GET /api/events` → **SSE**; a `change` event fires when board state changes on disk,
+    with a `kind` of `tasks`, `milestones`, `config`, or `memory` so the browser reloads
+    the right surface. Implemented with `fs.watchFile` on `TASKS.md` and `MILESTONES.md`
+    (reliable cross-platform) plus a best-effort recursive `fs.watch`. **`secure/` is
+    excluded from watching** — edits there never produce events.
   - `GET|POST /api/memory/tree`, `/api/memory/file?path=` → memory tab; writes are
     path-guarded to `CLAUDE.md` or `*.md` under `memory/` (traversal / absolute / non-`.md`
     / symlink-escape all rejected).
@@ -66,9 +85,11 @@ To launch + open the board (what `/tasks-start` does): `node .tasks/board-server
 ## The board-maintenance hooks (written into the TARGET repo)
 
 `/tasks-start` offers (ask once, suggest yes) to merge this block into the target repo's
-`.claude/settings.local.json` (default — personal, gitignored, matches `.tasks/` being
-local scaffolding) or `.claude/settings.json` (only if the user committed `.tasks/` and
-wants the reminder shared with collaborators):
+Claude settings. The target file follows the git choice recorded in `.tasks/config.json`:
+**`.claude/settings.json`** when `"git": "tracked"` (the reminder is worth sharing with
+everyone on the shared board), **`.claude/settings.local.json`** when `"git"` is
+`"ignored"` or `"none"` (personal, gitignored). The operator can override; record the
+actual target as `config.json` `"hooks"` (`"shared"` / `"local"`):
 
 ```json
 {
@@ -135,7 +156,7 @@ The dashboard parses/serializes this exact shape; the server only moves the byte
 ## Backlog
 
 ## To-Do
-- [ ] **Task title** - optional note (needs #b2c) #a3f
+- [ ] **Task title** - optional note (needs #b2c) (ms #k7p) (owner emmett) #a3f
   - [x] subtask
     > optional subtask detail
 
@@ -149,39 +170,115 @@ The dashboard parses/serializes this exact shape; the server only moves the byte
 - `## Section` headers (optional `**bold**`); section id = lowercased, non-alnum → `-`.
   Default columns are **Backlog → To-Do → Active → Done** (file order = column order).
 - Task lines: `- [ ]` / `- [x]`, a **bold** title, optional ` - note`, optional
-  ` (needs #id, #id)` prerequisites, then the task's own short base-36 ` #id` LAST.
+  ` (needs #id, #id)` prerequisites, optional ` (ms #id)` milestone tag, optional
+  ` (owner name)`, then the task's own short base-36 ` #id` LAST.
+- **The task's own id is the bare trailing `#id`** — ids inside parentheses (`(needs #b2c)`,
+  `(ms #k7p)`) are references and must be excluded from the trailing-id scan. Never write a
+  naive "last `#token` wins" parser.
+- `(ms #id)` resolves against `MILESTONES.md` (see below); an id that doesn't resolve
+  renders as an "unknown milestone" chip, never an error.
 - A task with an unfinished prerequisite is **blocked** (badge + can't move into Active).
-  Every task gets an id automatically; missing ids are backfilled on load.
+  Every task gets an id automatically; missing ids are backfilled on load — with the used-id
+  pool spanning **both** `TASKS.md` and `MILESTONES.md`.
 - Subtasks: 2-space-indented `  - [ ]` lines with a title/check state. Optional subtask
   descriptions are 4-space-indented continuation lines below the subtask; the dashboard emits
   them as blockquote-style lines (`    > detail`) and round-trips them into the modal's
   subtask description field.
-- Serialize always emits `[x]`/`[ ]`, bold titles, `(needs …)` before the trailing `#id`,
-  and `## Section` headers without bold.
+- Serialize always emits `[x]`/`[ ]`, bold titles, then `(needs …)`, `(ms …)`, `(owner …)`
+  in that canonical order before the trailing `#id`, and `## Section` headers without bold.
+  Absent tokens emit nothing, so a board that never uses them round-trips byte-identically.
+
+## MILESTONES.md format contract
+
+Same byte-pipe rules: the server only moves the file; the dashboard parses/serializes.
+
+```markdown
+# Milestones
+
+- [ ] **Phoenix GA** - customer-facing launch (target 2026-08-01) #k7p
+- [x] **Billing rewrite** - (target 2026-05-01) (done 2026-05-04) #q2m
+```
+
+- Flat one-line-per-milestone list (no sections, no subtask rows). Optional ` - note`,
+  optional ` (target YYYY-MM-DD)`, done = `[x]` + ` (done YYYY-MM-DD)`, trailing bare `#id`
+  LAST. Ids validate `^[0-9a-z]{2,8}$` and are **unique across TASKS.md + MILESTONES.md
+  combined**; the dashboard loads milestones first, then tasks, so backfill can never mint
+  a colliding id.
+- **Progress is derived**: done children ÷ all children, where children = tasks carrying
+  `(ms #id)` **plus** archived lines under `## Completed` in the milestone's detail file
+  (clearing old Done tasks archives them there so progress never regresses).
+- The board watches `MILESTONES.md` and `milestones/` for SSE exactly like `TASKS.md`.
+
+## Completion gates (dashboard-enforced; render violations honestly)
+
+- **Subtasks (hard, no waiver):** a task cannot be checked done while any subtask is
+  unchecked. Already-enforced alongside the prerequisite lock.
+- **Verification (hard, waivable):** a task cannot be checked done while any
+  `## Verification` item in its detail file is still `[ ]`. Every item must be `[x]`
+  (passed) or `[~]` (waived) first. The gate lives on the **checked action in the task
+  modal** — the only UI path that completes a task — where the detail file is already
+  loaded (zero extra fetches). The board's waive control stamps
+  `(waived YYYY-MM-DD — <name>)` (operator; reason optional). Agents editing files must
+  include a reason: `(waived YYYY-MM-DD — agent: <why>)`.
+- **Milestones (hard):** a milestone cannot be checked done while any task carrying its
+  `(ms #id)` is unchecked. Deleting a milestone from the board also removes its `(ms #id)`
+  tag from all tasks and deletes its detail file.
+- **Honest rendering:** these gates guard the UI only — the files are plain markdown and an
+  agent can hand-write a violating state (a checked parent over open subtasks, a done
+  milestone over open children). The board must **render that state as-is** plus a derived
+  inconsistency chip; it never auto-unchecks, rewrites, or rejects the data.
 
 ## Per-task detail files (`.tasks/tasks/<id>.md`)
 
 `TASKS.md` is the one-line-per-task index; a task's **rich detail** lives in
 `.tasks/tasks/<id>.md` (keyed by the task's trailing `#id`), served via `/api/task`. The
 dashboard's task modal reads/writes it. Format = a TT;DR-led markdown description, optionally
-followed by a `## Activity` section of `- ` log lines:
+followed by `## `-headed sections; the board gives special treatment to `## Verification`
+and `## Activity`:
 
 ```markdown
 TT;DR: plain-English one-or-two-sentence summary (rendered as a callout).
 
 Full plan — markdown is rendered (headings, lists, code, **bold**, _italic_, `code`, links).
 
+## Verification
+- [ ] `npm test` passes on the changed package
+- [x] Staging /health returns 200 after deploy
+- [~] Operator confirmed the panel copy (waived 2026-07-02 — agent: copy superseded by #d4e)
+
 ## Activity
 - 2026-06-25 14:02 — created
 - 2026-06-25 15:10 — moved To-Do → Active
 ```
 
-- The browser splits on the first `^## Activity$` (case-insensitive): everything above is the
-  description, the `- ` lines below are the activity log (rendered newest-first in the modal).
+- The browser parses the file **section-aware**: a leading description (everything before
+  the first `## ` header), then the ordered `## ` blocks. `## Verification` (case-insensitive)
+  parses into checklist items — `[ ]` open / `[x]` passed / `[~]` waived, with an optional
+  trailing `(waived YYYY-MM-DD — <who>: <reason>)` on waived items. `## Activity` parses
+  into `- ` log lines (rendered newest-first in the modal). **Every other section is
+  preserved verbatim, in its original position** — loading and saving a detail file must
+  never drop or reorder content the board doesn't understand.
+- The serializer **never emits an empty `## Verification`** — a file without one stays
+  byte-identical on round-trip; the section is inserted (before `## Activity`) only when the
+  first item is added.
+- In milestone detail files the same parser also recognizes `## Completed` — the archive of
+  cleared child-task lines that keeps counting toward milestone progress.
 - Files are **lazy/optional** — a task with no detail file shows an empty description. They're
   created on first write and **deleted when the task is deleted** (the modal's delete fires
-  `DELETE /api/task?id=`). Agents editing `TASKS.md` by hand should mirror that: remove
-  `.tasks/tasks/<id>.md` when they remove a task.
+  `DELETE /api/task?id=`; milestone deletes fire `DELETE /api/milestone?id=`). Agents editing
+  `TASKS.md` by hand should mirror that: remove `.tasks/tasks/<id>.md` when they remove a task.
+
+## config.json and secure/ (setup-owned; the server stays out)
+
+- **`.tasks/config.json`** — durable setup choices written by `/tasks-start`:
+  `{ "schemaVersion": 1, "git": "tracked"|"ignored"|"none", "hooks": "shared"|"local",
+  "createdAt": "...", "pluginVersion": "..." }`. The board **may read** it (via
+  `GET /api/config`) for cosmetic affordances; it must **never write or act on** it.
+- **`.tasks/secure/`** — the gitignored private store (secrets + personal notes). The server
+  must keep it **unreachable**: no API route can read or write into it (the memory API is
+  path-guarded to `CLAUDE.md`/`memory/`, detail APIs are id-regex + fixed-dir, the vendor
+  route is confined to `vendor/`), and the recursive watcher ignores it so edits there never
+  surface over SSE.
 
 ## Tiered dependencies
 
@@ -237,8 +334,8 @@ a complete, opt-in reversal.
 
 The server serves provisioned assets at `GET /vendor/*` from `.tasks/vendor/` (confined,
 binary-safe, correct MIME — see the HTTP API list above). The recursive `fs.watch` ignores
-`vendor/`, `node_modules/`, `package.json`/lock, the manifest, and `*.tmp` so provisioning never
-spams SSE.
+`vendor/`, `node_modules/`, `package.json`/lock, the manifest, `secure/`, and `*.tmp` so
+provisioning and secret edits never spam SSE.
 
 ### The dashboard's runtime loader (browser side)
 
