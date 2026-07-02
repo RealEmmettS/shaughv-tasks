@@ -28,9 +28,13 @@ import { fileURLToPath } from 'node:url';
 
 const TASKS_DIR = path.dirname(fileURLToPath(import.meta.url));
 const TASKS_MD = path.join(TASKS_DIR, 'TASKS.md');
+const MILESTONES_MD = path.join(TASKS_DIR, 'MILESTONES.md');
 const CLAUDE_MD = path.join(TASKS_DIR, 'CLAUDE.md');
 const MEMORY_DIR = path.join(TASKS_DIR, 'memory');
 const TASK_DETAIL_DIR = path.join(TASKS_DIR, 'tasks'); // per-task detail files: tasks/<id>.md
+const MILESTONE_DETAIL_DIR = path.join(TASKS_DIR, 'milestones'); // per-milestone detail files: milestones/<id>.md
+const SECURE_DIR_NAME = 'secure'; // .tasks/secure — never served, never watched (secrets; see tasks-memory)
+const CONFIG_FILE = path.join(TASKS_DIR, 'config.json'); // setup-owned; served read-only at /api/config
 const DASHBOARD = path.join(TASKS_DIR, 'dashboard.html');
 const STATE_FILE = path.join(TASKS_DIR, '.board-server.json');     // {port, pid, startedAt} — written by the server
 const NUDGE_FILE = path.join(TASKS_DIR, '.board-nudge.json');      // {<event>: epochMs} — written by hook, separate to avoid contention
@@ -140,7 +144,24 @@ async function findFreePort(start) {
   return start; // give up gracefully; bind will surface the error
 }
 
-// Resolve "is our server already up?" — returns {port} if a live board responds, else null.
+// The board's identity: which .tasks/ folder this server serves. Ports are shared machine-wide —
+// after a restart, another repo's board may hold the port our state file remembers — so liveness
+// alone is NEVER identity (see the tasks-boards skill). Realpath + case normalization keeps the
+// comparison stable across symlinks and Windows casing.
+function boardRoot() {
+  try { return fs.realpathSync(TASKS_DIR); } catch { return TASKS_DIR; }
+}
+function sameRoot(a, b) {
+  if (!a || !b) return false;
+  const norm = (p) => (process.platform === 'win32' ? String(p).toLowerCase() : String(p));
+  return norm(a) === norm(b);
+}
+
+// Resolve "is OUR server already up?" — resolves with the state only when the responder on the
+// recorded port is a shaughv board serving THIS .tasks/ folder. A matching token with a different
+// root means another repo's board holds the port (our state file is stale): that is NOT ours, and
+// callers start fresh on a free port. Legacy (pre-0.2.0) servers answer a bare token with no root;
+// accept those only when the state file's pid is still alive (this repo's own older server).
 function probeRunning() {
   const state = readJsonSafe(STATE_FILE);
   if (!state || !state.port) return Promise.resolve(null);
@@ -150,7 +171,17 @@ function probeRunning() {
       (res) => {
         let body = '';
         res.on('data', (c) => (body += c));
-        res.on('end', () => resolve(body.trim() === PING_TOKEN ? state : null));
+        res.on('end', () => {
+          const text = body.trim();
+          if (text === PING_TOKEN) return resolve(pidAlive(state.pid) ? state : null); // legacy
+          try {
+            const info = JSON.parse(text);
+            if (info && info.ok === PING_TOKEN && sameRoot(info.root, boardRoot())) {
+              return resolve({ ...state, root: info.root });
+            }
+          } catch { /* not a board */ }
+          resolve(null); // foreign board or non-board on our remembered port
+        });
       }
     );
     req.on('error', () => resolve(null));
@@ -239,7 +270,13 @@ async function serve({ open = false, port: requested } = {}) {
       const url = new URL(req.url, `http://127.0.0.1:${port}`);
       const pathname = url.pathname;
 
-      if (pathname === '/api/ping') return send(res, 200, 'text/plain', PING_TOKEN);
+      if (pathname === '/api/ping') {
+        // Identity, not just liveness: multiple boards can share one machine, and a port can be
+        // inherited by another repo's board. Clients must match `root` before trusting this server.
+        return send(res, 200, 'application/json', JSON.stringify({
+          ok: PING_TOKEN, root: boardRoot(), pid: process.pid, port,
+        }));
+      }
 
       if (pathname === '/' || pathname === '/index.html' || pathname === '/dashboard.html') {
         const html = await fsp.readFile(DASHBOARD, 'utf8').catch(() => '<h1>dashboard.html missing</h1>');
@@ -273,6 +310,40 @@ async function serve({ open = false, port: requested } = {}) {
           const mtime = await fileMtimeMs(TASKS_MD);
           return send(res, 200, 'application/json', JSON.stringify({ ok: true, mtime }), { 'X-Board-Mtime': String(mtime) });
         }
+      }
+
+      // MILESTONES.md — same byte-pipe + optimistic-concurrency semantics as /api/tasks.
+      // GET serves the skeleton when the file doesn't exist yet; it's only created on first write.
+      if (pathname === '/api/milestones') {
+        if (req.method === 'GET') {
+          const md = await fsp.readFile(MILESTONES_MD, 'utf8').catch(() => '# Milestones\n');
+          const mtime = await fileMtimeMs(MILESTONES_MD);
+          return send(res, 200, 'text/markdown; charset=utf-8', md, { 'X-Board-Mtime': String(mtime) });
+        }
+        if (req.method === 'POST') {
+          const body = await readBody(req);
+          const base = req.headers['x-base-mtime'];
+          if (base !== undefined && base !== '') {
+            const current = await fileMtimeMs(MILESTONES_MD);
+            if (String(current) !== String(base)) {
+              const latest = await fsp.readFile(MILESTONES_MD, 'utf8').catch(() => '# Milestones\n');
+              return send(res, 409, 'text/markdown; charset=utf-8', latest, { 'X-Board-Mtime': String(current) });
+            }
+          }
+          const tmp = MILESTONES_MD + '.tmp';
+          await fsp.writeFile(tmp, body, 'utf8');
+          await fsp.rename(tmp, MILESTONES_MD);
+          lastSelfWrite = Date.now();
+          const mtime = await fileMtimeMs(MILESTONES_MD);
+          return send(res, 200, 'application/json', JSON.stringify({ ok: true, mtime }), { 'X-Board-Mtime': String(mtime) });
+        }
+      }
+
+      // Setup-owned config (git tracking, hooks target). Served verbatim, GET-only — the server
+      // never parses, acts on, or writes it; /tasks-start owns it. secure/ has no route at all.
+      if (pathname === '/api/config' && req.method === 'GET') {
+        const body = await fsp.readFile(CONFIG_FILE, 'utf8').catch(() => '{}');
+        return send(res, 200, 'application/json', body);
       }
 
       if (pathname === '/api/memory/tree' && req.method === 'GET') {
@@ -317,6 +388,33 @@ async function serve({ open = false, port: requested } = {}) {
         if (req.method === 'DELETE') {
           // Called when a task is deleted, so its detail file can't outlive it (and a
           // future task that happens to reuse the id never inherits stale content).
+          await fsp.unlink(target).catch(() => {});
+          lastSelfWrite = Date.now();
+          return send(res, 200, 'application/json', JSON.stringify({ ok: true }));
+        }
+      }
+
+      // Per-milestone detail file (rich description + Completed archive + activity log):
+      // .tasks/milestones/<id>.md — same semantics as /api/task. The id regex + fixed directory
+      // confine both detail routes inside .tasks/; secure/ is structurally unreachable from here.
+      if (pathname === '/api/milestone') {
+        const id = (url.searchParams.get('id') || '').toLowerCase();
+        if (!/^[0-9a-z]{2,8}$/.test(id)) return send(res, 400, 'application/json', JSON.stringify({ error: 'bad id' }));
+        const target = path.join(MILESTONE_DETAIL_DIR, id + '.md');
+        if (req.method === 'GET') {
+          const content = await fsp.readFile(target, 'utf8').catch(() => '');
+          return send(res, 200, 'text/markdown; charset=utf-8', content);
+        }
+        if (req.method === 'POST') {
+          const body = await readBody(req);
+          await fsp.mkdir(MILESTONE_DETAIL_DIR, { recursive: true });
+          const tmp = target + '.tmp';
+          await fsp.writeFile(tmp, body, 'utf8');
+          await fsp.rename(tmp, target);
+          lastSelfWrite = Date.now();
+          return send(res, 200, 'application/json', JSON.stringify({ ok: true }));
+        }
+        if (req.method === 'DELETE') {
           await fsp.unlink(target).catch(() => {});
           lastSelfWrite = Date.now();
           return send(res, 200, 'application/json', JSON.stringify({ ok: true }));
@@ -369,7 +467,7 @@ async function serve({ open = false, port: requested } = {}) {
     server.listen(port, '127.0.0.1', resolve);
   });
 
-  writeJsonSafe(STATE_FILE, { port, pid: process.pid, startedAt: new Date().toISOString() });
+  writeJsonSafe(STATE_FILE, { port, pid: process.pid, startedAt: new Date().toISOString(), root: boardRoot() });
 
   // Watch for external edits (e.g. an agent editing TASKS.md) and push to the browser.
   // Debounced; suppress the echo of our own POST writes.
@@ -380,18 +478,25 @@ async function serve({ open = false, port: requested } = {}) {
     debounce = setTimeout(() => broadcast(kind), 150);
   };
   try { fs.watchFile(TASKS_MD, { interval: 600 }, () => onChange('tasks')); } catch { /* */ }
+  try { fs.watchFile(MILESTONES_MD, { interval: 600 }, () => onChange('milestones')); } catch { /* */ }
   try { fs.watch(TASKS_DIR, { recursive: true }, (_e, name) => {
     if (!name) return onChange('memory');
     const n = String(name);
-    // Ignore our own state files and anything the installer touches (vendor assets, the
-    // transient npm scaffolding, the manifest, tmp files) — those aren't board content and
-    // would otherwise spam every connected browser with bogus "change" events.
+    // Ignore our own state files, anything the installer touches (vendor assets, the transient
+    // npm scaffolding, the manifest, tmp files), the scoped .gitignore, and EVERYTHING under
+    // secure/ — secrets must never surface over SSE, not even as write timing.
     if (n.startsWith('.board-') || n.startsWith('.install-manifest') ||
         n === 'package.json' || n === 'package-lock.json' || n.endsWith('.tmp') ||
+        n === '.gitignore' ||
+        n === SECURE_DIR_NAME || n.startsWith(SECURE_DIR_NAME + path.sep) ||
         n === 'vendor' || n.startsWith('vendor' + path.sep) ||
         n === 'node_modules' || n.startsWith('node_modules' + path.sep)) return;
-    onChange(n === 'TASKS.md' ? 'tasks' : 'memory');
-  }); } catch { /* recursive watch unsupported on some Linux — watchFile above still covers TASKS.md */ }
+    if (n === 'TASKS.md') return onChange('tasks');
+    if (n === 'MILESTONES.md' || n === 'milestones' || n.startsWith('milestones' + path.sep)) return onChange('milestones');
+    if (n === 'tasks' || n.startsWith('tasks' + path.sep)) return onChange('detail');
+    if (n === 'config.json') return onChange('config');
+    onChange('memory');
+  }); } catch { /* recursive watch unsupported on some Linux — watchFile above still covers TASKS.md + MILESTONES.md */ }
 
   const url = `http://127.0.0.1:${port}/`;
   process.stdout.write(`SHAUGHV task board live at ${url}\n`);
@@ -539,7 +644,7 @@ function stop() {
 
 async function status() {
   const running = await probeRunning();
-  process.stdout.write(JSON.stringify(running || { running: false }) + '\n');
+  process.stdout.write(JSON.stringify(running ? { ...running, root: running.root || boardRoot() } : { running: false }) + '\n');
 }
 
 // ---------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 {
   "name": "shaughv-tasks",
-  "version": "0.1.2",
-  "description": "Emmett Shaughnessy's standalone Codex task + workplace-memory skill bundle. The SHAUGHV tasks-* skills (tasks-start / tasks-update / tasks-remove plus the tasks-management and tasks-memory reference skills): stand up a self-contained .tasks/ task board + workplace memory in any repo, with a live localhost dashboard (zero-dependency Node server), rich per-task handoff descriptions + activity log, UI-backed subtasks with optional descriptions, a task detail modal, a freshness indicator, animated cards, and a tiered offline-capable asset loader with a manifest-tracked, fully reversible install plus opt-in board-maintenance hooks. Built for two audiences: the agent (tracking what it must do, is doing, and has done, plus durable repo learnings, across sessions) and the operator (a visibility board to watch and reorganize work). Tasks and memory persist across sessions — resume exactly where you left off.",
+  "version": "0.2.0",
+  "description": "Emmett Shaughnessy's standalone Codex task + workplace-memory skill bundle. The seven SHAUGHV tasks-* skills (tasks-start / tasks-create / tasks-update / tasks-remove plus the tasks-management, tasks-memory, and tasks-boards reference skills): stand up a self-contained .tasks/ task board + workplace memory in any repo — dated milestones with derived progress that tasks join via (ms #id), per-task handoff files with default-on verification checklists (hard, waivable completion gates with recorded waivers), owners and prerequisites, a gitignored secure/ tier for secrets, ask-once git tracking (share the board with your team through git, or keep it local; remembered in config.json) — with a live localhost dashboard (zero-dependency Node server, milestone rail, identity-verified ports so multiple boards can run on one machine), a tiered offline-capable asset loader, and opt-in board-maintenance hooks. Built for operator + agent collaboration: tasks, milestones, and memory persist across sessions, operators, and agents — resume exactly where anyone left off.",
   "author": {
     "name": "Emmett Shaughnessy",
     "email": "hey@emmetts.dev",
@@ -36,7 +36,7 @@
   "interface": {
     "displayName": "shaughv-tasks",
     "shortDescription": "Emmett's standalone task + workplace-memory skill bundle.",
-    "longDescription": "Run /tasks-start to stand up a self-contained .tasks/ task board and workplace memory in any repo, with a live localhost dashboard, persistent cross-session memory, and resume-where-you-left-off. /tasks-update syncs and triages tasks and fills memory gaps; /tasks-remove folds the memory back into the repo. Skills-only — this bundle ships no MCP servers (the board is a local Node HTTP server the skill launches, not an MCP server). Codex installs from the tracked, self-contained package under plugins/shaughv-tasks/, regenerated from repo root by build-codex-plugin.ps1.",
+    "longDescription": "Run /tasks-start to stand up a self-contained .tasks/ task board and workplace memory in any repo, with a live localhost dashboard (milestone rail included), persistent cross-session memory, and resume-where-you-left-off — asking once whether the board is git-shared with your team or kept local. /tasks-create is the guided way to add a milestone, task, or subtask with a default-on verification checklist; /tasks-update syncs and triages tasks (including at-risk milestones) and fills memory gaps; /tasks-remove folds the memory back into the repo. Secrets never go in tasks or memory — a gitignored .tasks/secure/ holds them. Skills-only — this bundle ships no MCP servers (the board is a local Node HTTP server the skill launches, not an MCP server). Codex installs from the tracked, self-contained package under plugins/shaughv-tasks/, regenerated from repo root by build-codex-plugin.ps1.",
     "developerName": "Emmett Shaughnessy",
     "category": "Productivity",
     "capabilities": [
@@ -47,6 +47,7 @@
     "websiteURL": "https://github.com/RealEmmettS/shaughv-tasks",
     "defaultPrompt": [
       "Run /tasks-start to set up my task board and workplace memory.",
+      "Use /tasks-create to add a milestone, task, or subtask with a verification checklist.",
       "Use /tasks-update to sync and triage my tasks and fill memory gaps.",
       "Use /tasks-remove to fold my tasks memory back into the repo."
     ],

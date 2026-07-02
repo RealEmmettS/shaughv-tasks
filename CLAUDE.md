@@ -5,8 +5,9 @@ installing it; this file is for you, future Claude, when editing it.
 
 ## What this repo is
 
-A focused, **skills-only** plugin: the five SHAUGHV `tasks-*` skills, lifted out of the
-larger `shaughv-code` bundle so the task system is installable on its own in any agent.
+A focused, **skills-only** plugin: the seven SHAUGHV `tasks-*` skills (grown from the five
+lifted out of the larger `shaughv-code` bundle) so the task system is installable on its
+own in any agent.
 The entire purpose is to be a single editable source of truth for the task + workplace-
 memory system across all of Emmett's instances.
 
@@ -25,15 +26,17 @@ asks to expand scope.
 > into the **target repo's** `.claude/settings*.json`; `/tasks-remove` tears both back down.
 > Those hooks live in whatever repo the skill is run in — never in this plugin.
 
-## The five skills
+## The seven skills
 
 | Skill | Role |
 |---|---|
-| `tasks-start` | Stands up `.tasks/` (TASKS.md, working memory, deep memory, dashboard), launches the live board, bootstraps memory. The only skill that carries assets. |
-| `tasks-update` | Syncs tasks from a connected tracker, triages stale items, fills memory gaps. |
-| `tasks-management` | Reference (`user-invocable: false`) — the `.tasks/TASKS.md` + per-task `.tasks/tasks/<id>.md` contract. |
-| `tasks-memory` | Reference (`user-invocable: false`) — the two-tier `.tasks/CLAUDE.md` + `.tasks/memory/` model. |
-| `tasks-remove` | Decommissions the system, folds memory back into the repo's own `CLAUDE.md` + `memory/`, deletes `.tasks/`. |
+| `tasks-start` | Stands up `.tasks/` (TASKS.md, MILESTONES.md, working memory, deep memory, `secure/`, `config.json`, dashboard), asks ONCE whether the board is git-tracked or local (persisted to `config.json`, never re-asked), launches the live board, bootstraps memory. The only skill that carries assets. |
+| `tasks-create` | Guided creation: milestone vs task vs subtask categorization, linking (`(needs …)` / `(ms …)` / `(owner …)`), default-on verification-checklist authoring. |
+| `tasks-update` | Syncs tasks from a connected tracker, triages stale items + at-risk milestones, archives cleared milestone work (progress never regresses), fills memory gaps. |
+| `tasks-management` | Reference (`user-invocable: false`) — the full contract: TASKS.md + MILESTONES.md formats, milestone → task → subtask hierarchy, verification checklists (`[ ]`/`[x]`/`[~]` waived, reasons required for agent waivers), completion gates, multi-operator conventions. |
+| `tasks-memory` | Reference (`user-invocable: false`) — the two-tier `.tasks/CLAUDE.md` + `.tasks/memory/` model, the secrets policy, and the `secure/` private tier. |
+| `tasks-boards` | Reference (`user-invocable: false`) — multi-board machines: resolve this repo's board from its own `.board-server.json`, verify identity via `/api/ping` root, never trust a port. |
+| `tasks-remove` | Decommissions the system, folds memory + open milestones back into the repo's own `CLAUDE.md` + `memory/`, handles `secure/` explicitly (never promoted), deletes `.tasks/`. |
 
 ## Persistence model (the point of this plugin)
 

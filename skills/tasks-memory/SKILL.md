@@ -42,9 +42,11 @@ in the hot cache; can grow indefinitely.
 
 **`.tasks/memory/people|projects|context/`** — rich detail for execution.
 
-> This memory is the task system's **private** store. It is separate from any repo-root
-> `CLAUDE.md`. `/tasks-remove` is what promotes it into the repo's real `CLAUDE.md` and
-> `memory/` when the user is ready.
+> This memory is the task system's own store, separate from any repo-root `CLAUDE.md`.
+> `/tasks-remove` is what promotes it into the repo's real `CLAUDE.md` and `memory/` when
+> the user is ready. Whether it's *private* depends on the board's git choice — on a
+> **tracked** board it is committed and team-visible (see "Shared vs personal memory"
+> below); truly private material lives in `.tasks/secure/`.
 
 ## Lookup flow (always decode before acting)
 
@@ -54,6 +56,46 @@ in the hot cache; can grow indefinitely.
 3. .tasks/memory/people|projects/ → rich detail when needed for execution
 4. Ask the user              → unknown term? learn it, then write it down.
 ```
+
+If a lookup needs a *credential*, it is deliberately **not** in memory — check
+`.tasks/secure/` or the environment/keychain, and never copy the value back into
+`TASKS.md`, detail files, or `memory/`.
+
+## Secrets & sensitive data
+
+**Secrets never live in memory.** API keys, tokens, passwords, private keys, connection
+strings, OAuth secrets, and anything the operator marks private do **not** belong in
+`TASKS.md`, task/milestone detail files, `.tasks/CLAUDE.md`, or `.tasks/memory/` — those
+are plain text and, on a tracked board, committed for everyone with repo access to read.
+
+- **Prefer environment variables or the OS keychain.** Most secrets already live there;
+  reference them by name (`$env:ORACLE_API_KEY`) instead of writing values anywhere.
+- **`.tasks/secure/` is the in-tree fallback** — the one place under `.tasks/` that the
+  scaffolded `.tasks/.gitignore` keeps out of git in every mode. Key material, `.env`-style
+  files, and private notes go there when they must live near the board.
+- **Reference by name, never inline.** From memory, point at the secret's home
+  ("Oracle API key → see secure/oracle.env"), never its value. If you find a secret pasted
+  into memory or a task file, move it to `secure/` (or env/keychain) and scrub the
+  original — including from `## Activity` lines.
+
+Because `secure/` is gitignored, its own `README.md` can't reach collaborators — the
+convention is documented here and surfaced by the pointer line `/tasks-start` writes near
+the top of the committable `.tasks/CLAUDE.md`:
+
+> Secrets: never stored here or in memory/. See .tasks/secure/ (gitignored), or env/keychain.
+
+## Shared vs personal memory (tracked boards)
+
+When the board is **git-tracked**, `.tasks/CLAUDE.md` and `.tasks/memory/` are committed
+and **shared across operators**. Adjust what you write accordingly:
+
+- Keep shared memory to shared facts — people, roles, projects, terms, company context —
+  anything you'd put in a team wiki.
+- Candid personal observations (how someone likes to be handled, private working notes,
+  one operator's personal preferences that aren't the team's) go to `.tasks/secure/`, which
+  stays local in every mode.
+- Never record another person's sensitive details without their consent — on a tracked
+  board, memory has an audience.
 
 ## Working memory format (`.tasks/CLAUDE.md`)
 

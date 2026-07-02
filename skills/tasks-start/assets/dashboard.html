@@ -103,6 +103,15 @@
       --font-display: "Unbounded", "Makira", system-ui, sans-serif;
       --font-body: "Makira", "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+      /* SHAUGHV design tokens (brand: square-first, hairline borders, no springs) */
+      --hairline: rgba(92, 84, 70, 0.18);
+      --radius-none: 0;
+      --radius-chip: 9999px;
+      --ease-brutalist: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-out-cubic: cubic-bezier(0.33, 1, 0.68, 1);
+      --dur-1: 180ms;
+      --dur-2: 300ms;
+      --dur-3: 500ms;
     }
 
     [data-theme="dark"] {
@@ -123,6 +132,7 @@
       --shadow: rgba(0, 0, 0, 0.45);
       --shadow-hover: rgba(0, 0, 0, 0.60);
       --overlay: rgba(0, 0, 0, 0.62);
+      --hairline: rgba(250, 250, 248, 0.16);
     }
 
     body {
@@ -1233,19 +1243,82 @@
     .tm-blocked { color: var(--accent); font-size: 13px; margin-top: 6px; font-family: ui-monospace, monospace; }
     .task-card { cursor: pointer; }
 
+    /* ===== MILESTONE RAIL (new components follow the brand primitives: square,
+       hairline borders, mono uppercase labels, sage as the single signal color) ===== */
+    .milestone-rail { flex-shrink: 0; margin-bottom: 14px; border: 1px solid var(--hairline); border-radius: var(--radius-none); background: var(--bg-secondary); }
+    .ms-rail-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; }
+    .ms-rail-toggle { display: inline-flex; align-items: center; gap: 8px; background: transparent; border: none; padding: 4px 6px; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--text-secondary); cursor: pointer; border-radius: var(--radius-none); }
+    .ms-rail-toggle:hover { color: var(--text-primary); background: transparent; border: none; }
+    .ms-rail-toggle svg { transition: transform var(--dur-1) var(--ease-out-cubic); }
+    .ms-rail-toggle[aria-expanded="false"] svg { transform: rotate(-90deg); }
+    .ms-rail-count { color: var(--accent); }
+    .ms-new-btn { display: inline-flex; align-items: center; gap: 6px; background: transparent; border: 1px solid var(--hairline); border-radius: var(--radius-none); padding: 4px 12px; font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--text-secondary); transition: border-color var(--dur-1) var(--ease-out-cubic), color var(--dur-1) var(--ease-out-cubic); }
+    .ms-new-btn:hover { border-color: var(--text-primary); color: var(--text-primary); background: transparent; }
+    .ms-rail-body { display: flex; gap: 10px; overflow-x: auto; padding: 0 10px 10px; }
+    .ms-rail-body.collapsed { display: none; }
+    .ms-card { min-width: 230px; max-width: 260px; flex-shrink: 0; background: var(--bg-card); border: 1px solid var(--hairline); border-radius: var(--radius-none); padding: 10px 12px; cursor: pointer; transition: border-color var(--dur-1) var(--ease-out-cubic); position: relative; }
+    .ms-card:hover { border-color: var(--text-secondary); }
+    .ms-card.filtering { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+    .ms-card.complete .ms-title { text-decoration: line-through; opacity: 0.6; }
+    .ms-card-top { display: flex; align-items: baseline; gap: 8px; min-width: 0; padding-right: 20px; }
+    .ms-index { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); letter-spacing: 0.1em; }
+    .ms-title { font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+    .ms-meta { display: flex; justify-content: space-between; align-items: center; margin: 6px 0; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+    .ms-count { color: var(--text-secondary); display: inline-flex; }
+    .ms-progress { height: 4px; background: var(--bg-secondary); border: 1px solid var(--hairline); border-radius: var(--radius-none); overflow: hidden; }
+    .ms-progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width var(--dur-2) var(--ease-out-cubic); }
+    .ms-filter-btn { position: absolute; top: 8px; right: 8px; background: transparent; border: none; padding: 2px; color: var(--text-muted); cursor: pointer; line-height: 0; border-radius: var(--radius-none); }
+    .ms-filter-btn:hover { color: var(--accent); background: transparent; }
+    .ms-card.filtering .ms-filter-btn { color: var(--accent); }
+    .ms-new-card { min-width: 200px; flex-shrink: 0; border: 1px dashed var(--hairline); border-radius: var(--radius-none); background: transparent; display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--text-muted); font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; cursor: pointer; padding: 10px 12px; transition: border-color var(--dur-1) var(--ease-out-cubic), color var(--dur-1) var(--ease-out-cubic); }
+    .ms-new-card:hover { border-color: var(--accent); color: var(--accent); background: transparent; }
+    .ms-new-input { background: var(--bg-card); border: 1px solid var(--accent); border-radius: var(--radius-none); padding: 8px 10px; color: var(--text-primary); font-family: inherit; font-size: 13px; outline: none; min-width: 200px; }
+
+    /* Chips on cards / list rows (pill radius is the brand's chip exception) */
+    .chip { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--hairline); border-radius: var(--radius-chip); padding: 1px 8px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); max-width: 170px; white-space: nowrap; }
+    .chip .chip-label { overflow: hidden; text-overflow: ellipsis; }
+    .chip.warn { border-color: var(--text-secondary); color: var(--text-secondary); }
+
+    /* Verification checklist rows (task modal) */
+    .tm-verify-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; column-gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px dashed var(--border-light); }
+    .tm-verify-row:last-of-type { border-bottom: none; }
+    .tm-verify-text { background: transparent; border: none; border-bottom: 1px solid transparent; color: var(--text-primary); font-family: inherit; font-size: 14px; outline: none; padding: 2px 0; }
+    .tm-verify-text:focus { border-bottom-color: var(--accent); }
+    .tm-verify-row.passed .tm-verify-text { text-decoration: line-through; color: var(--text-muted); }
+    .tm-verify-row.waived .tm-verify-text { text-decoration: line-through; color: var(--text-muted); font-style: italic; }
+    .tm-waive-btn { background: transparent; border: 1px solid var(--hairline); border-radius: var(--radius-none); font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; padding: 3px 8px; color: var(--text-muted); cursor: pointer; transition: border-color var(--dur-1) var(--ease-out-cubic), color var(--dur-1) var(--ease-out-cubic); }
+    .tm-waive-btn:hover { border-color: var(--accent); color: var(--accent); background: transparent; }
+    .tm-verify-row.waived .tm-waive-btn { border-color: var(--accent); color: var(--accent); }
+    .tm-waive-stamp { grid-column: 2 / 5; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-muted); letter-spacing: 0.02em; padding-bottom: 2px; }
+    .tm-verify-gate { outline: 1px solid var(--accent); outline-offset: 6px; transition: outline-color var(--dur-2) var(--ease-out-cubic); }
+    .tm-count-badge { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; color: var(--text-muted); text-transform: none; }
+    .tm-count-badge .done { color: var(--accent); }
+    .tm-ms-child { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px dashed var(--border-light); font-size: 14px; }
+    .tm-ms-child:last-of-type { border-bottom: none; }
+    .tm-ms-child .sect { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-left: auto; }
+    .tm-ms-child.done .t { text-decoration: line-through; color: var(--text-muted); }
+    .tm-ms-child .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tm-ms-archived { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted); padding: 4px 0; }
+
+    /* Blocked-action shake — short and honest (180ms, no spring) */
+    @keyframes deny-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 65% { transform: translateX(3px); } }
+    .deny-shake { animation: deny-shake var(--dur-1) var(--ease-out-cubic); }
+    @media (prefers-reduced-motion: reduce) { .deny-shake { animation: none; } .ms-progress-fill { transition: none; } }
+
     /* ===== Freshness / staleness indicator ===== */
     #freshness { font-family: ui-monospace, monospace; font-size: 11px; padding: 2px 9px; border-radius: 999px; white-space: nowrap; letter-spacing: 0.02em; }
     #freshness.fresh { color: #fff; background: var(--accent); }
     #freshness.aging { color: var(--text-muted); background: var(--bg-primary); border: 1px solid var(--border); }
     #freshness.stale { color: #fff; background: #b3261e; }
 
-    /* Card "just changed" pulse + the FLIP ghost that glides between columns. */
+    /* Card "just changed" pulse + the FLIP ghost that glides between columns.
+       Outline (border-based depth) + brand easing — no shadow ring, no spring. */
     @keyframes task-pulse {
-      0%   { box-shadow: 0 0 0 0 var(--accent); }
-      15%  { box-shadow: 0 0 0 3px var(--accent); }
-      100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
+      0%   { outline: 2px solid var(--accent); outline-offset: 0px; }
+      60%  { outline: 2px solid var(--accent); outline-offset: 3px; }
+      100% { outline: 2px solid rgba(0, 0, 0, 0); outline-offset: 5px; }
     }
-    .task-card.just-changed { animation: task-pulse 1.05s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .task-card.just-changed { animation: task-pulse 0.9s var(--ease-out-cubic); }
     .task-card.flip-ghost { box-shadow: 0 12px 28px -10px rgba(0, 0, 0, 0.45); }
     @media (prefers-reduced-motion: reduce) {
       .task-card.just-changed { animation: none; }
@@ -1387,6 +1460,7 @@
 
   <!-- TASKS TAB PANEL -->
   <div class="tab-panel active" id="tasksPanel">
+    <div class="milestone-rail" id="milestoneRail" style="display: none;"></div>
     <div class="list-view" id="listView" style="display: none;"></div>
     <div class="board" id="board">
       <div class="empty-state" id="boardEmptyState" style="width: 100%;">
@@ -1450,6 +1524,27 @@
     </div>
   </div>
 
+  <!-- MILESTONE MODAL (rich view + edit for a single milestone: target, description, child tasks, activity) -->
+  <div class="modal-overlay" id="msModalOverlay">
+    <div class="modal task-modal">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
+          <span class="checkbox" id="msCheckbox" title="Toggle done" style="flex-shrink:0;"></span>
+          <input type="text" class="tm-title-input" id="msTitle" placeholder="Milestone title">
+        </div>
+        <div style="display:flex; align-items:center; gap:14px; flex-shrink:0;">
+          <span class="tm-id" id="msId"></span>
+          <button class="modal-close" id="msClose">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body" id="msBody"></div>
+      <div class="modal-footer">
+        <button class="tm-btn" id="msDelete" style="margin-right:auto; color:#b3261e; border-color:#b3261e;">Delete milestone</button>
+        <button id="msDoneBtn" class="primary">Close</button>
+      </div>
+    </div>
+  </div>
+
   <div class="status-bar" id="status"></div>
 
   <script>
@@ -1488,6 +1583,23 @@
       statusEl.textContent = msg;
       statusEl.classList.add('visible');
       setTimeout(() => statusEl.classList.remove('visible'), 2000);
+    }
+
+    // ===== INLINE LUCIDE ICONS (ISC) — the brand allows Lucide only, never emoji =====
+    const ICON_PATHS = {
+      'check': '<path d="M20 6 9 17l-5-5"/>',
+      'check-square': '<path d="M21 10.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12.5"/><path d="m9 11 3 3L22 4"/>',
+      'lock': '<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+      'chevron-down': '<path d="m6 9 6 6 6-6"/>',
+      'target': '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+      'shield-check': '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1 1 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
+      'plus': '<path d="M5 12h14"/><path d="M12 5v14"/>',
+      'alert-triangle': '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+      'crosshair': '<circle cx="12" cy="12" r="10"/><path d="M22 12h-4"/><path d="M6 12H2"/><path d="M12 6V2"/><path d="M12 22v-4"/>',
+    };
+    function icon(name, size = 14) {
+      const paths = ICON_PATHS[name] || '';
+      return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px; flex-shrink:0;">${paths}</svg>`;
     }
 
     // ===== MAIN TAB SWITCHING =====
@@ -1568,6 +1680,13 @@
       for (const sec of sections) for (const t of (tasks[sec.id] || [])) if (t.id) s.add(t.id);
       return s;
     }
+    // Ids are unique across BOTH TASKS.md and MILESTONES.md — every mint/backfill draws
+    // from this union so a task can never collide with a milestone (or vice versa).
+    function usedIds() {
+      const s = currentTaskIds();
+      for (const m of milestones) if (m.id) s.add(m.id);
+      return s;
+    }
     function taskById(id) {
       for (const sec of sections) for (const t of (tasks[sec.id] || [])) if (t.id === id) return t;
       return null;
@@ -1615,15 +1734,22 @@
           const checked = line.match(/\[[xX]\]/) !== null;
           let text = line.replace(/^- \[[ xX]\]\s*/, '');
 
-          // Pull out the prerequisite list "(needs #a3f, #k2p)" and the task's own
-          // trailing id "#a3f" before parsing title/note. Order matters: needs first
-          // (it also contains #ids), then the trailing id.
+          // Pull out the parenthesized tokens — "(needs #a3f, #k2p)", "(ms #k7p)",
+          // "(owner emmett)" — and the task's own trailing bare id "#a3f" before parsing
+          // title/note. Order matters: paren tokens first (needs/ms also contain #ids),
+          // then the trailing id, so a paren id is never mistaken for the task's own.
           let needs = [];
           const needsMatch = text.match(/\(needs\s+([^)]*)\)/i);
           if (needsMatch) {
             needs = (needsMatch[1].match(/[0-9a-z]{2,}/gi) || []).map(s => s.toLowerCase());
             text = text.replace(needsMatch[0], '').trim();
           }
+          let milestoneId = null;
+          const msMatch = text.match(/\(ms\s+#?([0-9a-z]{2,})\)/i);
+          if (msMatch) { milestoneId = msMatch[1].toLowerCase(); text = text.replace(msMatch[0], '').trim(); }
+          let owner = null;
+          const ownerMatch = text.match(/\(owner\s+([^)]+)\)/i);
+          if (ownerMatch) { owner = ownerMatch[1].trim(); text = text.replace(ownerMatch[0], '').trim(); }
           let id = null;
           const idMatch = text.match(/#([0-9a-z]{2,})\s*$/i);
           if (idMatch) { id = idMatch[1].toLowerCase(); text = text.replace(/\s*#[0-9a-z]{2,}\s*$/i, '').trim(); }
@@ -1639,6 +1765,8 @@
           currentTask = {
             id,
             needs,
+            milestoneId,
+            owner,
             title,
             note,
             checked,
@@ -1662,8 +1790,9 @@
       }
 
       // Backfill stable short ids for any task missing one and de-dupe collisions, so
-      // every task can be referenced as a prerequisite. (Backfilled ids persist on next save.)
-      const used = new Set();
+      // every task can be referenced as a prerequisite. Seeded with the milestone ids
+      // (milestones load first) so a backfilled task id can't collide across files.
+      const used = new Set(milestones.map(m => m.id).filter(Boolean));
       const flat = [];
       for (const sid in resultTasks) for (const t of resultTasks[sid]) flat.push(t);
       for (const t of flat) { if (t.id && !used.has(t.id)) used.add(t.id); else if (t.id) t.id = null; }
@@ -1682,8 +1811,10 @@
           const checkbox = t.checked ? '[x]' : '[ ]';
           const note = t.note ? ` - ${t.note}` : '';
           const needs = (t.needs && t.needs.length) ? ` (needs ${t.needs.map(n => '#' + n).join(', ')})` : '';
+          const ms = t.milestoneId ? ` (ms #${t.milestoneId})` : '';
+          const owner = t.owner ? ` (owner ${t.owner})` : '';
           const idTag = t.id ? ` #${t.id}` : '';
-          md += `- ${checkbox} **${t.title}**${note}${needs}${idTag}\n`;
+          md += `- ${checkbox} **${t.title}**${note}${needs}${ms}${owner}${idTag}\n`;
           t.subtasks.forEach(st => {
             const stCheckbox = st.checked ? '[x]' : '[ ]';
             md += `  - ${stCheckbox} ${st.text}\n`;
@@ -1697,6 +1828,157 @@
       });
 
       return md.trimEnd() + '\n';
+    }
+
+    // ============================================================
+    // ===== MILESTONES (MILESTONES.md + milestones/<id>.md) =====
+    // ============================================================
+    // Milestones are the level above tasks: a dated outcome tasks roll up into via the
+    // (ms #id) tag. Progress is DERIVED, never stored — done children (live Done tasks +
+    // lines archived under the milestone detail file's "## Completed") over all children.
+    let milestones = [];
+    let msDetails = {};                    // id → parsed detail (powers archived counts + the modal)
+    let activeMilestoneFilter = null;      // milestone id, or null = show everything
+    let lastMilestonesModified = 0;
+    let msSaving = false;
+    let boardRepoName = '';                // from /api/ping root — disambiguates multi-board tabs
+
+    function parseMilestoneMarkdown(content) {
+      const out = [];
+      for (const line of (content || '').split('\n')) {
+        const m = line.match(/^- \[([ xX])\]\s*(.*)$/);
+        if (!m) continue;
+        const checked = m[1] !== ' ';
+        let text = m[2];
+        let target = null, doneDate = null, id = null;
+        const tm = text.match(/\(target\s+(\d{4}-\d{2}-\d{2})\)/i);
+        if (tm) { target = tm[1]; text = text.replace(tm[0], '').trim(); }
+        const dm = text.match(/\(done\s+(\d{4}-\d{2}-\d{2})\)/i);
+        if (dm) { doneDate = dm[1]; text = text.replace(dm[0], '').trim(); }
+        const im = text.match(/#([0-9a-z]{2,})\s*$/i);
+        if (im) { id = im[1].toLowerCase(); text = text.replace(/\s*#[0-9a-z]{2,}\s*$/i, '').trim(); }
+        let title = text, note = '';
+        const bm = text.match(/^\*\*(.+?)\*\*(.*)$/);
+        if (bm) { title = bm[1]; note = bm[2].replace(/^\s*-\s*/, '').trim(); }
+        out.push({ id, title, note, target, doneDate, checked });
+      }
+      // Backfill/de-dupe ids against the union pool (tasks + milestones).
+      const used = new Set(currentTaskIds());
+      for (const m of out) { if (m.id && !used.has(m.id)) used.add(m.id); else if (m.id) m.id = null; }
+      for (const m of out) { if (!m.id) m.id = genTaskId(used); }
+      return out;
+    }
+
+    function milestonesToMarkdown() {
+      let md = '# Milestones\n';
+      if (milestones.length) md += '\n';
+      milestones.forEach(m => {
+        const checkbox = m.checked ? '[x]' : '[ ]';
+        const note = m.note ? ` - ${m.note}` : '';
+        const target = m.target ? ` (target ${m.target})` : '';
+        const done = m.checked && m.doneDate ? ` (done ${m.doneDate})` : '';
+        const idTag = m.id ? ` #${m.id}` : '';
+        md += `- ${checkbox} **${m.title}**${note}${target}${done}${idTag}\n`;
+      });
+      return md.trimEnd() + '\n';
+    }
+
+    function milestoneById(id) { return milestones.find(m => m.id === id) || null; }
+    function milestoneChildren(m) {
+      const out = [];
+      for (const sec of sections) for (const t of (tasks[sec.id] || [])) if (t.milestoneId === m.id) out.push(t);
+      return out;
+    }
+    function milestoneOpenChildren(m) { return milestoneChildren(m).filter(t => !t.checked); }
+    function milestoneArchivedCount(m) {
+      const d = msDetails[m.id];
+      return d && d.completed ? d.completed.length : 0;
+    }
+    // Progress counts archived children too — clearing old Done tasks (which archives
+    // them into the milestone's ## Completed) must never move a milestone backward.
+    function milestoneProgress(m) {
+      const kids = milestoneChildren(m);
+      const archived = milestoneArchivedCount(m);
+      return { done: kids.filter(t => t.checked).length + archived, total: kids.length + archived };
+    }
+    // Derived violation states — an agent can hand-edit the files into a checked parent
+    // over open subtasks (or a done milestone over open children). Render honestly; never
+    // auto-uncheck or "fix" the data.
+    function taskInconsistent(t) { return t.checked && openSubtasks(t).length > 0; }
+    function milestoneInconsistent(m) { return m.checked && milestoneOpenChildren(m).length > 0; }
+    function pad2(n) { return String(n).padStart(2, '0'); }
+
+    // The section arrays filtered by the active milestone filter — the one lens every
+    // tasks surface (board, list, counts) renders through.
+    function visibleTasks(sectionId) {
+      const arr = tasks[sectionId] || [];
+      return activeMilestoneFilter ? arr.filter(t => t.milestoneId === activeMilestoneFilter) : arr;
+    }
+
+    async function loadMilestonesFromServer() {
+      if (!SERVER_MODE) return;
+      try {
+        const res = await fetch('/api/milestones');
+        const content = await res.text();
+        lastMilestonesModified = Number(res.headers.get('X-Board-Mtime')) || 0;
+        milestones = parseMilestoneMarkdown(content);
+        if (activeMilestoneFilter && !milestoneById(activeMilestoneFilter)) activeMilestoneFilter = null;
+        await loadMilestoneDetails();
+        renderMilestoneRail();
+      } catch (e) { showStatus('Milestones load failed: ' + e.message); }
+    }
+    // Milestone detail files are tiny and there are single-digit milestones — fetching
+    // them all keeps archived-progress counting cheap without denormalizing the index.
+    async function loadMilestoneDetails() {
+      msDetails = {};
+      await Promise.all(milestones.map(async (m) => {
+        try {
+          const r = await fetch('/api/milestone?id=' + encodeURIComponent(m.id));
+          msDetails[m.id] = parseDetail(await r.text());
+        } catch (_) { msDetails[m.id] = parseDetail(''); }
+      }));
+    }
+    async function saveMilestonesToServer() {
+      if (!SERVER_MODE || msSaving) return;
+      msSaving = true;
+      try {
+        const res = await fetch('/api/milestones', {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/markdown', 'X-Base-Mtime': String(lastMilestonesModified) },
+          body: milestonesToMarkdown(),
+        });
+        if (res.status === 409) {
+          const latest = await res.text();
+          lastMilestonesModified = Number(res.headers.get('X-Board-Mtime')) || lastMilestonesModified;
+          milestones = parseMilestoneMarkdown(latest);
+          await loadMilestoneDetails();
+          renderMilestoneRail();
+          renderTasks();
+          showStatus('Milestones changed on disk — reloaded. Re-apply your edit.');
+          return;
+        }
+        lastMilestonesModified = Number(res.headers.get('X-Board-Mtime')) || lastMilestonesModified;
+      } catch (e) { showStatus('Milestones save failed: ' + e.message); }
+      finally { msSaving = false; }
+    }
+    async function saveMilestoneDetail(id, activityNote) {
+      if (!SERVER_MODE) return;
+      const d = msDetails[id] || (msDetails[id] = parseDetail(''));
+      if (activityNote) d.activity.push(`${nowStamp()} — ${activityNote}`);
+      try {
+        await fetch('/api/milestone?id=' + encodeURIComponent(id), {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/markdown' },
+          body: serializeDetail(d),
+        });
+        markBoardUpdated();
+      } catch (e) { showStatus('Milestone detail save failed: ' + e.message); }
+    }
+    // A milestone mutation: persist MILESTONES.md + refresh the surfaces it shows on.
+    function commitMilestones() {
+      saveMilestonesToServer();
+      renderMilestoneRail();
+      markBoardUpdated();
     }
 
     // Cards are READ-ONLY surfaces: a click anywhere opens the rich task modal where ALL
@@ -1729,10 +2011,16 @@
       }
 
       const metaBits = [];
-      if (subTotal) metaBits.push(`<span title="subtasks done">☑ ${subDone}/${subTotal}</span>`);
-      if (blocked) metaBits.push(`<span style="color: var(--accent);" title="Blocked until prerequisites are done">🔒 needs ${unmet.map(id => '#' + id).join(', ')}</span>`);
+      if (subTotal) metaBits.push(`<span title="subtasks done" style="display:inline-flex; align-items:center; gap:4px;">${icon('check-square', 12)}${subDone}/${subTotal}</span>`);
+      if (blocked) metaBits.push(`<span style="color: var(--accent); display:inline-flex; align-items:center; gap:4px;" title="Blocked until prerequisites are done">${icon('lock', 12)}needs ${unmet.map(id => '#' + id).join(', ')}</span>`);
+      if (task.milestoneId) {
+        const m = milestoneById(task.milestoneId);
+        metaBits.push(`<span class="chip" title="${m ? 'Milestone: ' + escapeHtml(m.title) : 'Unknown milestone #' + escapeHtml(task.milestoneId)}">${icon('target', 11)}<span class="chip-label">${m ? escapeHtml(m.title) : '#' + escapeHtml(task.milestoneId) + '?'}</span></span>`);
+      }
+      if (task.owner) metaBits.push(`<span class="chip" title="Owner — who's driving this task"><span class="chip-label">${escapeHtml(task.owner)}</span></span>`);
+      if (taskInconsistent(task)) metaBits.push(`<span class="chip warn" title="Checked done in the file, but subtasks are still open — finish them or uncheck">${icon('alert-triangle', 11)}<span class="chip-label">checked · ${openSubtasks(task).length} open</span></span>`);
       if (metaBits.length) {
-        html += `<div style="margin-left: 26px; margin-top: 6px; display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); font-family: ui-monospace, monospace;">${metaBits.join('')}</div>`;
+        html += `<div style="margin-left: 26px; margin-top: 6px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; font-size: 12px; color: var(--text-muted); font-family: var(--font-mono);">${metaBits.join('')}</div>`;
       }
 
       card.innerHTML = html;
@@ -2040,8 +2328,10 @@
           if (title) {
             if (!tasks[sectionId]) tasks[sectionId] = [];
             tasks[sectionId].push({
-              id: genTaskId(currentTaskIds()),
+              id: genTaskId(usedIds()),
               needs: [],
+              milestoneId: activeMilestoneFilter || null,   // creating while filtered joins the milestone
+              owner: null,
               title,
               note: '',
               checked: false,
@@ -2175,7 +2465,7 @@
         sections = result.sections;
         tasks = result.tasks;
         taskFileName = 'TASKS.md';
-        if (activeMainTab === 'tasks') filePathEl.textContent = 'TASKS.md';
+        if (activeMainTab === 'tasks') filePathEl.textContent = boardRepoName ? boardRepoName + '/.tasks/TASKS.md' : 'TASKS.md';
         if (initial) switchTaskView('board'); else renderTasks();
         markBoardUpdated();             // an agent (or reload) just refreshed the board
         showStatus(initial ? 'Live board connected' : 'Reloaded');
@@ -2224,6 +2514,21 @@
           try { kind = (JSON.parse(e.data) || {}).kind || 'tasks'; } catch (_) {}
           if (kind === 'tasks') {
             if (!hasChanges && !isSaving) loadTasksFromServer(false);
+          } else if (kind === 'milestones') {
+            if (!msSaving) loadMilestonesFromServer().then(() => renderTasks());
+          } else if (kind === 'detail') {
+            // An agent edited a detail file — refresh the open task modal (never while
+            // the operator is mid-edit in the description textarea).
+            if (tmTask && !tmDescEditing) {
+              fetch('/api/task?id=' + encodeURIComponent(tmTask.id)).then(r => r.text()).then(t => {
+                if (!tmTask || tmDescEditing) return;
+                tmDetail = parseDetail(t);
+                tmDetailLoaded = true;
+                renderTaskModalBody();
+              }).catch(() => {});
+            }
+          } else if (kind === 'config') {
+            /* setup-owned; nothing to redraw */
           } else if (kind === 'memory' && activeMainTab === 'memory') {
             loadMemoryFromServer();
           }
@@ -2269,13 +2574,14 @@
         renderList();
         rollCounts(listView);
       }
+      // Milestone progress derives from task state — keep the rail in step with the board.
+      if (SERVER_MODE) renderMilestoneRail();
     }
 
     function renderBoard() {
       board.innerHTML = '';
       sections.forEach(section => {
-        const sectionTasks = tasks[section.id] || [];
-        board.appendChild(createColumn(section.id, section.name, sectionTasks));
+        board.appendChild(createColumn(section.id, section.name, visibleTasks(section.id)));
       });
 
       const addSectionBtn = document.createElement('div');
@@ -2314,8 +2620,10 @@
           const title = quickInput.value.trim();
           if (!tasks[quickAddSection]) tasks[quickAddSection] = [];
           tasks[quickAddSection].unshift({
-            id: genTaskId(currentTaskIds()),
+            id: genTaskId(usedIds()),
             needs: [],
+            milestoneId: activeMilestoneFilter || null,
+            owner: null,
             title,
             note: '',
             checked: false,
@@ -2333,7 +2641,7 @@
 
       // Render each section
       sections.forEach(section => {
-        const sectionTasks = tasks[section.id] || [];
+        const sectionTasks = visibleTasks(section.id);
         const sectionEl = document.createElement('div');
         sectionEl.className = 'list-section';
         sectionEl.dataset.sectionId = section.id;
@@ -2534,15 +2842,22 @@
         content.appendChild(note);
       }
 
-      // id + subtask progress + (if any) blocked-by-prerequisites meta row
+      // id + subtask progress + milestone/owner chips + (if any) blocked meta row
       const unmet = unmetNeeds(task);
       const subDone = task.subtasks.filter(s => s.checked).length;
       const metaRow = document.createElement('div');
-      metaRow.style.cssText = 'font-size: 11px; font-family: ui-monospace, monospace; color: var(--text-muted); margin-top: 2px;';
-      metaRow.textContent = '#' + task.id
-        + (task.subtasks.length ? '   ☑ ' + subDone + '/' + task.subtasks.length : '')
-        + (unmet.length ? '   🔒 needs ' + unmet.map(id => '#' + id).join(', ') : '');
-      if (unmet.length) { metaRow.style.color = 'var(--accent)'; item.style.opacity = '0.6'; }
+      metaRow.style.cssText = 'font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); margin-top: 2px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;';
+      const bits = ['<span>#' + task.id + '</span>'];
+      if (task.subtasks.length) bits.push(`<span style="display:inline-flex; align-items:center; gap:3px;">${icon('check-square', 11)}${subDone}/${task.subtasks.length}</span>`);
+      if (unmet.length) bits.push(`<span style="display:inline-flex; align-items:center; gap:3px; color: var(--accent);">${icon('lock', 11)}needs ${unmet.map(id => '#' + id).join(', ')}</span>`);
+      if (task.milestoneId) {
+        const m = milestoneById(task.milestoneId);
+        bits.push(`<span style="display:inline-flex; align-items:center; gap:3px;" title="${m ? 'Milestone: ' + escapeHtml(m.title) : 'Unknown milestone'}">${icon('target', 11)}${m ? escapeHtml(m.title) : '#' + escapeHtml(task.milestoneId) + '?'}</span>`);
+      }
+      if (task.owner) bits.push(`<span title="Owner">${escapeHtml(task.owner)}</span>`);
+      if (taskInconsistent(task)) bits.push(`<span style="display:inline-flex; align-items:center; gap:3px; color: var(--text-secondary);" title="Checked done, but subtasks are still open">${icon('alert-triangle', 11)}checked · open subtasks</span>`);
+      metaRow.innerHTML = bits.join('');
+      if (unmet.length) { item.style.opacity = '0.6'; }
       content.appendChild(metaRow);
 
       item.appendChild(checkbox);
@@ -3483,7 +3798,8 @@
     const tmBodyEl = document.getElementById('tmBody');
 
     let tmTask = null;                       // live ref into `tasks` for the open card
-    let tmDetail = { description: '', activity: [] };
+    let tmDetail = null;                     // parseDetail() result for the open card
+    let tmDetailLoaded = false;              // gate: don't judge verification before it's read
     let tmDescEditing = false;
     let tmDescDirty = false;
 
@@ -3492,22 +3808,108 @@
       const p = (n) => String(n).padStart(2, '0');
       return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
     }
+    function dateStamp() { return nowStamp().slice(0, 10); }
 
-    // A detail file = a TT;DR-led markdown description, optionally followed by a
-    // "## Activity" section the agent appends one-line entries to.
-    function splitDetail(text) {
-      const m = (text || '').match(/^##\s+Activity\s*$/im);
-      if (!m) return { description: (text || '').trim(), activity: [] };
-      const description = text.slice(0, m.index).trim();
-      const activity = text.slice(m.index + m[0].length)
-        .split('\n').map(l => l.trim())
-        .filter(l => l.startsWith('- ')).map(l => l.replace(/^-\s+/, ''));
-      return { description, activity };
+    // The operator's display name — stamped on waivers and (optionally) activity, so a
+    // shared board's record shows who did what. Asked once, kept in localStorage.
+    function operatorName() {
+      let n = null;
+      try { n = localStorage.getItem('shaughv-tasks-operator'); } catch (_) {}
+      if (!n) {
+        n = (prompt('Your name (stamped on waivers so the record shows who made the call):') || 'operator').trim() || 'operator';
+        try { localStorage.setItem('shaughv-tasks-operator', n); } catch (_) {}
+      }
+      return n;
     }
-    function joinDetail(description, activity) {
-      let out = (description || '').trim();
-      if (activity && activity.length) out += '\n\n## Activity\n' + activity.map(a => '- ' + a).join('\n');
-      return out.trim() + '\n';
+
+    // ===== Section-aware detail parse/serialize =====
+    // A detail file = a TT;DR-led markdown description, then ordered "## " sections. The
+    // board gives special treatment to "## Verification" (three-state checklist:
+    // [ ] open / [x] passed / [~] waived, with a "(waived <stamp>)" tail), "## Activity"
+    // (log lines), and — in milestone files — "## Completed" (archived child tasks). Every
+    // OTHER section is preserved verbatim in its original position, so a round-trip can
+    // never drop content the board doesn't understand (## Why, ## Plan, ## Status, …).
+    function parseDetail(text) {
+      const lines = (text || '').replace(/\r\n/g, '\n').split('\n');
+      const blocks = [];
+      const desc = [];
+      let cur = null;
+      for (const line of lines) {
+        const h = line.match(/^##\s+(.+?)\s*$/);
+        if (h) {
+          const name = h[1];
+          const lower = name.toLowerCase();
+          const kind = lower === 'verification' ? 'verification'
+            : lower === 'activity' ? 'activity'
+            : lower === 'completed' ? 'completed' : 'other';
+          cur = { kind, name, lines: [] };
+          blocks.push(cur);
+        } else if (cur) cur.lines.push(line);
+        else desc.push(line);
+      }
+      const verification = [];
+      const activity = [];
+      const completed = [];
+      for (const b of blocks) {
+        if (b.kind === 'verification') {
+          for (const l of b.lines) {
+            const m = l.match(/^-\s+\[([ xX~])\]\s*(.*)$/);
+            if (!m) continue;
+            const state = m[1] === '~' ? 'waived' : (m[1] === ' ' ? 'open' : 'passed');
+            let t = m[2];
+            let waived = null;
+            const wm = t.match(/\(waived\s+([^)]*)\)\s*$/i);
+            if (wm) { waived = wm[1].trim(); t = t.slice(0, wm.index).trim(); }
+            verification.push({ text: t, state, waived });
+          }
+        } else if (b.kind === 'activity') {
+          for (const l of b.lines) { const t = l.trim(); if (t.startsWith('- ')) activity.push(t.replace(/^-\s+/, '')); }
+        } else if (b.kind === 'completed') {
+          for (const l of b.lines) { const t = l.trim(); if (t.startsWith('- ')) completed.push(t.replace(/^-\s+/, '')); }
+        }
+      }
+      return { description: desc.join('\n').trim(), verification, activity, completed, blocks };
+    }
+    function serializeDetail(d) {
+      const vLines = (d.verification || []).map(v => {
+        const box = v.state === 'waived' ? '[~]' : v.state === 'passed' ? '[x]' : '[ ]';
+        const w = v.state === 'waived' && v.waived ? ` (waived ${v.waived})` : '';
+        return `- ${box} ${v.text}${w}`;
+      });
+      const aLines = (d.activity || []).map(a => '- ' + a);
+      const cLines = (d.completed || []).map(c => '- ' + c);
+      // Start from the original block order; swap in the edited special sections, drop the
+      // special sections that emptied, keep everything else verbatim. A file that never had
+      // a ## Verification never GAINS an empty one — old files stay byte-stable.
+      const blocks = (d.blocks || []).map(b => ({ kind: b.kind, name: b.name, lines: [...b.lines] }))
+        .filter(b => !(b.kind === 'verification' && !vLines.length))
+        .filter(b => !(b.kind === 'activity' && !aLines.length))
+        .filter(b => !(b.kind === 'completed' && !cLines.length));
+      const setBody = (kind, lines) => { const b = blocks.find(x => x.kind === kind); if (b) b.lines = lines; return !!b; };
+      const hasV = setBody('verification', vLines);
+      const hasC = setBody('completed', cLines);
+      const hasA = setBody('activity', aLines);
+      if (!hasV && vLines.length) {
+        const ai = blocks.findIndex(b => b.kind === 'activity');
+        const nb = { kind: 'verification', name: 'Verification', lines: vLines };
+        if (ai >= 0) blocks.splice(ai, 0, nb); else blocks.push(nb);
+      }
+      if (!hasC && cLines.length) {
+        const ai = blocks.findIndex(b => b.kind === 'activity');
+        const nb = { kind: 'completed', name: 'Completed', lines: cLines };
+        if (ai >= 0) blocks.splice(ai, 0, nb); else blocks.push(nb);
+      }
+      if (!hasA && aLines.length) blocks.push({ kind: 'activity', name: 'Activity', lines: aLines });
+      const parts = [];
+      const descText = (d.description || '').trim();
+      if (descText) parts.push(descText);
+      for (const b of blocks) {
+        const body = [...b.lines];
+        while (body.length && !body[body.length - 1].trim()) body.pop();
+        while (body.length && !body[0].trim()) body.shift();
+        parts.push('## ' + b.name + (body.length ? '\n' + body.join('\n') : ''));
+      }
+      return (parts.join('\n\n').trim() || '') + '\n';
     }
 
     // Minimal, dependency-free markdown → HTML for the description pane: TT;DR callout,
@@ -3558,7 +3960,8 @@
       tmTask = task;
       tmDescEditing = false;
       tmDescDirty = false;
-      tmDetail = { description: '', activity: [] };
+      tmDetail = parseDetail('');
+      tmDetailLoaded = !SERVER_MODE;   // file:// has no detail files — nothing to wait for
       tmTitleEl.value = task.title;
       tmIdEl.textContent = '#' + task.id;
       tmCheckboxEl.className = 'checkbox ' + (task.checked ? 'checked' : '');
@@ -3567,8 +3970,9 @@
       if (SERVER_MODE) {
         try {
           const res = await fetch('/api/task?id=' + encodeURIComponent(task.id));
-          tmDetail = splitDetail(await res.text());
-        } catch (_) { tmDetail = { description: '', activity: [] }; }
+          tmDetail = parseDetail(await res.text());
+        } catch (_) { tmDetail = parseDetail(''); }
+        tmDetailLoaded = true;
         if (tmTask === task) renderTaskModalBody();
       }
     }
@@ -3581,7 +3985,8 @@
       tmDescDirty = false;
     }
 
-    // Persist the per-task detail file (description + activity). Server mode only.
+    // Persist the per-task detail file (description + verification + activity, plus any
+    // agent-authored sections carried verbatim). Server mode only.
     async function saveTaskDetail(activityNote) {
       if (!SERVER_MODE || !tmTask) return;
       if (activityNote) tmDetail.activity.push(`${nowStamp()} — ${activityNote}`);
@@ -3589,7 +3994,7 @@
         await fetch('/api/task?id=' + encodeURIComponent(tmTask.id), {
           method: 'POST',
           headers: { 'Content-Type': 'text/markdown' },
-          body: joinDetail(tmDetail.description, tmDetail.activity),
+          body: serializeDetail(tmDetail),
         });
         markBoardUpdated();
       } catch (e) { showStatus('Detail save failed: ' + e.message); }
@@ -3603,13 +4008,15 @@
         `<option value="${s.id}"${s.id === task.section ? ' selected' : ''}>${escapeHtml(s.name)}</option>`).join('');
       const unmet = unmetNeeds(task);
       const blockedLine = unmet.length
-        ? `<div class="tm-blocked">🔒 Blocked — waiting on ${unmet.map(id => {
+        ? `<div class="tm-blocked">${icon('lock', 13)} Blocked — waiting on ${unmet.map(id => {
             const t = taskById(id);
             return '#' + id + (t ? ' (' + escapeHtml(t.title) + ')' : '');
           }).join(', ')}</div>`
         : '';
       const needsStr = (task.needs || []).map(n => '#' + n).join(', ');
       const liveOnly = ' <span style="text-transform:none; letter-spacing:0; color:var(--text-muted); font-weight:normal;">— live board only</span>';
+      const msOptions = ['<option value="">None</option>'].concat(milestones.map(m =>
+        `<option value="${m.id}"${m.id === task.milestoneId ? ' selected' : ''}>${escapeHtml(m.title)}</option>`)).join('');
 
       tmBodyEl.innerHTML = `
         <div class="tm-section-label">Column</div>
@@ -3622,11 +4029,20 @@
         <input type="text" id="tmNeeds" class="tm-note-input" placeholder="#a3f, #k2p" value="${escapeHtml(needsStr)}">
         ${blockedLine}
 
+        ${SERVER_MODE ? `<div class="tm-section-label">${icon('target', 12)} Milestone</div>
+        <select id="tmMilestone" class="tm-note-input">${msOptions}</select>` : ''}
+
+        <div class="tm-section-label">Owner <span style="text-transform:none; letter-spacing:0; color:var(--text-muted); font-weight:normal;">— who's driving this (shared boards)</span></div>
+        <input type="text" id="tmOwner" class="tm-note-input" placeholder="name" value="${escapeHtml(task.owner || '')}">
+
         <div class="tm-section-label tm-row-between"><span>Description${SERVER_MODE ? '' : liveOnly}</span>${SERVER_MODE ? `<button class="tm-btn" id="tmDescToggle">${tmDescEditing ? 'Preview' : 'Edit'}</button>` : ''}</div>
         <div id="tmDescArea"></div>
 
-        <div class="tm-section-label">Subtasks</div>
+        <div class="tm-section-label">${icon('check-square', 12)} Subtasks <span class="tm-count-badge" id="tmSubCount"></span></div>
         <div id="tmSubtasks"></div>
+
+        ${SERVER_MODE ? `<div class="tm-section-label">${icon('shield-check', 12)} Verification <span class="tm-count-badge" id="tmVerifyCount"></span></div>
+        <div id="tmVerification"></div>` : ''}
 
         <div class="tm-section-label">Activity</div>
         <ul class="tm-activity" id="tmActivity"></ul>
@@ -3634,7 +4050,9 @@
 
       renderTmDesc();
       renderTmSubtasks();
+      renderTmVerification();
       renderTmActivity();
+      refreshTmCounts();
 
       const secSel = document.getElementById('tmSection');
       secSel.addEventListener('change', () => {
@@ -3662,6 +4080,45 @@
           renderTaskModalBody();             // refresh the blocked-line
         }
       });
+
+      const msSel = document.getElementById('tmMilestone');
+      if (msSel) msSel.addEventListener('change', () => {
+        const v = msSel.value || null;
+        if (v !== (task.milestoneId || null)) {
+          task.milestoneId = v;
+          commitBoard();
+        }
+      });
+
+      const ownerInput = document.getElementById('tmOwner');
+      if (ownerInput) ownerInput.addEventListener('change', () => {
+        const v = ownerInput.value.trim() || null;
+        if (v !== (task.owner || null)) {
+          task.owner = v;
+          commitBoard();
+        }
+      });
+    }
+
+    // Zero-padded mono progress readouts for the modal section labels — subtasks and
+    // verification get DISTINCT icons + words so the two gates never blur together.
+    function refreshTmCounts() {
+      if (!tmTask) return;
+      const subEl = document.getElementById('tmSubCount');
+      if (subEl) {
+        const total = (tmTask.subtasks || []).length;
+        const done = (tmTask.subtasks || []).filter(s => s.checked).length;
+        subEl.innerHTML = total ? `<span class="done">${pad2(done)}</span>/${pad2(total)}` : '';
+      }
+      const vEl = document.getElementById('tmVerifyCount');
+      if (vEl) {
+        const list = (tmDetail && tmDetail.verification) || [];
+        const settled = list.filter(v => v.state !== 'open').length;
+        const waived = list.filter(v => v.state === 'waived').length;
+        vEl.innerHTML = list.length
+          ? `<span class="done">${pad2(settled)}</span>/${pad2(list.length)}${waived ? ' · ' + waived + ' waived' : ''}`
+          : '';
+      }
     }
 
     function renderTmDesc() {
@@ -3715,7 +4172,7 @@
         const cb = document.createElement('span');
         cb.className = 'checkbox ' + (st.checked ? 'checked' : '');
         cb.style.flexShrink = '0';
-        cb.addEventListener('click', () => { st.checked = !st.checked; commitBoard(); renderTmSubtasks(); });
+        cb.addEventListener('click', () => { st.checked = !st.checked; commitBoard(); renderTmSubtasks(); refreshTmCounts(); });
         const txt = document.createElement('input');
         txt.type = 'text';
         txt.className = 'tm-sub-text' + (st.checked ? ' checked' : '');
@@ -3771,6 +4228,112 @@
       wrap.appendChild(add);
     }
 
+    // ===== Verification checklist (the waivable hard gate on completion) =====
+    // Items live in the task DETAIL file's "## Verification" section, never in TASKS.md.
+    // Three states: open / passed / waived. An operator may waive from here without a
+    // reason (the stamp records who + when); agents editing the file must record a reason.
+    function renderTmVerification() {
+      const wrap = document.getElementById('tmVerification');
+      if (!wrap || !tmTask || !tmDetail) return;
+      const list = tmDetail.verification || (tmDetail.verification = []);
+      wrap.innerHTML = '';
+      list.forEach((v, idx) => {
+        const row = document.createElement('div');
+        row.className = 'tm-verify-row' + (v.state === 'passed' ? ' passed' : v.state === 'waived' ? ' waived' : '');
+        const cb = document.createElement('span');
+        cb.className = 'checkbox ' + (v.state === 'passed' ? 'checked' : '');
+        cb.style.flexShrink = '0';
+        if (v.state === 'waived') cb.style.opacity = '0.35';
+        cb.title = v.state === 'waived' ? 'Waived — un-waive first to check it' : 'Toggle passed';
+        cb.addEventListener('click', () => {
+          if (v.state === 'waived') return;
+          v.state = v.state === 'passed' ? 'open' : 'passed';
+          saveTaskDetail();
+          renderTmVerification();
+          refreshTmCounts();
+        });
+        const txt = document.createElement('input');
+        txt.type = 'text';
+        txt.className = 'tm-verify-text';
+        txt.value = v.text;
+        txt.addEventListener('change', () => {
+          const nv = txt.value.trim();
+          if (!nv) list.splice(idx, 1); else v.text = nv;
+          saveTaskDetail();
+          renderTmVerification();
+          refreshTmCounts();
+        });
+        const waive = document.createElement('button');
+        waive.className = 'tm-waive-btn';
+        waive.textContent = v.state === 'waived' ? 'waived' : 'waive';
+        waive.title = v.state === 'waived' ? 'Un-waive (back to open)' : 'Waive this check — recorded with your name';
+        waive.addEventListener('click', () => {
+          if (v.state === 'waived') {
+            v.state = 'open';
+            v.waived = null;
+            saveTaskDetail(`un-waived "${v.text}"`);
+          } else {
+            const who = operatorName();
+            v.state = 'waived';
+            v.waived = `${dateStamp()} — ${who}`;
+            saveTaskDetail(`waived "${v.text}" (${who})`);
+          }
+          renderTmVerification();
+          refreshTmCounts();
+        });
+        const del = document.createElement('button');
+        del.className = 'tm-sub-del';
+        del.title = 'Remove check';
+        del.textContent = '×';
+        del.addEventListener('click', () => { list.splice(idx, 1); saveTaskDetail(); renderTmVerification(); refreshTmCounts(); });
+        row.appendChild(cb); row.appendChild(txt); row.appendChild(waive); row.appendChild(del);
+        if (v.state === 'waived' && v.waived) {
+          const stamp = document.createElement('div');
+          stamp.className = 'tm-waive-stamp';
+          stamp.textContent = 'waived ' + v.waived;
+          row.appendChild(stamp);
+        }
+        wrap.appendChild(row);
+      });
+      if (!list.length) {
+        const hint = document.createElement('div');
+        hint.style.cssText = 'font-style: italic; font-size: 13px; color: var(--text-muted); padding: 4px 0;';
+        hint.textContent = tmDetailLoaded
+          ? 'Add the concrete pass/fail checks that gate this task — completion requires every check passed or waived.'
+          : 'Loading checks…';
+        wrap.appendChild(hint);
+      }
+      const add = document.createElement('div');
+      add.className = 'tm-add';
+      add.textContent = '+ Add criterion';
+      add.addEventListener('click', () => {
+        const row = document.createElement('div');
+        row.className = 'tm-verify-row';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'tm-verify-text';
+        input.placeholder = 'Concrete, observable pass/fail check…';
+        input.style.gridColumn = '1 / 5';
+        let committed = false;
+        const commit = () => {
+          if (committed) return; committed = true;
+          const v = input.value.trim();
+          if (v) { list.push({ text: v, state: 'open', waived: null }); saveTaskDetail(); }
+          renderTmVerification();
+          refreshTmCounts();
+        };
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); commit(); }
+          else if (e.key === 'Escape') { committed = true; renderTmVerification(); }
+        });
+        input.addEventListener('blur', commit);
+        row.appendChild(input);
+        wrap.insertBefore(row, add);
+        input.focus();
+      });
+      wrap.appendChild(add);
+    }
+
     function renderTmActivity() {
       const ul = document.getElementById('tmActivity');
       if (!ul) return;
@@ -3799,17 +4362,43 @@
       if (tmTask) tmCheckboxEl.className = 'checkbox ' + (tmTask.checked ? 'checked' : '');
     }
 
+    // A refused action gets a short, honest shake (180ms, brand easing) + a status line.
+    function denyNudge(msg, el) {
+      showStatus(msg);
+      const t = el || tmCheckboxEl;
+      if (t) { t.classList.remove('deny-shake'); void t.offsetWidth; t.classList.add('deny-shake'); }
+    }
+
     tmCheckboxEl.addEventListener('click', () => {
       if (!tmTask) return;
       if (!tmTask.checked) {
+        // Completion gates, in order: prerequisites (hard) → subtasks (hard, no waiver) →
+        // verification (hard, waivable: every item must be passed or waived).
         const unmet = unmetNeeds(tmTask);
         if (unmet.length) {
-          showStatus(`Blocked — finish ${unmet.map(id => '#' + id).join(', ')} before marking done`);
+          denyNudge(`Blocked — finish ${unmet.map(id => '#' + id).join(', ')} before marking done`);
           return;
         }
         if (openSubtasks(tmTask).length) {
-          showStatus('Blocked — finish or remove open subtasks before marking done');
+          denyNudge('Blocked — finish or remove open subtasks before marking done');
           return;
+        }
+        if (SERVER_MODE) {
+          if (!tmDetailLoaded) {
+            denyNudge('Still loading verification checks — try again in a second');
+            return;
+          }
+          const openV = (tmDetail.verification || []).filter(v => v.state === 'open');
+          if (openV.length) {
+            denyNudge(`${openV.length} verification check${openV.length > 1 ? 's' : ''} still open — pass or waive each first`);
+            const sec = document.getElementById('tmVerification');
+            if (sec) {
+              sec.classList.add('tm-verify-gate');
+              sec.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'center' });
+              setTimeout(() => sec.classList.remove('tm-verify-gate'), 1600);
+            }
+            return;
+          }
         }
       }
       tmTask.checked = !tmTask.checked;
@@ -3831,6 +4420,355 @@
       deleteTask(t);
     });
     taskModalOverlay.addEventListener('click', (e) => { if (e.target === taskModalOverlay) closeTaskModal(); });
+
+    // ============================================================
+    // ===== MILESTONE RAIL + MILESTONE MODAL =====
+    // ============================================================
+    const milestoneRail = document.getElementById('milestoneRail');
+    const msModalOverlay = document.getElementById('msModalOverlay');
+    const msTitleEl = document.getElementById('msTitle');
+    const msIdEl = document.getElementById('msId');
+    const msCheckboxEl = document.getElementById('msCheckbox');
+    const msBodyEl = document.getElementById('msBody');
+
+    let msTask = null;                    // the open milestone (live ref into `milestones`)
+    let msDescEditing = false;
+    let railCollapsed = false;
+    try { railCollapsed = localStorage.getItem('shaughv-tasks-rail') === 'collapsed'; } catch (_) {}
+    let lastMsPct = {};                   // id → last rendered fill %, so the bar sweeps, not jumps
+    let lastMsCounts = {};                // id → last "NN/NN" text, for the Slot Roll
+
+    function renderMilestoneRail() {
+      if (!SERVER_MODE || !milestoneRail) return;
+      milestoneRail.style.display = '';
+      milestoneRail.innerHTML = '';
+
+      const header = document.createElement('div');
+      header.className = 'ms-rail-header';
+      const toggle = document.createElement('button');
+      toggle.className = 'ms-rail-toggle';
+      toggle.setAttribute('aria-expanded', String(!railCollapsed));
+      toggle.setAttribute('aria-controls', 'msRailBody');
+      toggle.innerHTML = `${icon('chevron-down', 14)} Milestones <span class="ms-rail-count">${pad2(milestones.length)}</span>`;
+      toggle.addEventListener('click', () => {
+        railCollapsed = !railCollapsed;
+        try { localStorage.setItem('shaughv-tasks-rail', railCollapsed ? 'collapsed' : 'open'); } catch (_) {}
+        renderMilestoneRail();
+      });
+      const newBtn = document.createElement('button');
+      newBtn.className = 'ms-new-btn';
+      newBtn.innerHTML = `${icon('plus', 12)} New milestone`;
+      newBtn.addEventListener('click', () => { railCollapsed = false; renderMilestoneRail(); startAddingMilestone(); });
+      header.appendChild(toggle);
+      header.appendChild(newBtn);
+      milestoneRail.appendChild(header);
+
+      const bodyEl = document.createElement('div');
+      bodyEl.className = 'ms-rail-body' + (railCollapsed ? ' collapsed' : '');
+      bodyEl.id = 'msRailBody';
+
+      const seenPct = {}, seenCounts = {};
+      milestones.forEach((m, i) => {
+        const prog = milestoneProgress(m);
+        const pct = prog.total ? Math.round((prog.done / prog.total) * 100) : 0;
+        const countText = `${pad2(prog.done)}/${pad2(prog.total)}`;
+        seenPct[m.id] = pct;
+        seenCounts[m.id] = countText;
+
+        const card = document.createElement('div');
+        card.className = 'ms-card'
+          + (m.checked ? ' complete' : '')
+          + (activeMilestoneFilter === m.id ? ' filtering' : '');
+        card.dataset.ms = m.id;
+        card.setAttribute('role', 'button');
+        card.tabIndex = 0;
+        card.title = m.title + (m.target ? ' — target ' + m.target : '');
+        const overdue = !m.checked && m.target && m.target < dateStamp();
+        card.innerHTML = `
+          <div class="ms-card-top">
+            <span class="ms-index">${pad2(i + 1)}</span>
+            <span class="ms-title">${escapeHtml(m.title)}</span>
+            ${m.checked ? `<span style="color: var(--accent); line-height: 0;">${icon('check', 12)}</span>` : ''}
+            ${milestoneInconsistent(m) ? `<span style="color: var(--text-secondary); line-height: 0;" title="Marked done, but child tasks are still open">${icon('alert-triangle', 12)}</span>` : ''}
+          </div>
+          <div class="ms-meta">
+            <span class="ms-target"${overdue ? ' style="color: var(--accent);" title="Target date passed with open tasks"' : ''}>${m.target ? 'target ' + m.target : 'no target'}</span>
+            <span class="ms-count" data-ms-count-for="${m.id}">${countText}</span>
+          </div>
+          <div class="ms-progress"><div class="ms-progress-fill" data-ms-fill-for="${m.id}"></div></div>
+        `;
+        const filterBtn = document.createElement('button');
+        filterBtn.className = 'ms-filter-btn';
+        filterBtn.setAttribute('aria-label', activeMilestoneFilter === m.id ? 'Clear the milestone filter' : 'Filter the board to this milestone');
+        filterBtn.title = filterBtn.getAttribute('aria-label');
+        filterBtn.innerHTML = icon('crosshair', 13);
+        filterBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          activeMilestoneFilter = activeMilestoneFilter === m.id ? null : m.id;
+          renderTasks();
+          showStatus(activeMilestoneFilter ? `Filtered to "${m.title}"` : 'Filter cleared');
+        });
+        card.appendChild(filterBtn);
+        const open = () => openMilestoneModal(m);
+        card.addEventListener('click', open);
+        card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+        bodyEl.appendChild(card);
+      });
+
+      // "+ new milestone" tile lives at the end of the strip
+      const newCard = document.createElement('button');
+      newCard.className = 'ms-new-card';
+      newCard.id = 'msNewCard';
+      newCard.innerHTML = `${icon('plus', 12)} New milestone`;
+      newCard.addEventListener('click', startAddingMilestone);
+      bodyEl.appendChild(newCard);
+      milestoneRail.appendChild(bodyEl);
+
+      // Micro-interactions: the fill SWEEPS from its previous width (never jumps), and a
+      // changed count rolls through the Slot Roll like the column badges do.
+      if (!railCollapsed) {
+        milestones.forEach((m) => {
+          const fill = bodyEl.querySelector(`[data-ms-fill-for="${m.id}"]`);
+          if (fill) {
+            const prev = lastMsPct[m.id];
+            const next = seenPct[m.id];
+            if (!prefersReducedMotion && prev !== undefined && prev !== next) {
+              fill.style.transition = 'none';
+              fill.style.width = prev + '%';
+              requestAnimationFrame(() => requestAnimationFrame(() => {
+                fill.style.removeProperty('transition');
+                fill.style.width = next + '%';
+              }));
+            } else {
+              fill.style.width = next + '%';
+            }
+          }
+          const countEl = bodyEl.querySelector(`[data-ms-count-for="${m.id}"]`);
+          const prevC = lastMsCounts[m.id];
+          if (countEl && !prefersReducedMotion && prevC !== undefined && prevC !== seenCounts[m.id]) {
+            buildSlotText(countEl, prevC);
+            animateSlotText(countEl, seenCounts[m.id], { color: 'var(--accent)' });
+          }
+        });
+      }
+      lastMsPct = seenPct;
+      lastMsCounts = seenCounts;
+    }
+
+    function startAddingMilestone() {
+      const tile = document.getElementById('msNewCard');
+      if (!tile) return;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'ms-new-input';
+      input.placeholder = 'Milestone title…';
+      tile.replaceWith(input);
+      input.focus();
+      let committed = false;
+      const commit = () => {
+        if (committed) return; committed = true;
+        const title = input.value.trim();
+        if (title) {
+          const m = { id: genTaskId(usedIds()), title, note: '', target: null, doneDate: null, checked: false };
+          milestones.push(m);
+          commitMilestones();
+          saveMilestoneDetail(m.id, 'created (operator, from the board)');
+          openMilestoneModal(m);
+        } else {
+          renderMilestoneRail();
+        }
+      };
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); commit(); }
+        else if (e.key === 'Escape') { committed = true; renderMilestoneRail(); }
+      });
+      input.addEventListener('blur', commit);
+    }
+
+    function openMilestoneModal(m) {
+      msTask = m;
+      msDescEditing = false;
+      msTitleEl.value = m.title;
+      msIdEl.textContent = '#' + m.id;
+      msCheckboxEl.className = 'checkbox ' + (m.checked ? 'checked' : '');
+      msModalOverlay.classList.add('visible');
+      renderMsModalBody();
+    }
+    function closeMilestoneModal() {
+      msModalOverlay.classList.remove('visible');
+      msTask = null;
+      msDescEditing = false;
+    }
+
+    function renderMsModalBody() {
+      const m = msTask;
+      if (!m) return;
+      const d = msDetails[m.id] || (msDetails[m.id] = parseDetail(''));
+      const prog = milestoneProgress(m);
+      const pct = prog.total ? Math.round((prog.done / prog.total) * 100) : 0;
+      const kids = milestoneChildren(m);
+
+      msBodyEl.innerHTML = `
+        <div class="tm-section-label">Target date</div>
+        <input type="date" id="msTarget" class="tm-note-input" value="${m.target || ''}">
+
+        <div class="tm-section-label">Note <span style="text-transform:none; letter-spacing:0; color:var(--text-muted); font-weight:normal;">— one-line context</span></div>
+        <input type="text" id="msNote" class="tm-note-input" placeholder="Short context (one line)" value="${escapeHtml(m.note || '')}">
+
+        <div class="tm-section-label">Progress <span class="tm-count-badge"><span class="done">${pad2(prog.done)}</span>/${pad2(prog.total)}${milestoneArchivedCount(m) ? ' · ' + milestoneArchivedCount(m) + ' archived' : ''}</span></div>
+        <div class="ms-progress" style="height: 6px;"><div class="ms-progress-fill" style="width: ${pct}%;"></div></div>
+        ${milestoneInconsistent(m) ? `<div class="tm-blocked">${icon('alert-triangle', 13)} Marked done, but child tasks are still open — finish them or uncheck</div>` : ''}
+
+        <div class="tm-section-label tm-row-between"><span>Description</span><button class="tm-btn" id="msDescToggle">${msDescEditing ? 'Preview' : 'Edit'}</button></div>
+        <div id="msDescArea"></div>
+
+        <div class="tm-section-label">${icon('target', 12)} Tasks <span class="tm-count-badge">${kids.length} live${milestoneArchivedCount(m) ? ' · ' + milestoneArchivedCount(m) + ' archived' : ''}</span></div>
+        <div id="msChildren"></div>
+
+        <div class="tm-section-label">Activity</div>
+        <ul class="tm-activity" id="msActivity"></ul>
+      `;
+
+      // Target / note
+      const targetInput = document.getElementById('msTarget');
+      targetInput.addEventListener('change', () => {
+        const v = targetInput.value || null;
+        if (v !== (m.target || null)) { m.target = v; commitMilestones(); }
+      });
+      const noteInput = document.getElementById('msNote');
+      noteInput.addEventListener('change', () => {
+        const v = noteInput.value.trim();
+        if (v !== (m.note || '')) { m.note = v; commitMilestones(); }
+      });
+
+      // Description (Edit/Preview, persisted to milestones/<id>.md)
+      const descArea = document.getElementById('msDescArea');
+      const descToggle = document.getElementById('msDescToggle');
+      if (msDescEditing) {
+        descToggle.style.display = 'none';
+        const ta = document.createElement('textarea');
+        ta.className = 'tm-desc-edit';
+        ta.value = d.description || '';
+        ta.placeholder = 'TT;DR: the outcome this milestone represents and where it stands.\n\nThen: why these tasks are grouped, what is in and out of scope…';
+        descArea.appendChild(ta);
+        const actions = document.createElement('div');
+        actions.style.cssText = 'display:flex; gap:8px; margin-top:8px; justify-content:flex-end;';
+        actions.innerHTML = '<button class="tm-btn" id="msDescCancel">Cancel</button><button class="tm-btn" id="msDescSave" style="border-color:var(--accent); color:var(--accent);">Save description</button>';
+        descArea.appendChild(actions);
+        ta.focus();
+        document.getElementById('msDescCancel').addEventListener('click', () => { msDescEditing = false; renderMsModalBody(); });
+        document.getElementById('msDescSave').addEventListener('click', async () => {
+          d.description = ta.value;
+          msDescEditing = false;
+          await saveMilestoneDetail(m.id, 'description edited (operator)');
+          renderMsModalBody();
+          showStatus('Description saved');
+        });
+      } else {
+        const div = document.createElement('div');
+        div.className = 'tm-desc-rendered';
+        div.innerHTML = renderTaskMarkdown(d.description);
+        descArea.appendChild(div);
+        descToggle.onclick = () => { msDescEditing = true; renderMsModalBody(); };
+      }
+
+      // Child tasks (live), then the archived lines from ## Completed
+      const childrenEl = document.getElementById('msChildren');
+      if (!kids.length && !milestoneArchivedCount(m)) {
+        childrenEl.innerHTML = '<div style="font-style: italic; font-size: 13px; color: var(--text-muted); padding: 4px 0;">No tasks yet — assign one from a task\'s Milestone selector, or create tasks while filtered to this milestone.</div>';
+      } else {
+        kids.forEach(t => {
+          const row = document.createElement('div');
+          row.className = 'tm-ms-child' + (t.checked ? ' done' : '');
+          const cb = document.createElement('span');
+          cb.className = 'checkbox ' + (t.checked ? 'checked' : '');
+          cb.style.cssText = 'pointer-events: none; width: 15px; height: 15px; min-width: 15px; min-height: 15px;';
+          const title = document.createElement('span');
+          title.className = 't';
+          title.textContent = t.title;
+          const sect = document.createElement('span');
+          sect.className = 'sect';
+          sect.textContent = (sections.find(s => s.id === t.section) || {}).name || t.section;
+          const jump = document.createElement('button');
+          jump.className = 'tm-btn';
+          jump.textContent = 'open';
+          jump.setAttribute('aria-label', 'Open task ' + t.title);
+          jump.addEventListener('click', (e) => { e.stopPropagation(); closeMilestoneModal(); openTaskModal(t); });
+          row.appendChild(cb); row.appendChild(title); row.appendChild(sect); row.appendChild(jump);
+          childrenEl.appendChild(row);
+        });
+        (d.completed || []).forEach(line => {
+          const row = document.createElement('div');
+          row.className = 'tm-ms-archived';
+          row.textContent = '· ' + line.replace(/^\[[xX]\]\s*/, '').replace(/\*\*/g, '');
+          row.title = 'Archived from Done — still counts toward progress';
+          childrenEl.appendChild(row);
+        });
+      }
+
+      // Activity (newest first, like the task modal)
+      const ul = document.getElementById('msActivity');
+      if (!d.activity || !d.activity.length) {
+        const li = document.createElement('li');
+        li.className = 'tm-empty';
+        li.textContent = 'No recorded activity yet.';
+        ul.appendChild(li);
+      } else {
+        [...d.activity].reverse().forEach(a => {
+          const li = document.createElement('li');
+          li.textContent = a;
+          ul.appendChild(li);
+        });
+      }
+    }
+
+    // Milestone completion is a HARD gate: it cannot close while any child task is open.
+    msCheckboxEl.addEventListener('click', () => {
+      if (!msTask) return;
+      if (!msTask.checked) {
+        const open = milestoneOpenChildren(msTask);
+        if (open.length) {
+          denyNudge(`Blocked — ${open.length} task${open.length > 1 ? 's' : ''} still open in this milestone`, msCheckboxEl);
+          return;
+        }
+        msTask.checked = true;
+        msTask.doneDate = dateStamp();
+        saveMilestoneDetail(msTask.id, `milestone completed (${operatorName()})`);
+      } else {
+        msTask.checked = false;
+        msTask.doneDate = null;
+      }
+      msCheckboxEl.className = 'checkbox ' + (msTask.checked ? 'checked' : '');
+      commitMilestones();
+      renderMsModalBody();
+    });
+    msTitleEl.addEventListener('change', () => {
+      if (!msTask) return;
+      const v = msTitleEl.value.trim();
+      if (v && v !== msTask.title) { msTask.title = v; commitMilestones(); renderTasks(); }
+      else msTitleEl.value = msTask.title;
+    });
+    document.getElementById('msClose').addEventListener('click', closeMilestoneModal);
+    document.getElementById('msDoneBtn').addEventListener('click', closeMilestoneModal);
+    document.getElementById('msDelete').addEventListener('click', () => {
+      if (!msTask) return;
+      const m = msTask;
+      const kids = milestoneChildren(m);
+      if (!confirm(`Delete milestone "${m.title}"?${kids.length ? ` Its (ms #${m.id}) tag will be removed from ${kids.length} task${kids.length > 1 ? 's' : ''}.` : ''}`)) return;
+      // Deleting a milestone must not leave dangling (ms #id) tags — untag the children,
+      // remove the line, and drop the detail file, all together.
+      kids.forEach(t => { t.milestoneId = null; });
+      const idx = milestones.findIndex(x => x.id === m.id);
+      if (idx !== -1) milestones.splice(idx, 1);
+      delete msDetails[m.id];
+      if (activeMilestoneFilter === m.id) activeMilestoneFilter = null;
+      if (SERVER_MODE) fetch('/api/milestone?id=' + encodeURIComponent(m.id), { method: 'DELETE' }).catch(() => {});
+      closeMilestoneModal();
+      commitMilestones();
+      if (kids.length) markChanged();   // the untag changed TASKS.md
+      renderTasks();
+    });
+    msModalOverlay.addEventListener('click', (e) => { if (e.target === msModalOverlay) closeMilestoneModal(); });
 
     // ============================================================
     // ===== FRESHNESS INDICATOR ("live" → seconds → "stale") =====
@@ -4125,7 +5063,7 @@
     function rollCounts(container) {
       const seen = {};
       sections.forEach((s) => {
-        const cur = (tasks[s.id] || []).length;
+        const cur = visibleTasks(s.id).length;
         seen[s.id] = cur;
         const el = container && container.querySelector(`[data-count-for="${s.id}"]`);
         if (!el) return;
@@ -4150,7 +5088,7 @@
 
     function taskSignature(t) {
       const subs = (t.subtasks || []).map(s => (s.checked ? '1' : '0') + s.text + '>' + (s.description || '')).join('|');
-      return [t.checked ? 1 : 0, t.section, t.title, t.note, (t.needs || []).join(','), subs].join('¦');
+      return [t.checked ? 1 : 0, t.section, t.title, t.note, (t.needs || []).join(','), t.milestoneId || '', t.owner || '', subs].join('¦');
     }
     function captureCardRects() {
       const map = new Map();
@@ -4227,9 +5165,21 @@
     if (SERVER_MODE) {
       openTaskBtn.textContent = 'Reload';
       openMemoryBtn.textContent = 'Reload';
-      loadTasksFromServer(true);
+      // Milestones load FIRST so the task-id backfill sees the full used-id pool.
+      loadMilestonesFromServer().then(() => loadTasksFromServer(true));
       startWatching();
       loadMemoryFromServer();
+      // Board identity → tab title + header path, so two boards on one machine are
+      // distinguishable at a glance (see the tasks-boards skill).
+      fetch('/api/ping').then(r => r.json()).then(info => {
+        if (!info || !info.root) return;
+        const parts = String(info.root).replace(/[\\/]+$/, '').split(/[\\/]/);
+        const repo = parts.length >= 2 ? parts[parts.length - 2] : parts[parts.length - 1];
+        if (!repo) return;
+        boardRepoName = repo;
+        document.title = 'TASKS / ' + repo.toUpperCase() + ' / SHAUGHV';
+        if (activeMainTab === 'tasks') filePathEl.textContent = repo + '/.tasks/TASKS.md';
+      }).catch(() => {});
     }
   </script>
 </body>

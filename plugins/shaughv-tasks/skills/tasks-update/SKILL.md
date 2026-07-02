@@ -26,7 +26,8 @@ If `.tasks/` doesn't exist, suggest `/tasks-start` first.
 
 ### 1. Load current state
 
-Read `.tasks/TASKS.md` and `.tasks/CLAUDE.md` + `.tasks/memory/`.
+Read `.tasks/TASKS.md`, `.tasks/MILESTONES.md`, `.tasks/config.json`, and
+`.tasks/CLAUDE.md` + `.tasks/memory/`.
 
 ### 2. Sync tasks from external sources
 
@@ -47,16 +48,29 @@ Fetch tasks assigned to the user (open / in-progress) and compare against `.task
 
 Present the diff; let the user decide. If no source is connected, skip to step 3.
 
+**Completing during sync respects the gates.** Before flipping a task done because it was
+completed externally, run `tasks-management`'s completion gates: subtasks all checked
+(hard), and every `## Verification` item `[x]` or `[~]` — verify what you can, or waive
+with a recorded reason; never auto-complete a task with `[ ]` verification items.
+
 ### 3. Triage stale items
 
-Review Active tasks and flag, leading with the most urgent:
+Review Active tasks and milestones and flag, leading with the most urgent:
 
 - **Overdue** (due date in the past) and **due today**.
+- **At-risk milestones** — past their `(target …)` date with open children. Report each
+  with progress: `Phoenix GA: 3/7 done, target 2026-08-01 (overdue) — at risk`.
 - Tasks in Active 30+ days with no movement.
 - Tasks with no context (no person, no project).
 
 For each: mark done? reschedule? move to Backlog? break down (hand to the `iterative-plan`
 skill if installed, otherwise split it into a small, concretely demoable next action)?
+
+**Clearing old Done items archives milestone work first.** When tidying the Done column
+(items older than ~a week), append each milestone-tagged task's line to its milestone's
+`## Completed` section in `.tasks/milestones/<id>.md` *before* removing it from
+`TASKS.md` — that's what keeps milestone progress from moving backward (see
+`tasks-management`). Delete the cleared tasks' detail files as usual.
 
 ### 4. Decode tasks for memory gaps
 
@@ -86,6 +100,7 @@ relationships → cross-reference people; deadlines → project files.
 ```
 Update complete:
 - Tasks: +3 from tracker, 1 completed, 2 triaged (1 overdue surfaced)
+- Milestones: Phoenix GA advanced 2/7 → 3/7; 1 at risk (target passed)
 - Memory: 2 gaps filled, 1 project enriched
 - All tasks decoded ✓
 ```
@@ -133,3 +148,7 @@ High-confidence items offered to add directly; low-confidence asked about.
 - Fuzzy-match task titles to handle minor wording differences.
 - Safe to run often — it only changes things when there's new info.
 - `--comprehensive` always runs interactively.
+- **Tracked boards: offer to commit.** If `.tasks/config.json` says `"git": "tracked"` and
+  the sync changed `TASKS.md`, `MILESTONES.md`, or any detail file, offer to commit the
+  board update — defer to the `git-workflow` skill if it's installed, otherwise suggest a
+  normal commit. Never auto-commit.

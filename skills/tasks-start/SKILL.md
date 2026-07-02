@@ -10,7 +10,8 @@ description: >
   clutters the repo root, then optionally scans connected tools (Slack, Asana/Linear/Jira,
   Microsoft 365 / Google, Notion) to seed memory. Trigger even when the user doesn't say
   "tasks" but clearly wants to start tracking work or onboard Claude to their workplace
-  language. Pairs with tasks-update, tasks-management, tasks-memory, and tasks-remove.
+  language. Pairs with tasks-create, tasks-update, tasks-management, tasks-memory, and
+  tasks-remove.
 ---
 
 # /tasks-start
@@ -29,12 +30,18 @@ into the repo's own `CLAUDE.md` and `memory/` and deletes `.tasks/`.
 ```
 .tasks/
   TASKS.md          ← the task list (board + list view)
+  MILESTONES.md     ← milestones (dated epics); tasks join one with an (ms #id) tag
+  tasks/            ← per-task detail files <id>.md (handoff, verification, activity)
+  milestones/       ← per-milestone detail files <id>.md
   CLAUDE.md         ← working memory / hot cache (the dashboard's Memory tab reads this)
   memory/           ← deep memory
     glossary.md
     people/
     projects/
     context/
+  secure/           ← gitignored private store: secrets + notes that must never be committed
+  config.json       ← persisted setup choices (git tracking, hooks target) — ask once, remember forever
+  .gitignore        ← scoped ignore: secure/ + runtime files (always scaffolded)
   dashboard.html    ← the SHAUGHV-branded UI (served on localhost; file:// fallback)
   board-server.mjs  ← zero-dep Node server: serves the dashboard + live-syncs TASKS.md
 ```
@@ -50,12 +57,24 @@ into the repo's own `CLAUDE.md` and `memory/` and deletes `.tasks/`.
 First look in the **current working directory** for a `.tasks/` folder:
 
 - **`.tasks/` in cwd** → already set up here. Load current state — read `.tasks/TASKS.md`,
-  `.tasks/CLAUDE.md`, and `.tasks/memory/`, and for **every task in the Active column** read
-  its `.tasks/tasks/<id>.md` (`## Status` + the most-recent `## Activity` line) so you can
-  resume mid-task. Then skip straight to **step 3 (Launch the live board)** — `/tasks-start`
-  is idempotent and doubles as "relaunch / repair my board." Re-verify the hook in step 4 too
-  (safe to re-run), ensure repo instructions in step 5, and lead your orientation in step 6
-  with "here's where we left off."
+  `.tasks/MILESTONES.md`, `.tasks/CLAUDE.md`, and `.tasks/memory/`; read `.tasks/config.json`
+  for the persisted setup choices (git tracking, hooks target) — **the resume path never
+  re-asks anything recorded there**; and for **every task in the Active column** read its
+  `.tasks/tasks/<id>.md` (`## Status` + the most-recent `## Activity` line) so you can resume
+  mid-task. For any milestone past its `(target …)` date with open children, read its
+  `.tasks/milestones/<id>.md` `## Status` too. Then skip straight to **step 3 (Launch the
+  live board)** — `/tasks-start` is idempotent and doubles as "relaunch / repair my board."
+  Re-verify the hook in step 4 too (safe to re-run), ensure repo instructions in step 5, and
+  lead your orientation in step 6 with "here's where we left off."
+
+  **Migration for boards that predate `config.json`:** if it's missing, do **not** ask —
+  infer and backfill silently, the way the board backfills missing ids. Infer `git`: not a
+  git repo → `"none"`; the repo-root `.gitignore` has a `.tasks/` line → `"ignored"`;
+  otherwise → `"tracked"`. Write `config.json` with the inferred value. While here,
+  idempotently scaffold anything an older install lacks — `.tasks/.gitignore`, `secure/`,
+  `MILESTONES.md`, `milestones/` — as additive repair (like re-verifying hooks), never a
+  question. Reconcile drift: if `config.json` says `"ignored"` but the root `.gitignore`
+  lost its `.tasks/` line, re-add it.
 
 If there's no `.tasks/` in cwd, **walk up the parent directories** (to the repo root / a
 filesystem boundary) and look for an ancestor `.tasks/`:
@@ -77,11 +96,52 @@ filesystem boundary) and look for an ancestor `.tasks/`:
 Create the `.tasks/` folder and populate it:
 
 - **`.tasks/TASKS.md`** — if absent, create with the standard template (see the
-  `tasks-management` skill). 
+  `tasks-management` skill).
+- **`.tasks/MILESTONES.md`** — if absent, create with the `# Milestones` skeleton (see
+  `tasks-management`).
 - **`.tasks/dashboard.html`** and **`.tasks/board-server.mjs`** — copy BOTH from
   `${CLAUDE_PLUGIN_ROOT}/skills/tasks-start/assets/` into `.tasks/`. The `.mjs` is the
   zero-dependency Node server that serves the dashboard on localhost and live-syncs the
-  board (see [`references/board-server.md`](references/board-server.md)).
+  board (see [`references/board-server.md`](references/board-server.md)). **Refresh is
+  upgrade-only:** when the files already exist (a relaunch, or a tracked board someone else
+  scaffolded), overwrite them only if the plugin's version is *newer* than the copy's
+  (compare `.claude-plugin/plugin.json` under `${CLAUDE_PLUGIN_ROOT}` against the
+  `pluginVersion` in `.tasks/.install-manifest.json`, falling back to `config.json`'s
+  `pluginVersion`). Never downgrade — on a shared board, operators on older plugin versions
+  must not flip committed board assets backwards.
+- **`.tasks/.gitignore`** — always scaffold (both git modes), with exactly:
+
+  ```
+  secure/
+  .board-server.json
+  .board-nudge.json
+  .board-server.log
+  vendor/
+  node_modules/
+  package.json
+  package-lock.json
+  .package-lock.json
+  .install-manifest.json
+  *.tmp
+  ```
+
+  Deliberately **not** ignored: `dashboard.html` and `board-server.mjs` — on a tracked
+  board they're committed so collaborators who clone get a working board with zero plugin
+  install (`node .tasks/board-server.mjs ensure`).
+- **`.tasks/secure/`** — create the directory with a short local `secure/README.md`
+  explaining the convention (it's gitignored, so it exists only for someone browsing the
+  folder; the committable pointer lives in `.tasks/CLAUDE.md` — see `tasks-memory`).
+- **`.tasks/config.json`** — write eagerly as part of the persistent skeleton, with a safe
+  floor:
+
+  ```json
+  { "schemaVersion": 1, "git": "ignored", "hooks": "local",
+    "createdAt": "<today>", "pluginVersion": "<from the plugin's plugin.json>" }
+  ```
+
+  `"ignored"` is the conservative floor (nothing gets committed by accident); the ask-once
+  question below corrects it. If the folder isn't inside a git repo at all, write
+  `"git": "none"` and skip that question entirely.
 - **Provision the board's display dependencies (tiered).** Immediately after copying the
   assets — and **before** launching the server in step 3 — run the internal installer once:
 
@@ -102,20 +162,41 @@ Create the `.tasks/` folder and populate it:
   a fresh setup. Create the persistent skeleton **immediately**, before any interactive
   bootstrapping, so a durable memory + config scaffold exists even if the operator stops here:
   - `.tasks/CLAUDE.md` — the working-memory skeleton (the `tasks-memory` shape: `## Me`,
-    `## People`, `## Terms`, `## Projects`, `## Preferences`, with empty tables), and a marker
-    comment as the very first line: `<!-- tasks-bootstrap: pending -->`.
+    `## People`, `## Terms`, `## Projects`, `## Preferences`, with empty tables), a marker
+    comment as the very first line: `<!-- tasks-bootstrap: pending -->`, and the secrets
+    pointer as the second line:
+    `> Secrets: never stored here or in memory/. See .tasks/secure/ (gitignored), or env/keychain.`
   - `.tasks/memory/` — `glossary.md` (with its section headers) plus `people/`, `projects/`,
-    and `context/` directories (drop a `.gitkeep` in each so the empty tree persists if the
-    operator commits `.tasks/`).
+    and `context/` directories (drop a `.gitkeep` in each so the empty tree persists when
+    the operator tracks `.tasks/`).
 
   The actual *enrichment* (decoding the operator's real shorthand) still happens interactively
   in steps 7–9 after the board is up. The install manifest (above) and the board hooks
   (step 4) are the rest of the persistent **configuration** — all created before the Q&A, so
   the task list + memory + config are guaranteed to exist on every init.
 
-Use `.tasks/.gitignore` judgment: by default the system is local scaffolding. If the user
-wants the task list and memory committed, leave it tracked; if they want it ephemeral, add
-a `.tasks/` line to the repo's `.gitignore`. Ask once if it isn't obvious.
+#### Ask once — git tracking (fresh setup only)
+
+This is the one setup question that changes what lands outside `.tasks/`. It is asked
+**only here, on a true initial setup** — the resume path in step 1 reads the recorded
+answer from `config.json` and never asks again (so "open my board" stays question-free).
+Ask it right after the skeleton above exists, record the answer, move on:
+
+> This board can be **git-tracked** — committed with the repo so teammates and other
+> agents share the same tasks, milestones, and memory (a first-class way to run this) —
+> or **kept local**, ignored and just for you on this machine. Which do you want?
+> [tracked / local]
+
+- **tracked** → set `config.json` to `"git": "tracked"`, `"hooks": "shared"`. Do **not**
+  add a `.tasks/` line to the repo-root `.gitignore` — the scoped `.tasks/.gitignore`
+  already keeps `secure/` and runtime files out. This is a natural commit point: offer to
+  commit the new board (defer to the `git-workflow` skill if it's installed; otherwise a
+  normal commit) — never auto-commit.
+- **local** → keep `"git": "ignored"`, `"hooks": "local"`, and add a `.tasks/` line to the
+  repo-root `.gitignore`.
+- **Unattended setup, or no answer** → the `"ignored"` floor stands (also add the root
+  `.gitignore` line so the floor is real); a later resume honors it and does not re-ask.
+- **Not a git repo** → `"git": "none"` was already written above; skip the question.
 
 #### Node dependency (detect → bootstrap → offline fallback)
 
@@ -155,13 +236,20 @@ If `node` is on PATH, start the live server and open it in the browser:
 node .tasks/board-server.mjs ensure --open
 ```
 
-This starts a detached, zero-dependency Node server (default `http://localhost:4317`),
-opens the operator's browser to it, and live-syncs `.tasks/TASKS.md` both ways — the agent
-edits the file, the operator edits the UI, and each sees the other's changes immediately
-(no manual file picking). Always print the URL too, in case auto-open can't reach the
-browser (e.g. a Cowork VM):
+This starts a detached, zero-dependency Node server, opens the operator's browser to it,
+and live-syncs `.tasks/TASKS.md` both ways — the agent edits the file, the operator edits
+the UI, and each sees the other's changes immediately (no manual file picking).
 
-> Your live task board is at **http://localhost:4317** (opening it now). Light (vintage) /
+**The port is per-board, never assumed.** The default is 4317, but if that port is busy —
+including when **another repo's board** is already running on it — this board takes the
+next free port. `ensure` verifies identity, not just liveness: a responding server must
+report *this* repo's `.tasks/` path, or it's treated as a foreign board and a separate
+server is started. After `ensure`, read the actual port from `.tasks/.board-server.json`
+(`{port, pid, ...}`) — or run `node .tasks/board-server.mjs status` — and print **that**
+URL. Multiple boards on one machine at once is a normal, supported setup; see the
+`tasks-boards` skill for the full multi-board rules.
+
+> Your live task board is at **http://localhost:<port>** (opening it now). Light (vintage) /
 > dark (brutalist) theme toggle is in the top-right.
 
 **No Node?** Fall back to the static flow: tell the user to open `.tasks/dashboard.html`
@@ -181,9 +269,11 @@ continuous visibility — offer to install a small set of Claude Code hooks:
 If yes, merge the hook block from
 [`references/board-server.md`](references/board-server.md) into the repo's Claude settings:
 
-- Target `.claude/settings.local.json` by default (personal, gitignored — matches `.tasks/`
-  being local scaffolding). Use `.claude/settings.json` only if `.tasks/` was committed in
-  step 2 and the user wants the reminder shared with collaborators.
+- Target the file that matches the git choice recorded in `.tasks/config.json`:
+  **`.claude/settings.json`** when `"git": "tracked"` (a shared board deserves a shared
+  reminder), **`.claude/settings.local.json`** when `"git"` is `"ignored"` or `"none"`
+  (personal, gitignored). The operator can override; record the actual target in
+  `config.json` as `"hooks": "shared"` or `"local"`.
 - **Merge, don't clobber:** read the file if it exists (else `{}`), preserve every existing
   key and hook, and append only our entries. Each command carries the marker
   `board-server.mjs hook` so `/tasks-remove` can find and remove exactly them.
@@ -201,8 +291,10 @@ top-level description of how this repo uses the task system.
   one; if the operator asked for unattended setup, add it directly. Never clobber existing
   instructions — append or update only the task-system section.
 - The section should explain:
-  - `.tasks/TASKS.md` is the board/list source of truth.
-  - `.tasks/tasks/<id>.md` holds each task's rich handoff, `## Status`, and `## Activity`.
+  - `.tasks/TASKS.md` is the board/list source of truth; `.tasks/MILESTONES.md` holds the
+    milestones (dated epics) that tasks join with an `(ms #id)` tag.
+  - `.tasks/tasks/<id>.md` holds each task's rich handoff, `## Verification` checklist,
+    `## Status`, and `## Activity`.
   - Proper subtasks are the dashboard modal's **Subtasks** items / indented checkbox rows in
     `TASKS.md`, not "sub-items" and not plain checklist text buried in the parent description.
   - Subtasks can have their own indented description lines for agent-facing detail:
@@ -210,11 +302,22 @@ top-level description of how this repo uses the task system.
   - Parent task descriptions are for reasoning, implementation sequence, context, impact,
     acceptance, and resume notes.
   - Large dependent work should be a separate top-level task linked with `(needs #id)`.
+  - Completion gates: a task can't be done over unchecked subtasks, or over `[ ]`
+    verification items (verify or waive-with-reason first); a milestone can't close over
+    open child tasks.
+  - **Secrets never go in `TASKS.md`, detail files, `CLAUDE.md`, or `memory/`** — use env
+    vars / the OS keychain, or `.tasks/secure/` (gitignored) as the fallback.
+  - On a shared (git-tracked) board: attribute `## Activity` lines, respect `(owner name)`,
+    pull before board sessions and commit after meaningful task changes.
   - Keep Active task `## Status` and `## Activity` current as work happens so `/tasks-start`
     can resume from the board.
-  - Reference `tasks-start`, `tasks-management`, `tasks-update`, `tasks-memory`, and
-    `tasks-remove`; mention companion skills such as `ttdr`, `personal-productivity`,
-    `iterative-plan`, or `git-workflow` only as optional if installed.
+  - Multiple boards can run on one machine: resolve this repo's board from
+    `.tasks/.board-server.json` and verify identity before using a board URL/API — never
+    assume a port (see `tasks-boards`).
+  - Reference `tasks-start`, `tasks-create`, `tasks-management`, `tasks-update`,
+    `tasks-memory`, `tasks-boards`, and `tasks-remove`; mention companion skills such as
+    `ttdr`, `personal-productivity`, `iterative-plan`, or `git-workflow` only as optional
+    if installed.
 
 Suggested section:
 
@@ -222,8 +325,10 @@ Suggested section:
 ## Task management system
 
 This repo uses the SHAUGHV `tasks-*` system. The board source of truth is
-`.tasks/TASKS.md`; each task's rich handoff lives at `.tasks/tasks/<id>.md` with `## Status`
-and `## Activity` kept current while work is in flight.
+`.tasks/TASKS.md`; milestones (dated epics) live in `.tasks/MILESTONES.md` and tasks join
+one with an `(ms #id)` tag; each task's rich handoff lives at `.tasks/tasks/<id>.md` with
+its `## Verification` checklist, `## Status`, and `## Activity` kept current while work is
+in flight.
 
 Use proper subtasks for small required steps that should be visible and checkable in the
 dashboard modal: indented checkbox rows under the parent task in `.tasks/TASKS.md`, optionally
@@ -233,9 +338,23 @@ board-trackable steps as plain text in the parent task description, and do not c
 resume notes. If related work is large enough to need its own status, activity log, or owner,
 make it a separate top-level task and link it with `(needs #id)`.
 
-Relevant skills: `tasks-start`, `tasks-management`, `tasks-update`, `tasks-memory`,
-`tasks-remove`. Companion skills such as `ttdr`, `personal-productivity`, `iterative-plan`, or
-`git-workflow` are optional if installed.
+Completion gates (board-enforced): a task can't be marked done while a subtask is unchecked,
+or while a `## Verification` item is still `[ ]` — verify it or waive it with a recorded
+reason (`(waived YYYY-MM-DD — agent: <why>)`); a milestone can't close while a child task is
+open. Use `/tasks-create` for a guided way to add a milestone, task, or subtask with a
+verification checklist.
+
+Never put secrets (API keys, tokens, credentials) in `TASKS.md`, detail files, `CLAUDE.md`,
+or `memory/` — use env vars / the OS keychain, or `.tasks/secure/` (gitignored).
+
+The live board's port is per-repo, never assumed: resolve it from
+`.tasks/.board-server.json` (or `node .tasks/board-server.mjs status`) and verify identity
+before using a board URL or API — multiple boards can run on this machine at once (see
+`tasks-boards`).
+
+Relevant skills: `tasks-start`, `tasks-create`, `tasks-management`, `tasks-update`,
+`tasks-memory`, `tasks-boards`, `tasks-remove`. Companion skills such as `ttdr`,
+`personal-productivity`, `iterative-plan`, or `git-workflow` are optional if installed.
 ```
 
 ### 6. Orient the user
@@ -250,7 +369,7 @@ Here's where we left off:
 - <Active task> — <where it stands; next step>   (from .tasks/tasks/<id>.md)
 - … (overdue / due-today items next)
 
-Task system loaded from .tasks/. Live board: http://localhost:4317
+Task system loaded from .tasks/. Live board: http://localhost:<port from .tasks/.board-server.json>
 - /tasks-update           sync tasks, triage stale items, fill memory gaps
 - /tasks-update --comprehensive   deep scan chat/email/calendar/docs for missed todos
 - /tasks-remove           decommission, remove the board hooks, fold memory into the repo
@@ -320,13 +439,17 @@ naming conventions.
 
 ```
 Task system ready in .tasks/:
-- Tasks:   .tasks/TASKS.md (X items)
-- Memory:  X people, X terms, X projects
-- Board:   live at http://localhost:4317 (node .tasks/board-server.mjs)
-- Assets:  tier=<full|vendor|shipped|offline> (from the install summary)
-- Hooks:   board-maintenance hooks added to .claude/settings.local.json (or skipped)
+- Tasks:      .tasks/TASKS.md (X items)
+- Milestones: .tasks/MILESTONES.md (X)
+- Memory:     X people, X terms, X projects
+- Tracking:   git=tracked (shared) | git=ignored (local) | git=none   (from config.json)
+- Secure:     .tasks/secure/ (gitignored — secrets and private notes go here, never in tasks/memory)
+- Board:      live at http://localhost:<port> (from .tasks/.board-server.json — never assume 4317)
+- Assets:     tier=<full|vendor|shipped|offline> (from the install summary)
+- Hooks:      board-maintenance hooks added to .claude/settings.json|settings.local.json (or skipped)
 
-Use /tasks-update to keep it current (add --comprehensive for a deep scan), or
+Use /tasks-create to add milestones/tasks/subtasks with verification checklists,
+/tasks-update to keep it all current (add --comprehensive for a deep scan), or
 /tasks-remove to remove the hooks and fold memory back into the repo when you're done.
 ```
 
@@ -334,6 +457,9 @@ Use /tasks-update to keep it current (add --comprehensive for a deep scan), or
 
 - If the system is already initialized, this just relaunches the live board (and re-verifies
   the hooks) — it's safe to re-run as your "open my board" command.
+- **Multiple boards can run on one machine at the same time** (one per repo). Always resolve
+  *this* repo's board via `.tasks/.board-server.json` / `board-server.mjs status` in the
+  repo you're working in — never by guessing a port. Full rules: the `tasks-boards` skill.
 - Nicknames are critical — always capture how people are actually referred to.
 - If a connector isn't available, skip it and note the gap; the system works fully manual.
 - Memory grows organically through conversation after bootstrap.

@@ -1,26 +1,37 @@
 # shaughv-tasks
 
 Emmett Shaughnessy's standalone **task + workplace-memory** plugin for Claude Code and Codex.
-It's the five SHAUGHV `tasks-*` skills — extracted from [`shaughv-code`](https://github.com/RealEmmettS/shaughv-code)
-into their own focused bundle so the task system is installable on its own, in any agent.
+It's the seven SHAUGHV `tasks-*` skills — grown from the five originally extracted from
+[`shaughv-code`](https://github.com/RealEmmettS/shaughv-code) — a focused bundle so the task
+system is installable on its own, in any agent.
 
 `/tasks-start` stands up a self-contained `.tasks/` folder in any repo and opens a live,
 SHAUGHV-branded board:
 
 - **A Kanban task list** (`.tasks/TASKS.md`) — Backlog → To-Do → Active → Done, with stable
-  task ids, prerequisites, and UI-backed subtasks with optional per-subtask descriptions.
-- **Per-task handoff files** (`.tasks/tasks/<id>.md`) — a TT;DR-led description, a plan, and a
-  timestamped activity log, so any agent can pick a task up cold.
+  task ids, prerequisites, owners, and UI-backed subtasks with optional per-subtask descriptions.
+- **Milestones** (`.tasks/MILESTONES.md`) — dated, epic-scale groupings tasks roll up into with
+  an `(ms #id)` tag; derived progress bars on the board's milestone rail, and a hard rule that a
+  milestone can't close while a child task is open.
+- **Per-task handoff files** (`.tasks/tasks/<id>.md`) — a TT;DR-led description, a plan, a
+  **verification checklist** (default-on; every check must be passed or waived-with-a-record
+  before the task can complete), and a timestamped activity log, so any agent can pick a task
+  up cold.
 - **Two-tier workplace memory** (`.tasks/CLAUDE.md` hot cache + `.tasks/memory/` deep store) —
-  so the agent decodes your people, projects, acronyms, and shorthand like a colleague.
-- **A live dashboard** — a zero-dependency Node board server with two-way sync, a click-to-open
-  task detail modal, a freshness indicator, and animated cards. It works fully offline.
+  so the agent decodes your people, projects, acronyms, and shorthand like a colleague — plus a
+  gitignored **`.tasks/secure/`** for secrets and private notes that must never be committed.
+- **A live dashboard** — a zero-dependency Node board server with two-way sync, a milestone
+  rail, a click-to-open task detail modal, a freshness indicator, and animated cards. It works
+  fully offline, and multiple boards can run on one machine at once (one per repo, identity-
+  verified ports).
 
 It serves two audiences at once: the **agent**, which tracks what it must do, is doing, and has
 done (plus durable repo learnings) across sessions and months; and the **operator**, who watches
 and reorganizes the same board. Tasks and memory **persist across sessions** — run `/tasks-start`,
 plan a bunch of work, come back days later, run `/tasks-start` again, and resume exactly where you
-left off.
+left off. Choose once whether `.tasks/` is **git-tracked** (shared with your team and other
+agents — board included, so collaborators who clone get a working dashboard with zero installs)
+or **kept local**; the choice is remembered in `.tasks/config.json` and never asked again.
 
 ## Install
 
@@ -84,11 +95,13 @@ claude --plugin-dir C:/Users/hey/git/shaughv-tasks
 
 | Skill | Purpose |
 |---|---|
-| `tasks-start` | Stand up a self-contained `.tasks/` task + workplace-memory system (TASKS.md, working memory, deep memory, and a SHAUGHV-branded board/list/memory `dashboard.html` with a vintage-cream / brutalist-dark theme toggle), launch the live board, teach the target repo's CLAUDE.md/AGENTS.md how to use the task system, and bootstrap memory from your real task list and connected tools. Idempotent — re-run it to relaunch the board and resume where you left off. |
-| `tasks-update` | Sync tasks from a connected tracker (Asana/Linear/Jira/GitHub Issues), triage overdue and stale items, and fill memory gaps; `--comprehensive` deep-scans chat/email/calendar/docs for missed todos and new memories. |
-| `tasks-management` | Reference for the `.tasks/TASKS.md` contract and per-task `.tasks/tasks/<id>.md` detail files — the markdown task format, the read/write/complete verbs, the self-contained-handoff + activity-log discipline, and how to surface overdue / due-today / priority items. |
-| `tasks-memory` | The two-tier workplace-memory model (`.tasks/CLAUDE.md` hot cache + `.tasks/memory/` deep store) that lets the agent decode shorthand, nicknames, acronyms, and project codenames like a colleague. |
-| `tasks-remove` | Decommission the system and flatten it back into the repo — merge working memory into the root `CLAUDE.md`, move deep memory into a repo-level `memory/`, preserve open tasks, then delete `.tasks/`. The inverse of `/tasks-start`. |
+| `tasks-start` | Stand up a self-contained `.tasks/` task + workplace-memory system (TASKS.md, MILESTONES.md, working memory, deep memory, `secure/`, `config.json`, and a SHAUGHV-branded board/list/memory `dashboard.html` with a vintage-cream / brutalist-dark theme toggle), ask once whether the board is git-tracked or local, launch the live board, teach the target repo's CLAUDE.md/AGENTS.md how to use the task system, and bootstrap memory from your real task list and connected tools. Idempotent — re-run it to relaunch the board and resume where you left off; it never re-asks a recorded choice. |
+| `tasks-create` | The guided front door for creating work: decides milestone vs task vs subtask with you, links prerequisites and milestones, sets owners, and authors the default-on verification checklist. |
+| `tasks-update` | Sync tasks from a connected tracker (Asana/Linear/Jira/GitHub Issues), triage overdue and stale items (including at-risk milestones), archive cleared milestone work so progress never regresses, and fill memory gaps; `--comprehensive` deep-scans chat/email/calendar/docs for missed todos and new memories. |
+| `tasks-management` | Reference for the full contract — `.tasks/TASKS.md`, `.tasks/MILESTONES.md`, per-task and per-milestone detail files, the milestone → task → subtask hierarchy, verification checklists with waivers, completion gates, the read/write/complete verbs, multi-operator conventions, and how to surface overdue / due-today / at-risk items. |
+| `tasks-memory` | The two-tier workplace-memory model (`.tasks/CLAUDE.md` hot cache + `.tasks/memory/` deep store) that lets the agent decode shorthand, nicknames, acronyms, and project codenames like a colleague — plus the secrets policy and the `secure/` private tier. |
+| `tasks-boards` | Reference for multi-board machines: how agents find, identity-verify, and talk to the RIGHT board when several repos each run their own (a port is not an identity). |
+| `tasks-remove` | Decommission the system and flatten it back into the repo — merge working memory into the root `CLAUDE.md`, move deep memory into a repo-level `memory/`, preserve open tasks and milestones, handle `secure/` explicitly (never promoted), then delete `.tasks/`. The inverse of `/tasks-start`. |
 
 ## Persistence across sessions
 
@@ -130,9 +143,11 @@ shaughv-tasks/
 │       └── skills/                     # copy of root skills/
 └── skills/
     ├── tasks-start/         # the only skill with assets (board server, dashboard, vendor/)
+    ├── tasks-create/
     ├── tasks-update/
     ├── tasks-management/
     ├── tasks-memory/
+    ├── tasks-boards/
     └── tasks-remove/
 ```
 

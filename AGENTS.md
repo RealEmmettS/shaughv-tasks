@@ -5,10 +5,10 @@ installing it; this file is for you, future Codex, when editing it.
 
 ## What this repo is
 
-A focused, **skills-only** plugin: the five SHAUGHV `tasks-*` skills, extracted from the
-larger `shaughv-code` bundle so the task system can be installed on its own. It is the single
-editable source of truth for the task + workplace-memory system across all of Emmett's
-agents.
+A focused, **skills-only** plugin: the seven SHAUGHV `tasks-*` skills (grown from the five
+extracted from the larger `shaughv-code` bundle) so the task system can be installed on its
+own. It is the single editable source of truth for the task + workplace-memory system across
+all of Emmett's agents.
 
 It ships **no MCP servers and no slash-command files.** The `/tasks-*` entry points are
 user-invocable *skills* (Codex surfaces a user-invocable skill as a slash command
