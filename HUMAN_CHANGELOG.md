@@ -6,6 +6,11 @@ For the technical version with versions, file paths, and links, see CHANGELOG.md
 
 ---
 
+## Roomier task descriptions — early July 2026
+
+**Improved**
+- When you open a task or milestone on the board, its description now behaves itself when it gets long. Instead of stretching the whole popup and pushing everything else down, a long description tucks into a tidy box with a **Show more** / **Show less** button, and you can scroll inside it. Short descriptions look exactly as before — the button only shows up when there's actually more to see, with a soft fade at the bottom hinting there's more. This makes room for the fuller write-ups people have started putting in these boxes, not just the quick summary.
+
 ## Milestones, checklists, and shared boards — early July 2026
 
 **Added**

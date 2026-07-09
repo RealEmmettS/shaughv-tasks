@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 A plain-English companion lives at [HUMAN_CHANGELOG.md](./HUMAN_CHANGELOG.md) and is kept in lockstep with this file — see the changelog rule in [CLAUDE.md](./CLAUDE.md).
 
+## [0.2.1] — 2026-07-09
+
+### Improved
+- `skills/tasks-start/assets/dashboard.html` — the read-only **Description** box in the task and milestone detail modals now collapses when it's tall and reveals a **Show more ▾ / Show less ▴** toggle, and its expanded state is a height-capped (`50vh`), independently **scrollable** region. A long description no longer grows unbounded and shoves Subtasks / Verification / Activity down the modal. The toggle only appears when the content actually overflows the collapsed height, so short (TT;DR-only) descriptions render whole with no control; a soft bottom fade hints there's more when collapsed; the expand/collapse choice persists across in-modal re-renders and resets to collapsed on reopen. One shared `mountCollapsibleDesc()` helper drives both modals (they share `.tm-desc-rendered`). Edit mode (the already-resizable textarea) is unchanged.
+
+### Behind the scenes
+- `plugins/shaughv-tasks/` regenerated via `build-codex-plugin.ps1`; version lockstep across the three manifests + this changelog.
+
 ## [0.2.0] — 2026-07-02
 
 The long-term platform release: milestones, verification checklists, git-tracked shared boards, a secure store, and multi-board safety — the plugin grows from five skills to seven.
