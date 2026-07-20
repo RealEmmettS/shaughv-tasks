@@ -55,6 +55,8 @@ To launch + open the board (what `/tasks-start` does): `node .tasks/board-server
     `^[0-9a-z]{2,8}$` id validation, lazy files, atomic writes, delete-with-the-milestone).
   - `GET /api/config` → raw `.tasks/config.json` bytes (`{}` if missing). **Read-only** —
     the server never parses or writes it; setup (`/tasks-start`) owns it.
+  - `GET /board-config.js` → the generated, no-store project-title companion used by the
+    dashboard in both localhost and `file://` modes. Missing files return an empty identity.
   - `GET /api/events` → **SSE**; a `change` event fires when board state changes on disk,
     with a `kind` of `tasks`, `milestones`, `config`, or `memory` so the browser reloads
     the right surface. Implemented with `fs.watchFile` on `TASKS.md` and `MILESTONES.md`
@@ -273,8 +275,13 @@ Full plan — markdown is rendered (headings, lists, code, **bold**, _italic_, `
 
 - **`.tasks/config.json`** — durable setup choices written by `/tasks-start`:
   `{ "schemaVersion": 1, "git": "tracked"|"ignored"|"none", "hooks": "shared"|"local",
-  "createdAt": "...", "pluginVersion": "..." }`. The board **may read** it (via
+  "boardTitle": "Magic Pantry", "createdAt": "...", "pluginVersion": "..." }`. The board
+  **may read** it (via
   `GET /api/config`) for cosmetic affordances; it must **never write or act on** it.
+- **`.tasks/board-config.js`** — generated from `config.json.boardTitle` by `/tasks-start`
+  and `/tasks-update` as `window.SHAUGHV_TASKS_BOARD = {"boardTitle":"..."};`. It is outside
+  the versioned app bundle, not gitignored, and reconciled on every start/update so custom
+  project identity survives upgrades and direct `file://` opens.
 - **`.tasks/.board-version.json`** — tracked source-of-truth marker for the copied board
   application bundle (`dashboard.html` + `board-server.mjs`). `/tasks-start` compares it on
   every relaunch and moves the whole bundle forward only when the loaded skill is newer;
@@ -373,7 +380,7 @@ Written **eagerly** (`status:"in-progress"`) and updated after each asset, then 
 ```jsonc
 {
   "schemaVersion": 1,
-  "pluginVersion": "0.2.2",         // read from .tasks/.board-version.json; explicit assets/host envs are fallbacks
+  "pluginVersion": "1.0.0",         // read from .tasks/.board-version.json; explicit assets/host envs are fallbacks
   "status": "complete",             // "in-progress" while running; a partial crash leaves this
   "requestedTier": "full",
   "tier": "vendor",                 // achieved (tracks anime.min.js)

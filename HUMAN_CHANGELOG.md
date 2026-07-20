@@ -6,6 +6,18 @@ For the technical version with versions, file paths, and links, see CHANGELOG.md
 
 ---
 
+## Boards named for their projects — late July 2026
+
+**Added**
+- Every board now remembers the real project it belongs to and shows that name prominently in both the board heading and browser tab. Reopening or updating a board keeps a good title exactly as it was; older boards labeled only “Tasks” get named once and stay named.
+
+**Improved**
+- Future assistants get a clearer map of how to start, create, break down, update, resume, share, and eventually remove a board. Creating proper tasks and subtasks points to the guided helper by default, while the deeper rulebook remains easy to find.
+- If an assistant's installed task helper is old or cannot be updated, it now knows how to fall back to the current GitHub guidance instead of guessing from stale instructions.
+
+**Behind the scenes**
+- The project identity lives separately from the replaceable dashboard app, so upgrades cannot accidentally wipe a carefully chosen name and direct offline opens show the same title as the live board.
+
 ## Boards that stay current — mid-July 2026
 
 **Fixed**

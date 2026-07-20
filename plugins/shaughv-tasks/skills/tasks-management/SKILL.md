@@ -28,6 +28,21 @@ once (one per repo), so resolve this repo's server from `.tasks/.board-server.js
 verify its identity before using any board URL or API — **a port is not an identity**. See
 the `tasks-boards` skill for the multi-board rules.
 
+## Skill routing and freshness
+
+- `/tasks-start` initializes, repairs, upgrades, relaunches, and resumes a board.
+- `/tasks-create` is the preferred front door for a well-formed milestone, task, or proper
+  dashboard-visible subtask; this skill defines the formats it writes.
+- `/tasks-update` upgrades the existing board when needed, syncs/triages task state, and
+  refreshes memory. `tasks-memory` governs that memory; `tasks-boards` governs live-server
+  identity; `/tasks-remove` decommissions the system.
+
+When the installed tasks plugin is missing or may be outdated, first try the harness-native
+plugin update. If that is unavailable, fails, or still leaves freshness uncertain, use the
+GitHub skill/connector to read the relevant current `main` file under
+`RealEmmettS/shaughv-tasks/skills/<skill-name>/SKILL.md` and treat it as the latest task-system
+contract: https://github.com/RealEmmettS/shaughv-tasks/tree/main/skills
+
 ## The three levels: milestone → task → subtask
 
 Work is tracked at three levels — use the smallest one that fits:

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 A plain-English companion lives at [HUMAN_CHANGELOG.md](./HUMAN_CHANGELOG.md) and is kept in lockstep with this file — see the changelog rule in [CLAUDE.md](./CLAUDE.md).
 
+## [1.0.0] — 2026-07-20
+
+The stable 1.0 task-system contract: every board carries the identity of the project it
+actually tracks, and every future agent gets a clear, current map of how to operate it.
+
+### Added
+- Durable project-facing board identity through `config.json.boardTitle` plus a generated `board-config.js` companion. `/tasks-start` and `/tasks-update` preserve meaningful titles, backfill only missing/generic legacy values, and reconcile the companion on every run so the same heading and `PROJECT / TASKS / SHAUGHV` tab title work over localhost and `file://`.
+
+### Improved
+- The target-repo task-system guidance and `tasks-management` reference now route agents across all seven skills, make `/tasks-create` the preferred path for well-formed milestones/tasks/subtasks, reinforce update and completion discipline, and provide a GitHub `main` fallback when a harness cannot update or may have stale plugin guidance.
+- The live dashboard reads the durable title while retaining repo-path identity for multi-board safety; config/identity changes refresh without conflating the display name with the server's absolute-root identity.
+
+### Behind the scenes
+- Extended the board-server/reference/removal contracts for the generated identity companion, bumped all manifests and the portable board marker to 1.0.0, and regenerated the tracked Codex package.
+
 ## [0.2.2] — 2026-07-17
 
 ### Fixed

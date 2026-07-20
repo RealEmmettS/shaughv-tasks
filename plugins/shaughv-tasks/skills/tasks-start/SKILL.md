@@ -40,7 +40,8 @@ into the repo's own `CLAUDE.md` and `memory/` and deletes `.tasks/`.
     projects/
     context/
   secure/           ← gitignored private store: secrets + notes that must never be committed
-  config.json       ← persisted setup choices (git tracking, hooks target) — ask once, remember forever
+  config.json       ← persisted setup choices + durable project-facing board title
+  board-config.js   ← generated title companion for localhost and file:// dashboard modes
   .board-version.json ← tracked version marker for the copied dashboard + server bundle
   .gitignore        ← scoped ignore: secure/ + runtime files (always scaffolded)
   dashboard.html    ← the SHAUGHV-branded UI (served on localhost; file:// fallback)
@@ -114,13 +115,38 @@ Create the `.tasks/` folder if needed, then populate or repair it:
 
   ```json
   { "schemaVersion": 1, "git": "ignored", "hooks": "local",
-    "createdAt": "<today>", "pluginVersion": "<from assets/board-version.json>" }
+    "boardTitle": "<project name>", "createdAt": "<today>",
+    "pluginVersion": "<from assets/board-version.json>" }
   ```
 
   `"ignored"` is the conservative floor (nothing gets committed by accident); the ask-once
   question below corrects it. If the folder isn't inside a git repo at all, write
   `"git": "none"` and skip that question entirely. If the file already exists, preserve
-  every recorded choice; the bundle logic below may reconcile only `pluginVersion`.
+  every recorded choice; the title invariant below owns `boardTitle`, and the bundle logic
+  may reconcile only `pluginVersion`.
+- **Durable project-facing board title (fresh setup + every update/relaunch).** The visible
+  heading and browser tab must name the project being built or tracked — never remain only
+  `Tasks`. `config.json.boardTitle` is the source of truth:
+  - Preserve any existing non-generic value exactly. Once meaningful, it changes only when
+    the operator explicitly asks to rename the board.
+  - Missing/blank values and generic placeholders such as `Tasks`, `Task Board`, or
+    `SHAUGHV Tasks` (case-insensitive) require a one-time backfill. Infer the real name from,
+    in order: an explicit project/product name in the request or established repo guidance;
+    the README heading or primary package manifest; the Git remote repository name; then a
+    prettified project-folder name. If credible high-priority signals conflict, ask once. In
+    unattended work, use the best non-generic repo/folder name so the board never stays
+    `Tasks`.
+  - After choosing the title, persist it in `config.json` while preserving every other key,
+    then generate `.tasks/board-config.js` from the same value using a real JSON serializer:
+
+    ```js
+    window.SHAUGHV_TASKS_BOARD = {"boardTitle":"Magic Pantry"};
+    ```
+
+    `config.json` remains authoritative; reconcile this derived one-line companion on every
+    `/tasks-start` and `/tasks-update`. It is deliberately outside the versioned app bundle,
+    is not gitignored, and therefore survives dashboard upgrades and works when
+    `dashboard.html` is opened directly with `file://`.
 - **Board application bundle (upgrade-only)** — the bundle is
   `<assets-dir>/dashboard.html`, `<assets-dir>/board-server.mjs`, and
   `<assets-dir>/board-version.json`; the target paths are `.tasks/dashboard.html`,
@@ -157,9 +183,9 @@ Create the `.tasks/` folder if needed, then populate or repair it:
   *.tmp
   ```
 
-  Deliberately **not** ignored: `dashboard.html`, `board-server.mjs`, and
+  Deliberately **not** ignored: `dashboard.html`, `board-server.mjs`, `board-config.js`, and
   `.board-version.json` — on a tracked board they're committed so collaborators who clone get
-  a working, version-identifiable board with zero plugin install
+  a working, project-named, version-identifiable board with zero plugin install
   (`node .tasks/board-server.mjs ensure`).
 - **`.tasks/secure/`** — create the directory with a short local `secure/README.md`
   explaining the convention (it's gitignored, so it exists only for someone browsing the
@@ -343,6 +369,8 @@ top-level description of how this repo uses the task system.
     `tasks-memory`, `tasks-boards`, and `tasks-remove`; mention companion skills such as
     `ttdr`, `personal-productivity`, `iterative-plan`, or `git-workflow` only as optional
     if installed.
+  - Include the skill-routing and freshness fallback from the suggested section below so an
+    agent in a stale harness can still find the current contract.
 
 Suggested section:
 
@@ -380,6 +408,18 @@ before using a board URL or API — multiple boards can run on this machine at o
 Relevant skills: `tasks-start`, `tasks-create`, `tasks-management`, `tasks-update`,
 `tasks-memory`, `tasks-boards`, `tasks-remove`. Companion skills such as `ttdr`,
 `personal-productivity`, `iterative-plan`, or `git-workflow` are optional if installed.
+
+Skill routing: use `/tasks-start` to initialize, repair, upgrade, or resume the board;
+`/tasks-create` is the preferred way to add a well-formed milestone, task, or subtask;
+`tasks-management` is the format and completion contract; `/tasks-update` syncs and triages
+current work; `tasks-memory` governs workplace memory; `tasks-boards` governs live-server
+identity; and `/tasks-remove` decommissions the system.
+
+If the installed tasks plugin is missing or may be older than the board, first try the
+harness's native plugin update. If that is unavailable, fails, or still leaves version
+freshness uncertain, use the GitHub skill/connector to read the relevant current file from
+`RealEmmettS/shaughv-tasks` on `main` (`skills/<skill-name>/SKILL.md`) and use that as the
+latest operating guidance: https://github.com/RealEmmettS/shaughv-tasks/tree/main/skills
 ```
 
 ### 6. Orient the user
@@ -464,6 +504,7 @@ naming conventions.
 
 ```
 Task system ready in .tasks/:
+- Title:      <config.json boardTitle>
 - Tasks:      .tasks/TASKS.md (X items)
 - Milestones: .tasks/MILESTONES.md (X)
 - Memory:     X people, X terms, X projects

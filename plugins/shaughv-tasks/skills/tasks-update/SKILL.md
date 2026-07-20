@@ -4,7 +4,8 @@ description: >
   Sync the task list and refresh workplace memory from current activity, for repos using the
   tasks-* system. Use whenever the user says /tasks-update, "sync my tasks", "catch me up",
   "triage my tasks", "what changed", "pull in my new assignments", "what am I missing", or
-  wants stale items triaged and memory gaps filled. Default mode syncs from a connected
+  wants stale items triaged and memory gaps filled. Repairs/upgrades the existing dashboard
+  bundle and its durable project title before syncing. Default mode syncs from a connected
   project tracker (Asana/Linear/Jira/GitHub Issues), triages overdue/stale items, and decodes
   tasks for memory gaps. `--comprehensive` additionally deep-scans chat, email, calendar, and
   docs to surface missed todos and suggest new memories. Operates on `.tasks/`. Reads
@@ -28,6 +29,24 @@ If `.tasks/` doesn't exist, suggest `/tasks-start` first.
 
 Read `.tasks/TASKS.md`, `.tasks/MILESTONES.md`, `.tasks/config.json`, and
 `.tasks/CLAUDE.md` + `.tasks/memory/`.
+
+Before syncing task content, run the **existing-board** portion of `/tasks-start`'s
+create/repair/upgrade gate (step 2) without launching the browser or repeating fresh-setup
+questions. In particular:
+
+- Compare the loaded skill's versioned three-file dashboard bundle with the target marker;
+  upgrade the whole bundle only when the source is newer, repair missing equal-version
+  members, and never downgrade a newer target.
+- Enforce the durable title invariant. Preserve a meaningful `config.json.boardTitle`; if it
+  is missing, blank, or generic (`Tasks`, `Task Board`, `SHAUGHV Tasks`), infer the actual
+  project name using `/tasks-start`'s precedence and ask only when credible signals conflict.
+- Reconcile `.tasks/board-config.js` from the persisted title using a real JSON serializer so
+  both localhost and `file://` dashboards show the same project identity.
+
+If the installed plugin appears stale, first try the harness-native plugin update. If it is
+unavailable, fails, or freshness is still uncertain, use the GitHub skill/connector to read
+the current `main` guidance from `RealEmmettS/shaughv-tasks`, beginning with
+`skills/tasks-update/SKILL.md` and `skills/tasks-start/SKILL.md`.
 
 ### 2. Sync tasks from external sources
 

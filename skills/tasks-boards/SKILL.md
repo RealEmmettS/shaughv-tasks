@@ -77,7 +77,10 @@ never as "running."
   another agent's live board.
 - **Telling the operator where their board is** — always the URL from the current repo's
   state file, ideally with the repo name attached. The dashboard shows the board's folder
-  name in its header/tab title, so mixed-up browser tabs are visible at a glance.
+  path under the durable project-facing `config.json.boardTitle`; that title appears in the
+  header and browser tab, so mixed-up boards are visible at a glance. Preserve a meaningful
+  title across relaunches and updates; `/tasks-start` and `/tasks-update` only backfill it
+  when missing or generic.
 
 ## Why this exists
 
