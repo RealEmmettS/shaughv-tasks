@@ -8,7 +8,7 @@ system is installable on its own, in any agent.
 `/tasks-start` stands up a self-contained `.tasks/` folder in any repo and opens a live,
 SHAUGHV-branded board:
 
-- **A Kanban task list** (`.tasks/TASKS.md`) — Backlog → To-Do → Active → Done, with stable
+- **A Kanban task list** (`.tasks/TASKS.md`) — Backlog → To-Do → Active → Completed, with stable
   task ids, prerequisites, owners, and UI-backed subtasks with optional per-subtask descriptions.
 - **Milestones** (`.tasks/MILESTONES.md`) — dated, epic-scale groupings tasks roll up into with
   an `(ms #id)` tag; derived progress bars on the board's milestone rail, and a hard rule that a
@@ -24,7 +24,8 @@ SHAUGHV-branded board:
   rail, a click-to-open task detail modal, a freshness indicator, and animated cards. It works
   fully offline, and multiple boards can run on one machine at once (one per repo, identity-
   verified ports). Each board persists its actual project name once and shows it in the
-  visible heading and browser tab instead of leaving every project labeled only “Tasks.”
+  visible heading and browser tab instead of leaving every project labeled only “Tasks.” A
+  compact source line identifies the canonical live `TASKS.md`, and duplicate tabs stay synced.
 
 It serves two audiences at once: the **agent**, which tracks what it must do, is doing, and has
 done (plus durable repo learnings) across sessions and months; and the **operator**, who watches

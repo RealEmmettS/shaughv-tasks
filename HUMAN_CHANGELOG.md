@@ -6,6 +6,21 @@ For the technical version with versions, file paths, and links, see CHANGELOG.md
 
 ---
 
+## Drag-and-drop that lands where you point — late July 2026
+
+**Improved**
+- A brand-new board now always opens with four useful categories: **Backlog**, **To-Do**, **Active**, and **Completed**. Existing boards keep the names and arrangement people already chose, including older boards that call the last category **Done**.
+- Dragging near the edge of a wide board or a long category now scrolls it for you, and categories can be dropped cleanly at the very end before the add-category button.
+- Under the project name, the board now shows a compact **Live** source path; hover it when you need the full file path and local server address. A directly opened offline board says **Selected file** so it does not imply the browser revealed a path it actually hides.
+
+**Fixed**
+- Dragging a category no longer also lights up a task drop target. The board now knows which kind of thing is moving and shows only the relevant guide.
+- Drop guides no longer push cards or categories around while you are aiming. The bright guide is pinned to the closest real gap, spans the category height or card width, and produces the same saved order you saw on screen—even with uneven cards, scrolling, empty categories, or a category you just created.
+- Two tabs open on the same board now stay together when either tab edits it. Each tab also checks the board behind its local address before reading or writing, so an old tab cannot quietly switch to another project's tasks if that address gets reused.
+
+**Behind the scenes**
+- The portable board bundle and every supported plugin install now identify this refinement as the same patch release.
+
 ## Boards named for their projects — late July 2026
 
 **Added**

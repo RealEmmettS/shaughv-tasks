@@ -106,8 +106,9 @@ repair/upgrade gate; never jump from resume directly to step 3.
   `<assets-dir>/board-version.json`; its semantic `pluginVersion` is the source bundle version.
 Create the `.tasks/` folder if needed, then populate or repair it:
 
-- **`.tasks/TASKS.md`** — if absent, create with the standard template (see the
-  `tasks-management` skill).
+- **`.tasks/TASKS.md`** — if absent, create with exactly these four empty categories in this
+  order: **Backlog → To-Do → Active → Completed** (use the standard template in the
+  `tasks-management` skill). Never rewrite an existing board's custom categories or order.
 - **`.tasks/MILESTONES.md`** — if absent, create with the `# Milestones` skeleton (see
   `tasks-management`).
 - **`.tasks/config.json`** — if absent, write it eagerly as part of the persistent skeleton,
@@ -162,6 +163,10 @@ Create the `.tasks/` folder if needed, then populate or repair it:
     source bundle, ensure `.board-version.json` exists, and reconcile only the config version.
   - Target version **newer** → do not copy or restamp anything. Report the newer board and
     continue without downgrading it.
+  - Before changing or repairing the bundle, record whether this board's server is running
+    (`node .tasks/board-server.mjs status`). If a running board's `board-server.mjs` changes,
+    restart it with the newly copied script (`stop`, then `ensure`) so open tabs cannot remain
+    attached to old in-memory server behavior. Preserve stopped boards as stopped.
 
   This comparison and copy decision happens on **every** `/tasks-start`, including relaunches
   and ancestor-board resumes. On a shared board, an older operator therefore cannot flip
@@ -289,7 +294,11 @@ node .tasks/board-server.mjs ensure --open
 
 This starts a detached, zero-dependency Node server, opens the operator's browser to it,
 and live-syncs `.tasks/TASKS.md` both ways — the agent edits the file, the operator edits
-the UI, and each sees the other's changes immediately (no manual file picking).
+the UI, and every open tab sees the same changes immediately (no manual file picking). The
+source line under the project title shows a compact canonical path; hovering it shows the full
+task-file path and localhost origin. The dashboard verifies that every task response and write
+still belongs to that board, and refuses a write if a stale tab's port now belongs to another
+project.
 
 **The port is per-board, never assumed.** The default is 4317, but if that port is busy —
 including when **another repo's board** is already running on it — this board takes the

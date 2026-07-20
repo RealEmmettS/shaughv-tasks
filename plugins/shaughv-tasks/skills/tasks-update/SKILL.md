@@ -85,7 +85,7 @@ Review Active tasks and milestones and flag, leading with the most urgent:
 For each: mark done? reschedule? move to Backlog? break down (hand to the `iterative-plan`
 skill if installed, otherwise split it into a small, concretely demoable next action)?
 
-**Clearing old Done items archives milestone work first.** When tidying the Done column
+**Clearing old Completed items archives milestone work first.** When tidying the Completed category
 (items older than ~a week), append each milestone-tagged task's line to its milestone's
 `## Completed` section in `.tasks/milestones/<id>.md` *before* removing it from
 `TASKS.md` — that's what keeps milestone progress from moving backward (see

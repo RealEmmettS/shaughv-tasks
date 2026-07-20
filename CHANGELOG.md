@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 A plain-English companion lives at [HUMAN_CHANGELOG.md](./HUMAN_CHANGELOG.md) and is kept in lockstep with this file — see the changelog rule in [CLAUDE.md](./CLAUDE.md).
 
+## [1.0.1] — 2026-07-20
+
+### Improved
+- Fresh boards now start with exactly **Backlog → To-Do → Active → Completed**. Existing custom category names and order remain untouched, and legacy **Done** categories retain the same completion gates.
+- Category and card drags auto-scroll near overflowing board/card edges, and category reordering now has an explicit final slot before **+ Add Section**.
+- The project header now shows a concise live-source path derived from the server's canonical `TASKS.md` location, with the full path and localhost origin available on hover; static mode clearly labels a browser-selected file without pretending the browser exposes its absolute path.
+
+### Fixed
+- Category drags and task drags now use distinct typed payloads, preventing one gesture from activating both drop systems and drawing a misleading task insertion line.
+- Drop markers are non-layout-shifting overlays positioned at the nearest measured boundary. Full-height category markers and card-edge markers now stay aligned across uneven card heights, scrolling, same-category reorders, cross-category moves, newly created categories, and empty categories.
+- Card moves persist relative to a stable neighboring task id instead of a transient numeric index, so the rendered target and the saved order agree.
+- Browser-originated writes now broadcast immediately to every other open tab instead of suppressing the only update those sibling tabs needed. Task reads and writes carry a stable board identity, so a long-lived tab refuses to display or mutate another project if its localhost port is ever reused.
+
+### Behind the scenes
+- Bumped the manifests and portable board marker to 1.0.1 and regenerated the tracked Codex package.
+
 ## [1.0.0] — 2026-07-20
 
 The stable 1.0 task-system contract: every board carries the identity of the project it

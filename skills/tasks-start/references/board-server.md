@@ -32,8 +32,8 @@ To launch + open the board (what `/tasks-start` does): `node .tasks/board-server
   `.tasks/.board-server.json` (`{port, pid, startedAt}`). "Is it running?" is verified by
   hitting the `/api/ping` health endpoint, not just a PID-alive check — so a dead/reused
   PID never fools it.
-- **Ping is an identity check, not just a liveness check.** `/api/ping` reports the
-  absolute path of the `.tasks/` folder the server serves (its **root**) alongside the
+- **Ping is an identity check, not just a liveness check.** `/api/ping` reports a stable
+  `boardId`, the absolute `.tasks/` **root**, and the canonical `tasksPath` alongside the
   `shaughv-task-board` token. `ensure` only treats a responder as "already running" when
   the root matches *this* board's `.tasks/` — a different root means **another repo's
   board holds the port**, which is handled as a busy port: this board starts on the next
@@ -42,10 +42,11 @@ To launch + open the board (what `/tasks-start` does): `node .tasks/board-server
   root before writing through any API (full rules: the `tasks-boards` skill).
 - HTTP API (the server stays **dumb** about markdown — the browser keeps all parse/serialize):
   - `GET /` → serves `dashboard.html`.
-  - `GET /api/tasks` → raw `TASKS.md`; response carries `X-Board-Mtime`.
+  - `GET /api/tasks` → raw `TASKS.md`; response carries `X-Board-Mtime` and `X-Board-Id`.
   - `POST /api/tasks` → atomic write. Send `X-Base-Mtime` (the mtime you loaded); if the
     file changed underneath you the server returns **409** with the latest content, so an
-    agent's write is never silently stomped.
+    agent's write is never silently stomped. Current dashboards also send
+    `X-Expected-Board-Id`; a stale tab pointed at a different board is rejected before write.
   - `GET|POST /api/milestones` → raw `MILESTONES.md`, exactly the same semantics as
     `/api/tasks` (mtime header, 409-with-latest, atomic write). GET returns the
     `# Milestones` skeleton when the file doesn't exist yet; the file is only created on
@@ -57,7 +58,8 @@ To launch + open the board (what `/tasks-start` does): `node .tasks/board-server
     the server never parses or writes it; setup (`/tasks-start`) owns it.
   - `GET /board-config.js` → the generated, no-store project-title companion used by the
     dashboard in both localhost and `file://` modes. Missing files return an empty identity.
-  - `GET /api/events` → **SSE**; a `change` event fires when board state changes on disk,
+  - `GET /api/events` → **SSE**; a `change` event fires when board state changes on disk or
+    through any browser tab,
     with a `kind` of `tasks`, `milestones`, `config`, or `memory` so the browser reloads
     the right surface. Implemented with `fs.watchFile` on `TASKS.md` and `MILESTONES.md`
     (reliable cross-platform) plus a best-effort recursive `fs.watch`. **`secure/` is
@@ -70,8 +72,8 @@ To launch + open the board (what `/tasks-start` does): `node .tasks/board-server
     `^[0-9a-z]{2,8}$` (the task's trailing `#id`). GET returns the raw markdown (empty string
     if the file doesn't exist yet — detail files are lazy/optional); POST atomically writes it;
     **DELETE removes it** (the dashboard calls DELETE when a task is deleted, so a reused id
-    can't inherit stale detail). All three set `lastSelfWrite` so the write doesn't echo back
-    over SSE.
+    can't inherit stale detail). Browser writes broadcast to sibling tabs immediately while
+    their matching filesystem-watch echo is de-duplicated.
   - `GET /vendor/*` → static read of a provisioned display asset from `.tasks/vendor/`
     (anime.js, the brand woff2s, the brand mark, `fonts.css`). Same path confinement as the
     memory API (`path.resolve` under `vendor/`, traversal / NUL / drive-escape → 403; encoded
@@ -81,6 +83,9 @@ To launch + open the board (what `/tasks-start` does): `node .tasks/board-server
     [Tiered dependencies](#tiered-dependencies).
 - `dashboard.html` auto-detects: over `http(s)` it uses this API + SSE; over `file://` it
   uses the legacy File System Access API. One file, both modes.
+- In live mode, the source line is derived from `/api/ping.tasksPath` and carries the full
+  canonical path + localhost origin in its tooltip. In `file://` mode the browser exposes only
+  the selected handle's name, so the UI says **Selected file** instead of implying a full path.
 - Auto-open is **only** on the explicit `/tasks-start` launch (`ensure --open`). Hooks call
   `ensure` **without** `--open`, so they revive the server silently and never pop a browser
   tab every session.
@@ -166,12 +171,13 @@ The dashboard parses/serializes this exact shape; the server only moves the byte
 ## Active
 - [ ] **Other task** #b2c
 
-## Done
-- [x] **Done task** #x9z
+## Completed
+- [x] **Completed task** #x9z
 ```
 
 - `## Section` headers (optional `**bold**`); section id = lowercased, non-alnum → `-`.
-  Default columns are **Backlog → To-Do → Active → Done** (file order = column order).
+  Fresh-board categories are **Backlog → To-Do → Active → Completed** (file order = category
+  order). Existing custom categories are preserved; legacy **Done** categories still work.
 - Task lines: `- [ ]` / `- [x]`, a **bold** title, optional ` - note`, optional
   ` (needs #id, #id)` prerequisites, optional ` (ms #id)` milestone tag, optional
   ` (owner name)`, then the task's own short base-36 ` #id` LAST.
@@ -209,7 +215,7 @@ Same byte-pipe rules: the server only moves the file; the dashboard parses/seria
   a colliding id.
 - **Progress is derived**: done children ÷ all children, where children = tasks carrying
   `(ms #id)` **plus** archived lines under `## Completed` in the milestone's detail file
-  (clearing old Done tasks archives them there so progress never regresses).
+  (clearing old Completed tasks archives them there so progress never regresses).
 - The board watches `MILESTONES.md` and `milestones/` for SSE exactly like `TASKS.md`.
 
 ## Completion gates (dashboard-enforced; render violations honestly)

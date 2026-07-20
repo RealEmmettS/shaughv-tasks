@@ -46,7 +46,7 @@ Show the user exactly what will happen before touching anything:
   .claude/settings*.json →  board-maintenance hooks removed (other hooks/keys kept)
   .tasks/CLAUDE.md      →  merge into ./CLAUDE.md  (## Memory section)
   .tasks/memory/        →  merge into ./memory/    (glossary.md, people/, projects/, context/)
-  .tasks/TASKS.md       →  3 open items → ## Open threads in ./CLAUDE.md; Done items archived
+  .tasks/TASKS.md       →  3 open items → ## Open threads in ./CLAUDE.md; Completed items archived
   .tasks/MILESTONES.md  →  1 open milestone → ## Open threads (grouped with its open tasks)
   .tasks/secure/        →  NOT promoted — you'll choose: delete or relocate (never folded into CLAUDE.md)
   .tasks/vendor/, config.json, board-config.js, .board-version.json, .install-manifest.json, milestones/, board-server.mjs, dashboard.html → deleted with .tasks/
@@ -102,7 +102,7 @@ open work:
 
 - **Default:** summarize remaining **Active** and **To-Do** items into an `## Open
   threads` list at the bottom of the repo's `CLAUDE.md` (or a short `TODO` note), so nothing
-  in flight is lost. Drop the `Done`/`Backlog` archive unless asked to keep it.
+  in flight is lost. Drop the `Completed`/`Backlog` archive unless asked to keep it.
 - **Open milestones get the same treatment**, grouped: an `## Open threads` entry per
   still-open milestone — `Milestone: Phoenix GA (3/7 tasks done, target 2026-08-01)` — with
   its still-open child tasks nested beneath it, so the grouping survives as prose.

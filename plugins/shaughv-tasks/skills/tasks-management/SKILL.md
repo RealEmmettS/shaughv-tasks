@@ -74,7 +74,7 @@ A fresh `TASKS.md` (no example tasks):
 
 ## Active
 
-## Done
+## Completed
 ```
 
 ### Columns (the Kanban flow)
@@ -84,7 +84,10 @@ The four sections are a left-to-right flow — read them to know the state of th
 - **Backlog** — captured but not committed yet (someday / maybe / not now).
 - **To-Do** — queued and ready; *what to pick up next*.
 - **Active** — being worked on *right now* (keep this short).
-- **Done** — completed; recent history, cleared after a while.
+- **Completed** — finished work and recent history, cleared after a while.
+
+These exact four categories are the fresh-board default. Preserve an existing board's custom
+categories and order; legacy boards whose completion category is named **Done** remain valid.
 
 Move a task rightward as it progresses. A task can't enter **Active** while it still has an
 unfinished prerequisite (see IDs & prerequisites below).
@@ -137,7 +140,7 @@ live in their own file, one line each:
   `(done YYYY-MM-DD)`.
 - Tasks join a milestone by carrying `(ms #id)` — one milestone per task, at most.
   **Progress is derived, never stored**: a milestone's progress is its done children
-  (live Done tasks plus archived ones — see below) over all its children.
+  (live Completed tasks plus archived ones — see below) over all its children.
 - **A milestone can't be completed while any of its tasks is still open** — hard rule; the
   board enforces it too. Never flip a milestone `[x]` over open children.
 - Each milestone's rich detail lives at **`.tasks/milestones/<id>.md`** — lazy/optional,
@@ -164,8 +167,8 @@ Archive of child tasks cleared from the board (see below):
 - 2026-07-02 10:05 — tagged #a3f, #b2c under this milestone
 ```
 
-- **Clearing Done tasks must not erase milestone progress.** Before removing a
-  milestone-tagged task from **Done** (the "keep Done ~1 week, then clear" routine),
+- **Clearing Completed tasks must not erase milestone progress.** Before removing a
+  milestone-tagged task from **Completed** (the "keep Completed ~1 week, then clear" routine),
   append its line to the milestone's `## Completed` section first. Archived children keep
   counting toward progress — that's why tidying the board never moves a milestone
   backward.
@@ -330,11 +333,11 @@ add an `## Activity` line when you do. For a guided, interactive creation flow, 
    plus an `## Activity` line — or hand it to the operator (operators may waive without a
    reason). Never flip a task done with `[ ]` verification items remaining.
 
-Only then flip `[ ]`→`[x]`, append `(done YYYY-MM-DD)`, move to Done, and append a closing
+Only then flip `[ ]`→`[x]`, append `(done YYYY-MM-DD)`, move to Completed, and append a closing
 `## Activity` line to its detail file noting what landed.
 
 **"Done with a milestone":** a milestone can't close while any task tagged with its
-`(ms #id)` is still open — hard rule, board-enforced. Ensure every child is in Done (or
+`(ms #id)` is still open — hard rule, board-enforced. Ensure every child is in Completed (or
 archived in the milestone's `## Completed`), then flip its line in `MILESTONES.md` to `[x]`,
 append `(done YYYY-MM-DD)`, and add a closing `## Activity` line to
 `.tasks/milestones/<id>.md`.
@@ -352,7 +355,7 @@ pull into Active. Park not-now ideas in Backlog.
 - Proper subtasks are for small required steps the operator should see and check off in the
   board UI; use each subtask's own description for subtask-specific detail, and the parent
   task description for context and reasoning.
-- Keep Done for ~1 week, then clear old items (or let `/tasks-update` triage them).
+- Keep Completed for ~1 week, then clear old items (or let `/tasks-update` triage them).
 
 ## Surfacing what matters (light prioritization)
 
