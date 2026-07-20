@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 A plain-English companion lives at [HUMAN_CHANGELOG.md](./HUMAN_CHANGELOG.md) and is kept in lockstep with this file — see the changelog rule in [CLAUDE.md](./CLAUDE.md).
 
+## [0.2.2] — 2026-07-17
+
+### Fixed
+- `skills/tasks-start/SKILL.md` — existing-board and ancestor-board resumes now pass through the create/repair/upgrade gate before launch instead of skipping directly to the server. The copied board application is a versioned three-file bundle (`dashboard.html`, `board-server.mjs`, `.board-version.json`): every `/tasks-start` compares semantic versions, rolls all members forward together only when the loaded bundle is newer, repairs missing same-version members, reconciles `config.json.pluginVersion` only after a successful copy, and refuses to downgrade a newer shared board. This closes the path that left pre-0.2.1 dashboards without the long-description **Show more / Show less** UI even though the plugin itself was current.
+- `skills/tasks-start/assets/board-server.mjs` — installer manifests now read the copied board marker first instead of recording `pluginVersion: "unknown"` outside Claude Code. The shipped offline-asset tier accepts the explicit `SHAUGHV_TASKS_ASSETS_DIR` supplied by `tasks-start`, with Claude/Codex plugin-root variables as compatibility fallbacks, so Claude Code, Codex, and standalone skills.sh installs resolve the same bundle reliably.
+
+### Behind the scenes
+- Added `skills/tasks-start/assets/board-version.json` as the portable source bundle marker and extended local/CI version-lockstep validation to cover it; updated the server reference, removal contract, README, and maintainer guidance; regenerated `plugins/shaughv-tasks/`.
+
 ## [0.2.1] — 2026-07-09
 
 ### Improved

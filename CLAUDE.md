@@ -88,14 +88,16 @@ Claude Code). So the Codex surface is a tracked, generated package:
 
 ## Bumping the version
 
-Bump the same version in all three manifests + add a CHANGELOG entry, in one commit:
+Bump the same version in all three manifests, the board bundle marker, and the changelogs,
+in one commit:
 1. `.claude-plugin/plugin.json`
 2. `.claude-plugin/marketplace.json`
 3. `.codex-plugin/plugin.json`
-4. `CHANGELOG.md` (new `## [x.y.z]` heading) + `HUMAN_CHANGELOG.md` (lockstep — see below)
-5. Regenerate the Codex package: `pwsh ./build-codex-plugin.ps1`.
+4. `skills/tasks-start/assets/board-version.json` (the portable copied-board bundle marker)
+5. `CHANGELOG.md` (new `## [x.y.z]` heading) + `HUMAN_CHANGELOG.md` (lockstep — see below)
+6. Regenerate the Codex package: `pwsh ./build-codex-plugin.ps1`.
 
-CI fails the push if these four versions disagree.
+CI fails the push if any of these version sources disagree.
 
 ## Changelog rule
 
@@ -116,9 +118,10 @@ rules if you need a refresher.)
   byte-compared by `build-codex-plugin.ps1 -Check`; never let an editor or EOL normalization
   touch them.
 - `board-server.mjs` and `dashboard.html` resolve their own paths at runtime from the
-  `.tasks/` folder; the only plugin-root coupling is `CLAUDE_PLUGIN_ROOT` (used for the
-  offline bundled-font tier). It keeps the skill name `tasks-start`, so
-  `<root>/skills/tasks-start/assets/...` stays valid.
+  `.tasks/` folder. `/tasks-start` resolves its loaded skill directory and passes the absolute
+  assets path as `SHAUGHV_TASKS_ASSETS_DIR` for the offline bundled-font tier; host-specific
+  plugin-root variables are fallbacks only. `assets/board-version.json` must match the plugin
+  manifests so Claude Code, Codex, and standalone skills.sh installs compare upgrades alike.
 
 ## What not to do
 

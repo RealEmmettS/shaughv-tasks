@@ -6,6 +6,15 @@ For the technical version with versions, file paths, and links, see CHANGELOG.md
 
 ---
 
+## Boards that stay current — mid-July 2026
+
+**Fixed**
+- Reopening an existing board now always checks whether its built-in dashboard is behind and upgrades the whole board app together when needed. Previously, reopening could skip that check entirely, leaving some projects on an older screen without newer touches such as **Show more / Show less** for long descriptions. A newer board is still protected from being replaced by an older copy.
+- Every supported assistant and installation route now has the same reliable way to identify the board version and find its fully offline visual assets, instead of sometimes recording the version as unknown.
+
+**Behind the scenes**
+- The board app now carries a tiny version marker, and the release checks make sure it can never drift away from the task-system release.
+
 ## Roomier task descriptions — early July 2026
 
 **Improved**

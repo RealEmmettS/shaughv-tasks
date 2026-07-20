@@ -1,7 +1,8 @@
 # board-server.mjs — the live localhost board + maintenance hooks
 
 `board-server.mjs` ships in `skills/tasks-start/assets/` and is copied into `.tasks/`
-by `/tasks-start`. It is the single source of truth for how the live board runs and how
+by `/tasks-start` alongside `dashboard.html` and the tracked `.board-version.json` bundle
+marker. It is the single source of truth for how the live board runs and how
 the board-maintenance hooks are wired into a target repo. **`/tasks-start` and
 `/tasks-remove` must follow this file verbatim** so the install string and the teardown
 match string never drift apart.
@@ -274,6 +275,11 @@ Full plan — markdown is rendered (headings, lists, code, **bold**, _italic_, `
   `{ "schemaVersion": 1, "git": "tracked"|"ignored"|"none", "hooks": "shared"|"local",
   "createdAt": "...", "pluginVersion": "..." }`. The board **may read** it (via
   `GET /api/config`) for cosmetic affordances; it must **never write or act on** it.
+- **`.tasks/.board-version.json`** — tracked source-of-truth marker for the copied board
+  application bundle (`dashboard.html` + `board-server.mjs`). `/tasks-start` compares it on
+  every relaunch and moves the whole bundle forward only when the loaded skill is newer;
+  `config.json.pluginVersion` is reconciled after a successful copy. A newer target is never
+  downgraded by an older plugin install.
 - **`.tasks/secure/`** — the gitignored private store (secrets + personal notes). The server
   must keep it **unreachable**: no API route can read or write into it (the memory API is
   path-guarded to `CLAUDE.md`/`memory/`, detail APIs are id-regex + fixed-dir, the vendor
@@ -293,7 +299,9 @@ otherwise falls back to the system font stack (the motion is glyph-agnostic, so 
 
 ### The `install` chain (server side)
 
-`board-server.mjs install` provisions those assets into `.tasks/vendor/` with a
+`/tasks-start` resolves the loaded skill's `assets/` directory and supplies it to the install
+subprocess as `SHAUGHV_TASKS_ASSETS_DIR`; the copied `.board-version.json` supplies the exact
+plugin version. `board-server.mjs install` then provisions those assets into `.tasks/vendor/` with a
 **try-everything chain, first success wins**, and each candidate is verified against a pinned
 **sha256** (so version drift, corruption, or a tampered CDN response is rejected and falls
 through):
@@ -302,7 +310,7 @@ through):
 |---|---|---|
 | **full** | npm | `npm install` the pinned `animejs` into a **transient** `.tasks/node_modules`, verify, copy the artefact into `vendor/`, then **prune `node_modules`** (nothing npm-related persists). |
 | **vendor** | pinned CDN fetch | `https` GET each asset (anime.js, woff2s, brand mark) straight into `vendor/`. |
-| **shipped** | the plugin bundle | copy from `${CLAUDE_PLUGIN_ROOT}/skills/tasks-start/assets/vendor/` — the offline-capable floor-with-assets. |
+| **shipped** | the plugin bundle | copy from the absolute assets directory supplied by `/tasks-start` in `SHAUGHV_TASKS_ASSETS_DIR`; host plugin-root variables are compatibility fallbacks. This is the offline-capable floor-with-assets in Claude Code, Codex, and standalone skills.sh installs. |
 | **offline** | nothing | provision nothing; the dashboard inlines its built-in engine + system fonts. Cannot fail. |
 
 Per-asset, the chain walks the allowed tiers high→low; the first sha-valid source wins. `--tier`
@@ -365,7 +373,7 @@ Written **eagerly** (`status:"in-progress"`) and updated after each asset, then 
 ```jsonc
 {
   "schemaVersion": 1,
-  "pluginVersion": "0.23.0",        // read from CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json, else "unknown"
+  "pluginVersion": "0.2.2",         // read from .tasks/.board-version.json; explicit assets/host envs are fallbacks
   "status": "complete",             // "in-progress" while running; a partial crash leaves this
   "requestedTier": "full",
   "tier": "vendor",                 // achieved (tracks anime.min.js)

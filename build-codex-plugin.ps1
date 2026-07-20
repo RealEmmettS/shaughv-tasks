@@ -47,6 +47,7 @@ $repoRoot  = $PSScriptRoot
 $mirror    = Join-Path $repoRoot 'plugins\shaughv-tasks'
 $srcSkills = Join-Path $repoRoot 'skills'
 $srcManif  = Join-Path $repoRoot '.codex-plugin\plugin.json'
+$boardVer  = Join-Path $repoRoot 'skills\tasks-start\assets\board-version.json'
 
 # --- Windows MAX_PATH safety ---------------------------------------------------
 # On install, Codex clones the whole marketplace repo; on Windows git's working-
@@ -59,9 +60,20 @@ $srcManif  = Join-Path $repoRoot '.codex-plugin\plugin.json'
 $MaxPathWarn = 170
 $MaxPathFail = 200
 
-foreach ($required in @($srcSkills, $srcManif)) {
+foreach ($required in @($srcSkills, $srcManif, $boardVer)) {
     if (-not (Test-Path -LiteralPath $required)) {
         throw "Missing required source: $required"
+    }
+}
+
+function Assert-BoardVersionLockstep {
+    $pluginVersion = (Get-Content -LiteralPath $srcManif -Raw | ConvertFrom-Json).version
+    $bundleVersion = (Get-Content -LiteralPath $boardVer -Raw | ConvertFrom-Json).pluginVersion
+    if (-not $bundleVersion) {
+        throw "Missing pluginVersion in board bundle marker: $boardVer"
+    }
+    if ($pluginVersion -ne $bundleVersion) {
+        throw "Board bundle version drift: plugin=$pluginVersion board=$bundleVersion ($boardVer)"
     }
 }
 
@@ -177,6 +189,7 @@ function Compare-Trees {
     return $issues
 }
 
+Assert-BoardVersionLockstep
 Assert-MirrorPath
 
 if ($Check) {

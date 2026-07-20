@@ -49,7 +49,7 @@ Show the user exactly what will happen before touching anything:
   .tasks/TASKS.md       →  3 open items → ## Open threads in ./CLAUDE.md; Done items archived
   .tasks/MILESTONES.md  →  1 open milestone → ## Open threads (grouped with its open tasks)
   .tasks/secure/        →  NOT promoted — you'll choose: delete or relocate (never folded into CLAUDE.md)
-  .tasks/vendor/, config.json, .install-manifest.json, milestones/, board-server.mjs, dashboard.html → deleted with .tasks/
+  .tasks/vendor/, config.json, .board-version.json, .install-manifest.json, milestones/, board-server.mjs, dashboard.html → deleted with .tasks/
   .tasks/               →  deleted after migration
   global Node install   →  OFFERED for reversal (default: KEEP) — only if the installer added one
 ```
@@ -129,7 +129,7 @@ Before deleting, tear down what `/tasks-start` set up **outside** `.tasks/`:
   silently promote credentials.
 
 Then delete the `.tasks/` folder, including `dashboard.html`, `board-server.mjs`,
-`config.json`, `MILESTONES.md` + `milestones/`, and everything the installer provisioned
+`.board-version.json`, `config.json`, `MILESTONES.md` + `milestones/`, and everything the installer provisioned
 **inside** it — `vendor/`, any `node_modules/` / `package.json`, and
 `.install-manifest.json`. Because all of that lives under `.tasks/`,
 deleting the folder removes it wholesale; the manifest's `created.files`/`created.dirs` lists

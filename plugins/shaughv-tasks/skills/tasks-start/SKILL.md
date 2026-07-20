@@ -41,6 +41,7 @@ into the repo's own `CLAUDE.md` and `memory/` and deletes `.tasks/`.
     context/
   secure/           ← gitignored private store: secrets + notes that must never be committed
   config.json       ← persisted setup choices (git tracking, hooks target) — ask once, remember forever
+  .board-version.json ← tracked version marker for the copied dashboard + server bundle
   .gitignore        ← scoped ignore: secure/ + runtime files (always scaffolded)
   dashboard.html    ← the SHAUGHV-branded UI (served on localhost; file:// fallback)
   board-server.mjs  ← zero-dep Node server: serves the dashboard + live-syncs TASKS.md
@@ -62,10 +63,11 @@ First look in the **current working directory** for a `.tasks/` folder:
   re-asks anything recorded there**; and for **every task in the Active column** read its
   `.tasks/tasks/<id>.md` (`## Status` + the most-recent `## Activity` line) so you can resume
   mid-task. For any milestone past its `(target …)` date with open children, read its
-  `.tasks/milestones/<id>.md` `## Status` too. Then skip straight to **step 3 (Launch the
-  live board)** — `/tasks-start` is idempotent and doubles as "relaunch / repair my board."
-  Re-verify the hook in step 4 too (safe to re-run), ensure repo instructions in step 5, and
-  lead your orientation in step 6 with "here's where we left off."
+  `.tasks/milestones/<id>.md` `## Status` too. Then continue through **step 2 (repair /
+  upgrade) before step 3** — step 2 is mandatory on every run, including resumes.
+  `/tasks-start` is idempotent and doubles as "relaunch / repair my board." Re-verify the
+  hook in step 4 too (safe to re-run), ensure repo instructions in step 5, and lead your
+  orientation in step 6 with "here's where we left off."
 
   **Migration for boards that predate `config.json`:** if it's missing, do **not** ask —
   infer and backfill silently, the way the board backfills missing ids. Infer `git`: not a
@@ -86,29 +88,59 @@ filesystem boundary) and look for an ancestor `.tasks/`:
   >  (a) use / update that parent board, or
   >  (b) create a new, separate board here in `<cwd>`?
 
-  - (a) → operate on the ancestor `.tasks/` (load it, then go to step 3 against it).
+  - (a) → operate on the ancestor `.tasks/` (load it, then run step 2 against it before step 3).
   - (b) → fresh setup here (a nested `.tasks/`); note the parent exists so it's intentional.
 
 - **No `.tasks/` anywhere up the tree** → fresh first-run setup; continue to step 2.
 
-### 2. Create what's missing
+### 2. Create, repair, and upgrade (every run)
 
-Create the `.tasks/` folder and populate it:
+Run this entire step for a fresh setup **and** every existing board before launch. This is the
+repair/upgrade gate; never jump from resume directly to step 3.
+
+- **Resolve the active skill bundle first.** Let `<skill-dir>` be the directory containing the
+  `tasks-start/SKILL.md` that is executing now, and `<assets-dir>` be `<skill-dir>/assets`.
+  Resolve it from the skill's loaded filesystem path; `${CLAUDE_PLUGIN_ROOT}/skills/tasks-start`
+  is only a Claude Code fallback, not a portable assumption. Read and validate
+  `<assets-dir>/board-version.json`; its semantic `pluginVersion` is the source bundle version.
+Create the `.tasks/` folder if needed, then populate or repair it:
 
 - **`.tasks/TASKS.md`** — if absent, create with the standard template (see the
   `tasks-management` skill).
 - **`.tasks/MILESTONES.md`** — if absent, create with the `# Milestones` skeleton (see
   `tasks-management`).
-- **`.tasks/dashboard.html`** and **`.tasks/board-server.mjs`** — copy BOTH from
-  `${CLAUDE_PLUGIN_ROOT}/skills/tasks-start/assets/` into `.tasks/`. The `.mjs` is the
+- **`.tasks/config.json`** — if absent, write it eagerly as part of the persistent skeleton,
+  with a safe floor:
+
+  ```json
+  { "schemaVersion": 1, "git": "ignored", "hooks": "local",
+    "createdAt": "<today>", "pluginVersion": "<from assets/board-version.json>" }
+  ```
+
+  `"ignored"` is the conservative floor (nothing gets committed by accident); the ask-once
+  question below corrects it. If the folder isn't inside a git repo at all, write
+  `"git": "none"` and skip that question entirely. If the file already exists, preserve
+  every recorded choice; the bundle logic below may reconcile only `pluginVersion`.
+- **Board application bundle (upgrade-only)** — the bundle is
+  `<assets-dir>/dashboard.html`, `<assets-dir>/board-server.mjs`, and
+  `<assets-dir>/board-version.json`; the target paths are `.tasks/dashboard.html`,
+  `.tasks/board-server.mjs`, and `.tasks/.board-version.json`. The `.mjs` is the
   zero-dependency Node server that serves the dashboard on localhost and live-syncs the
-  board (see [`references/board-server.md`](references/board-server.md)). **Refresh is
-  upgrade-only:** when the files already exist (a relaunch, or a tracked board someone else
-  scaffolded), overwrite them only if the plugin's version is *newer* than the copy's
-  (compare `.claude-plugin/plugin.json` under `${CLAUDE_PLUGIN_ROOT}` against the
-  `pluginVersion` in `.tasks/.install-manifest.json`, falling back to `config.json`'s
-  `pluginVersion`). Never downgrade — on a shared board, operators on older plugin versions
-  must not flip committed board assets backwards.
+  board (see [`references/board-server.md`](references/board-server.md)). Determine the
+  target version from `.tasks/.board-version.json`, falling back to the first valid semantic
+  `pluginVersion` in `.tasks/config.json` and `.tasks/.install-manifest.json`.
+  - Fresh/missing/invalid target version, or source version **newer** → copy all three files
+    as one bundle. Only after every copy succeeds, set `config.json.pluginVersion` to the
+    source version while preserving every other config key.
+  - Equal versions → preserve existing app files; repair any missing member from the same
+    source bundle, ensure `.board-version.json` exists, and reconcile only the config version.
+  - Target version **newer** → do not copy or restamp anything. Report the newer board and
+    continue without downgrading it.
+
+  This comparison and copy decision happens on **every** `/tasks-start`, including relaunches
+  and ancestor-board resumes. On a shared board, an older operator therefore cannot flip
+  committed app files backwards, while every newer install deterministically rolls the whole
+  bundle forward instead of leaving a stale dashboard behind.
 - **`.tasks/.gitignore`** — always scaffold (both git modes), with exactly:
 
   ```
@@ -125,25 +157,18 @@ Create the `.tasks/` folder and populate it:
   *.tmp
   ```
 
-  Deliberately **not** ignored: `dashboard.html` and `board-server.mjs` — on a tracked
-  board they're committed so collaborators who clone get a working board with zero plugin
-  install (`node .tasks/board-server.mjs ensure`).
+  Deliberately **not** ignored: `dashboard.html`, `board-server.mjs`, and
+  `.board-version.json` — on a tracked board they're committed so collaborators who clone get
+  a working, version-identifiable board with zero plugin install
+  (`node .tasks/board-server.mjs ensure`).
 - **`.tasks/secure/`** — create the directory with a short local `secure/README.md`
   explaining the convention (it's gitignored, so it exists only for someone browsing the
   folder; the committable pointer lives in `.tasks/CLAUDE.md` — see `tasks-memory`).
-- **`.tasks/config.json`** — write eagerly as part of the persistent skeleton, with a safe
-  floor:
-
-  ```json
-  { "schemaVersion": 1, "git": "ignored", "hooks": "local",
-    "createdAt": "<today>", "pluginVersion": "<from the plugin's plugin.json>" }
-  ```
-
-  `"ignored"` is the conservative floor (nothing gets committed by accident); the ask-once
-  question below corrects it. If the folder isn't inside a git repo at all, write
-  `"git": "none"` and skip that question entirely.
-- **Provision the board's display dependencies (tiered).** Immediately after copying the
-  assets — and **before** launching the server in step 3 — run the internal installer once:
+- **Provision/repair the board's display dependencies (tiered).** On every setup or relaunch,
+  after the bundle decision and **before** launching the server in step 3, run the internal
+  installer. For that subprocess, set `SHAUGHV_TASKS_ASSETS_DIR` to the absolute
+  `<assets-dir>` resolved above so the shipped offline tier works in Claude Code, Codex, and
+  standalone skills.sh installs alike:
 
   ```
   node .tasks/board-server.mjs install

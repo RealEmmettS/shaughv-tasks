@@ -1,6 +1,6 @@
 {
   "name": "shaughv-tasks",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Emmett Shaughnessy's standalone task + workplace-memory plugin — the seven SHAUGHV tasks-* skills (/tasks-start, /tasks-create, /tasks-update, /tasks-remove, plus the tasks-management, tasks-memory, and tasks-boards reference skills). /tasks-start stands up a self-contained `.tasks/` folder in any repo — a TASKS.md Kanban list, MILESTONES.md dated milestones with derived progress that tasks join via (ms #id), per-task handoff files with default-on verification checklists (hard, waivable completion gates with recorded waivers), owners and prerequisites, CLAUDE.md working memory + a memory/ deep store, a gitignored secure/ private tier for secrets, and a SHAUGHV-branded live dashboard with a milestone rail — backed by a zero-dependency Node board server with two-way sync, identity-verified ports (multiple boards per machine, one per repo), optimistic-concurrency writes, a tiered offline-capable asset loader, and opt-in board-maintenance hooks. Ask-once git tracking persisted to config.json: share the board (and the dashboard itself) with your team through git, or keep it local. Built for operator + agent collaboration: tasks, milestones, and memory persist across sessions, operators, and agents — resume exactly where anyone left off.",
   "author": {
     "name": "Emmett Shaughnessy",

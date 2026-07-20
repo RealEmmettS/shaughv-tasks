@@ -71,7 +71,8 @@ for Claude Code). So the Codex surface is a tracked, generated package:
    name; keep `description` under 1024 chars). Supporting docs in `references/`, code in
    `examples/`, assets in `assets/`.
 2. Bump `version` in all three manifests (`.codex-plugin/plugin.json`,
-   `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`).
+   `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`) and keep
+   `skills/tasks-start/assets/board-version.json` in lockstep.
 3. Regenerate the Codex package: `pwsh ./build-codex-plugin.ps1`.
 4. Add a release entry to both changelogs (see the Changelog rule below).
 
