@@ -3,11 +3,13 @@ name: tasks-create
 description: >
   Interactively create well-formed work in the tasks-* system — a milestone, a task, or a
   subtask — with the right level chosen, the right links (milestone, prerequisites, owner),
-  and a verification checklist authored by default. Use whenever the user says /tasks-create,
-  "add a task", "create a task", "new task", "start a milestone", "add a milestone", "break
-  this down into tasks", "add a subtask", "capture this as a task", or otherwise wants new
-  work put on the board correctly rather than dropped in as a bare line. Decides milestone
-  vs task vs subtask, seeds the per-task handoff file and its verification checklist, and
+  an explicit scope/finish line, and a verification checklist authored by default. Use
+  whenever the user says /tasks-create, "add a task", "create a task", "new task", "scope a
+  task", "define done", "set acceptance criteria", "plan a task", "start a milestone", "add a
+  milestone", "break this down into tasks", "add a subtask", "capture this as a task", or
+  otherwise wants new work put on the board correctly rather than dropped in as a bare line.
+  Decides milestone vs task vs subtask; separates the functional bar from the evidence bar;
+  records gate ownership; seeds the per-task handoff file and verification checklist; and
   links work with (ms #id) / (needs #id). Writes the formats defined by tasks-management;
   pairs with tasks-start, tasks-update, tasks-management, tasks-memory, and tasks-remove.
 argument-hint: "[milestone|task|subtask] [title]"
@@ -49,7 +51,8 @@ Tie-breakers:
   consider a milestone.
 - Never create a milestone for a single task — just make the task.
 - When the operator hands you a fuzzy blob of work ("we need to overhaul auth"), don't ask
-  them to categorize it — propose the decomposition yourself (milestone + first tasks) and
+  them to categorize it — preserve the end goal, then propose a progressive decomposition
+  yourself (milestone + smallest working task + later hardening/qualification tasks) and
   confirm.
 
 ## Creating a milestone
@@ -70,19 +73,83 @@ Tie-breakers:
 
 1. Gather: title; context (what/for whom/due); which column (default **To-Do** — Active
    only if work starts right now).
-2. Milestone: does it belong to one? Offer the existing milestones by name, or spin one up
+2. Scope and finish line: for anything non-trivial, propose the in-scope outcome,
+   explicitly deferred/out-of-scope work, functional bar, evidence bar, and gate owner
+   using the contract below. If the task is ambitious or uncertainty is high, propose a
+   progressive delivery ladder with the smallest working version first. Confirm only the
+   choices that materially change the task.
+3. Milestone: does it belong to one? Offer the existing milestones by name, or spin one up
    first. Tag `(ms #id)`.
-3. Prerequisites: if it depends on other work, get those tasks' ids — **creating any
+4. Prerequisites: if it depends on other work, get those tasks' ids — **creating any
    missing prerequisite tasks first** — then `(needs #a1, #b2)`.
-4. Owner (shared boards): if someone is actively driving it, `(owner name)`.
-5. Subtasks: small board-visible steps as indented checkbox rows, each with an optional
+5. Owner (shared boards): if someone is actively driving it, `(owner name)`.
+6. Subtasks: small board-visible steps as indented checkbox rows, each with an optional
    `    > detail` line when the next agent needs more than the title.
-6. Mint the id (unique across both files) and write the line in canonical token order:
+7. Mint the id (unique across both files) and write the line in canonical token order:
    `- [ ] **Title** - note (needs …) (ms …) (owner …) #id`.
-7. Seed `.tasks/tasks/<id>.md` for anything non-trivial: `TT;DR:` line, then Why / Plan /
-   Impact / Acceptance / **Verification** / Status / Activity per `tasks-management` —
-   **Verification is default-on** (see below).
-8. If it went straight to Active, add the `## Activity` line saying so.
+8. Seed `.tasks/tasks/<id>.md` for anything non-trivial: `TT;DR:` line, then Why / Scope /
+   Plan / Impact / Acceptance / **Verification** / Status / Activity per
+   `tasks-management` — **Verification is default-on** (see below).
+9. If it went straight to Active, add the `## Activity` line saying so.
+
+## Scoping the finish line
+
+Do not turn a fuzzy request into an unbounded task. For every non-trivial task, infer and
+propose one compact scope contract:
+
+- **In scope** — the result this task is responsible for.
+- **Deferred / out of scope** — adjacent work this task is not responsible for.
+- **Functional bar** — the smallest truthful outcome that must actually work for the task
+  to be complete. This is never satisfied by a build, draft, or claim when the requested
+  behavior itself has not been exercised.
+- **Evidence bar** — the checks required for the appropriate confidence level (for example,
+  local correctness, CI, release qualification, physical-device acceptance, or an external
+  approval). Verification items implement this bar.
+- **Gate owner** — who or what requires each costly gate: the operator, written project or
+  release policy, an external approver, or the agent's own recommendation.
+
+Infer sensible defaults and present them as a proposal; do not interview the operator one
+field at a time. Ask one combined question only when a choice materially changes cost,
+duration, risk, or what "done" means.
+
+Routine, bounded checks belong on the current task. A long soak, exhaustive platform
+matrix, physical-hardware run, external approval, or other costly gate becomes a hard
+completion gate only when it is essential to the functional bar or required by an owner.
+Never silently omit required evidence, but do not silently promote optional evidence into
+an ownerless hard gate either. State the expected cost and the risk of deferral, then honor
+the owner's decision.
+
+When the operator defers a non-essential evidence gate:
+
+1. Record the dated decision under `## Scope`, `## Acceptance`, and `## Activity`.
+2. Create a separately owned **Backlog** task for the evidence debt, linked with `(needs
+   #id)` when it can only happen after this task.
+3. Do not leave the deferred work as an open `[ ]` verification item on the current task.
+   If it was already added, mark it `[~]` with the required waiver reason and link the new
+   task.
+
+This separation is a scheduling and ownership decision, not permission to claim untested
+behavior as proven.
+
+## Progressive delivery for ambitious work
+
+When the requested task spans several systems, has multiple unknowns, needs many distinct
+proof environments, or cannot be explained as one independently testable outcome, do not
+create one giant task and hope it converges. Preserve the operator's actual end goal, then
+propose a ladder:
+
+1. **Basic working version** — the smallest end-to-end slice that exercises the core
+   behavior and can fail informatively. Prefer a thin vertical path through the real system
+   over a pile of disconnected scaffolding.
+2. **Hardening steps** — separately observable tasks for edge cases, integrations,
+   performance, portability, migration, polish, or recovery behavior.
+3. **End-goal qualification** — the remaining evidence and release/acceptance work required
+   to make the full claim.
+
+Use proper subtasks only for small steps that remain part of one task's next work session.
+Use separate linked tasks when a rung needs its own owner, status, verification, or handoff;
+use a milestone when several such tasks serve the same end goal. Give the first working rung
+priority and keep later rungs visible rather than silently shrinking the end goal.
 
 ## Creating a subtask
 
@@ -106,9 +173,10 @@ Write **concrete, observable, independently checkable** pass/fail lines:
 
 Not vague goals ("works well", "is fast"), not restatements of the title. One check per
 line; aim for 1–4. Derive the first items from `## Acceptance`, then make each one
-tickable. A pure note-task with genuinely nothing to verify may leave the section empty —
-but the template still includes the section, so verification is the default rather than an
-afterthought.
+tickable. Each item must support the recorded functional or evidence bar and have a known
+owner when it is costly. A pure note-task with genuinely nothing to verify may leave the
+section empty — but the template still includes the section, so verification is the default
+rather than an afterthought.
 
 ## What this skill does not do
 

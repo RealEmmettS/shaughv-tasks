@@ -1,5 +1,6 @@
 {
   "name": "shaughv-tasks",
+  "description": "Emmett Shaughnessy's task-board and workplace-memory skills for agent/operator collaboration.",
   "owner": {
     "name": "Emmett Shaughnessy",
     "email": "hey@emmetts.dev",
@@ -9,8 +10,8 @@
     {
       "name": "shaughv-tasks",
       "source": "./",
-      "description": "Emmett Shaughnessy's standalone task + workplace-memory plugin — the SHAUGHV tasks-* skills with a live localhost board, milestones with derived progress, default-on verification checklists with recorded waivers, git-shareable boards, a gitignored secure store, persistent cross-session memory, and resume-where-you-left-off.",
-      "version": "1.0.1",
+      "description": "Emmett Shaughnessy's standalone task + workplace-memory plugin — the SHAUGHV tasks-* skills with a live localhost board, milestones with derived progress, scoped functional/evidence finish lines, progressive working slices, named gate ownership, bounded convergence, default-on verification checklists with recorded waivers, git-shareable boards, a gitignored secure store, persistent cross-session memory, and resume-where-you-left-off.",
+      "version": "1.0.2",
       "homepage": "https://github.com/RealEmmettS/shaughv-tasks",
       "keywords": [
         "shaughv",
@@ -27,6 +28,7 @@
         "board",
         "dashboard",
         "planning",
+        "scoping",
         "handoff",
         "resume",
         "persistence"

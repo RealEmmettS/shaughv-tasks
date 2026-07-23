@@ -14,9 +14,11 @@ SHAUGHV-branded board:
   an `(ms #id)` tag; derived progress bars on the board's milestone rail, and a hard rule that a
   milestone can't close while a child task is open.
 - **Per-task handoff files** (`.tasks/tasks/<id>.md`) — a TT;DR-led description, a plan, a
+  scoped functional finish line, a separate evidence bar with named gate ownership, a
   **verification checklist** (default-on; every check must be passed or waived-with-a-record
   before the task can complete), and a timestamped activity log, so any agent can pick a task
-  up cold.
+  up cold without inheriting an unbounded proof loop. Ambitious or stuck work is reshaped
+  into a basic working version first, then observable steps toward the full goal.
 - **Two-tier workplace memory** (`.tasks/CLAUDE.md` hot cache + `.tasks/memory/` deep store) —
   so the agent decodes your people, projects, acronyms, and shorthand like a colleague — plus a
   gitignored **`.tasks/secure/`** for secrets and private notes that must never be committed.
@@ -104,9 +106,9 @@ claude --plugin-dir C:/Users/hey/git/shaughv-tasks
 | Skill | Purpose |
 |---|---|
 | `tasks-start` | Stand up a self-contained `.tasks/` task + workplace-memory system (TASKS.md, MILESTONES.md, working memory, deep memory, `secure/`, `config.json`, and a SHAUGHV-branded board/list/memory `dashboard.html` with a vintage-cream / brutalist-dark theme toggle), persist the real project-facing board title, ask once whether the board is git-tracked or local, launch the live board, teach the target repo's CLAUDE.md/AGENTS.md how to use the task system, and bootstrap memory from your real task list and connected tools. Idempotent — re-run it to repair or upgrade the copied board bundle, relaunch, and resume where you left off; it never re-asks a recorded choice, replaces a meaningful title, or downgrades a newer board. |
-| `tasks-create` | The guided front door for creating work: decides milestone vs task vs subtask with you, links prerequisites and milestones, sets owners, and authors the default-on verification checklist. |
+| `tasks-create` | The guided front door for creating work: decides milestone vs task vs subtask with you, defines in/out scope, separates the functional and evidence bars, turns ambitious work into a basic working version plus progressive steps, assigns costly gates, links prerequisites and milestones, and authors the default-on verification checklist. |
 | `tasks-update` | Repair/upgrade an existing board and its durable project title, sync tasks from a connected tracker (Asana/Linear/Jira/GitHub Issues), triage overdue and stale items (including at-risk milestones), archive cleared milestone work so progress never regresses, and fill memory gaps; `--comprehensive` deep-scans chat/email/calendar/docs for missed todos and new memories. |
-| `tasks-management` | Reference for the full contract — `.tasks/TASKS.md`, `.tasks/MILESTONES.md`, per-task and per-milestone detail files, the milestone → task → subtask hierarchy, verification checklists with waivers, completion gates, the read/write/complete verbs, multi-operator conventions, and how to surface overdue / due-today / at-risk items. |
+| `tasks-management` | Reference for the full contract — `.tasks/TASKS.md`, `.tasks/MILESTONES.md`, per-task and per-milestone detail files, the milestone → task → subtask hierarchy, scoped finish lines, progressive working slices, verification checklists with waivers, gate ownership, bounded convergence, completion gates, the read/write/complete verbs, multi-operator conventions, and how to surface overdue / due-today / at-risk items. |
 | `tasks-memory` | The two-tier workplace-memory model (`.tasks/CLAUDE.md` hot cache + `.tasks/memory/` deep store) that lets the agent decode shorthand, nicknames, acronyms, and project codenames like a colleague — plus the secrets policy and the `secure/` private tier. |
 | `tasks-boards` | Reference for multi-board machines: how agents find, identity-verify, and talk to the RIGHT board when several repos each run their own (a port is not an identity). |
 | `tasks-remove` | Decommission the system and flatten it back into the repo — merge working memory into the root `CLAUDE.md`, move deep memory into a repo-level `memory/`, preserve open tasks and milestones, handle `secure/` explicitly (never promoted), then delete `.tasks/`. The inverse of `/tasks-start`. |

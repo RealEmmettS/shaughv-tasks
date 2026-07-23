@@ -5,9 +5,10 @@ description: >
   this whenever the user asks about their tasks, wants to add or complete tasks, asks
   "what's on my plate", "what am I waiting on", "what's due", or wants commitments tracked —
   inside a repo that uses the tasks-* system. Defines the TASKS.md and MILESTONES.md formats,
-  the milestone → task → subtask hierarchy, verification checklists, the interaction verbs,
-  the breakdown rules, and how to surface overdue / due-today / at-risk items. Set up by
-  /tasks-start and kept current by /tasks-update.
+  the milestone → task → subtask hierarchy, scope and finish-line contracts, verification
+  checklists, bounded convergence rules, the interaction verbs, the breakdown rules, and how
+  to surface overdue / due-today / at-risk items. Set up by /tasks-start and kept current by
+  /tasks-update.
 user-invocable: false
 ---
 
@@ -226,6 +227,11 @@ What this task is for; the problem/goal it serves. Whether it came from a **dire
 order** ("operator asked for X") or was **derived** — and if derived, the reasoning/decisions
 that led here (options considered, what was chosen and rejected, and why).
 
+## Scope
+What is in scope and what is explicitly deferred/out of scope. Record any dated operator
+decision that changes the finish line, especially a costly evidence gate moved to a separate
+owned backlog task.
+
 ## Plan
 The full approach: reasoning, implementation sequence, files/areas/commands involved, the
 design, constraints, edge cases. Board-trackable small steps belong in proper subtasks, not
@@ -236,7 +242,10 @@ What completing this changes in the system — **intended** effects, and **possi
 ones (side-effects, risks, blast radius, things to watch / not break).
 
 ## Acceptance
-How we'll know it's done (criteria, tests). Links to specs / PRs / threads.
+**Functional bar:** the smallest truthful outcome that must actually work.
+**Evidence bar:** the proof required for the appropriate confidence or release level.
+**Gate ownership:** who or what requires each costly gate, and which gates may be deferred.
+Links to specs / PRs / threads.
 
 ## Verification
 The tickable version of Acceptance — concrete, observable pass/fail checks, kept current:
@@ -258,9 +267,11 @@ What's already done vs. what's left, and exactly where to resume.
   grasps the task at a glance. The exhaustive detail follows underneath. The board renders the
   `TT;DR:` line as a highlighted callout.
 - **`## Verification` is the checklist; `## Acceptance` is the narrative.** Acceptance
-  explains how we'll know it's done; Verification turns that into lines that actually get
-  ticked. Seed it when the task is created (default-on — `/tasks-create` writes it), one
-  concrete, independently checkable pass/fail item per line. Items have three states:
+  defines the functional bar, evidence bar, and gate ownership; Verification turns the
+  required evidence into lines that actually get ticked. Seed it when the task is created
+  (default-on — `/tasks-create` writes it), one concrete, independently checkable pass/fail
+  item per line. Every item must support one of the recorded bars, and a costly item must
+  have a named owner or written policy behind it. Items have three states:
   `[ ]` open, `[x]` passed, `[~]` waived. **A task cannot be completed while any item is
   still `[ ]`** — every item must be passed or waived first; the board enforces the same
   gate. Waive by appending `(waived YYYY-MM-DD — <who>: <reason>)` to the item. The
@@ -306,6 +317,47 @@ What's already done vs. what's left, and exactly where to resume.
   happens to reuse the id never inherits stale detail. (The board's delete does this for you;
   if you remove a task by hand-editing `TASKS.md`, remove the detail file as well.)
 
+### Finish-line ownership and bounded convergence
+
+For every non-trivial task, keep two bars explicit:
+
+- The **functional bar** is the smallest truthful result that must actually work. A build,
+  staged change, CI run, or written claim is not a substitute for exercising the requested
+  behavior.
+- The **evidence bar** is the proof required for the appropriate confidence level. Routine,
+  bounded checks stay on the task. Long soaks, exhaustive matrices, physical-device runs,
+  external approvals, and other costly checks are hard gates only when essential to the
+  functional bar or required by an identified owner.
+
+Never silently weaken required evidence. When a non-essential evidence gate is expensive,
+blocking, or has no clear owner, tell the operator the expected cost and deferral risk and
+ask for one decision. If deferred, record the dated decision, waive any already-created
+verification item with a reason, and create/link a separately owned Backlog task for that
+evidence debt. Do not let the work disappear, and do not keep the current task open forever
+for an ownerless recommendation.
+
+Every execution/verification cycle must produce at least one of: a passed check, concrete
+failure evidence, or a narrowed hypothesis. A staged-but-uncommitted fix that the real
+validator cannot see, a silent failure, or an identical retry produced no new information.
+Put the candidate state where the actual validator can observe it; when a check fails without
+explaining why, improve its reporting before changing more product code.
+
+After **two consecutive cycles with materially identical evidence**, stop repeating the same
+action. Update `## Status` and `## Activity` with what was tried, the evidence, and the exact
+blocker. First ask whether the task is too ambitious at its current grain. If it is, preserve
+the full end goal but re-scope the work into a progressive ladder:
+
+1. the smallest end-to-end version that can actually run and produce useful evidence;
+2. separately observable hardening/integration steps; and
+3. the remaining end-goal qualification.
+
+Make small same-session steps proper subtasks; make independently owned, verified, or
+resumable rungs separate linked tasks; use a milestone when several tasks serve the same end
+goal. Start with the basic working rung, then move upward. Otherwise change the experiment,
+improve observability, split/defer the gate through its owner, or ask the operator for the
+missing decision. Merely renaming or rerunning the same attempt is not a new experiment. Tool
+retries and unattended validation must always have a bound.
+
 ## How to interact
 
 **"What's on my plate" / "my tasks":** read `.tasks/TASKS.md`, summarize Active and To-Do,
@@ -317,9 +369,10 @@ it has small board-visible steps, add them as indented subtasks under the task l
 include subtask descriptions when the next agent needs more than the subtask title. If it
 depends on other tasks, add `(needs #…)` — creating any missing prerequisite tasks first so
 you can reference their ids. If it belongs to a milestone, tag it `(ms #id)`. For anything
-non-trivial, seed `.tasks/tasks/<id>.md` with a `TT;DR:`-led description **including its
-`## Verification` checklist** (see above). Move it to Active when work actually starts — and
-add an `## Activity` line when you do. For a guided, interactive creation flow, use the
+non-trivial, record its in/out scope, functional bar, evidence bar, and gate ownership, then
+seed `.tasks/tasks/<id>.md` with a `TT;DR:`-led description **including its `## Verification`
+checklist** (see above). Move it to Active when work actually starts — and add an
+`## Activity` line when you do. For a guided, interactive creation flow, use the
 `tasks-create` skill.
 
 **"Done with X" / "finished X":** find it and work the completion gates in order:
@@ -331,7 +384,9 @@ add an `## Activity` line when you do. For a guided, interactive creation flow, 
    `[~]`. Verify what you can now; for anything you genuinely can't or shouldn't verify,
    waive it **with a recorded reason** — `(waived YYYY-MM-DD — agent: <why>)` on the item
    plus an `## Activity` line — or hand it to the operator (operators may waive without a
-   reason). Never flip a task done with `[ ]` verification items remaining.
+   reason). When the waived check still represents useful evidence debt, create and link an
+   owned Backlog task so the waiver does not make the work disappear. Never flip a task done
+   with `[ ]` verification items remaining.
 
 Only then flip `[ ]`→`[x]`, append `(done YYYY-MM-DD)`, move to Completed, and append a closing
 `## Activity` line to its detail file noting what landed.
