@@ -361,6 +361,10 @@ top-level description of how this repo uses the task system.
     `    > detail for this subtask`.
   - Parent task descriptions are for reasoning, implementation sequence, context, impact,
     acceptance, and resume notes.
+  - Non-trivial tasks record in/out scope, a functional bar, an evidence bar, and who owns
+    costly gates. Optional evidence may be deferred only by a dated decision plus an owned
+    backlog task; ambitious or looping work is re-scoped into a basic working version first,
+    followed by separately observable steps toward the full goal.
   - Large dependent work should be a separate top-level task linked with `(needs #id)`.
   - Completion gates: a task can't be done over unchecked subtasks, or over `[ ]`
     verification items (verify or waive-with-reason first); a milestone can't close over
@@ -405,6 +409,16 @@ or while a `## Verification` item is still `[ ]` — verify it or waive it with 
 reason (`(waived YYYY-MM-DD — agent: <why>)`); a milestone can't close while a child task is
 open. Use `/tasks-create` for a guided way to add a milestone, task, or subtask with a
 verification checklist.
+
+For non-trivial tasks, distinguish the functional bar (what must actually work) from the
+evidence bar (the proof required), record what is explicitly out of scope, and identify who
+owns costly gates. If non-essential evidence is deferred, record the dated decision and
+create an owned Backlog task rather than leaving an ownerless gate to block the current task.
+After two attempts produce materially identical evidence, stop retrying, update Status and
+Activity, and ask whether the task is too ambitious at its current grain. Preserve the full
+goal, but split it into the smallest end-to-end working version, then separately observable
+hardening and qualification steps. Start with that basic rung; otherwise change the
+experiment or return the gate to its owner.
 
 Never put secrets (API keys, tokens, credentials) in `TASKS.md`, detail files, `CLAUDE.md`,
 or `memory/` — use env vars / the OS keychain, or `.tasks/secure/` (gitignored).
@@ -523,7 +537,8 @@ Task system ready in .tasks/:
 - Assets:     tier=<full|vendor|shipped|offline> (from the install summary)
 - Hooks:      board-maintenance hooks added to .claude/settings.json|settings.local.json (or skipped)
 
-Use /tasks-create to add milestones/tasks/subtasks with verification checklists,
+Use /tasks-create to add scoped milestones/tasks/subtasks with explicit finish lines and
+verification checklists,
 /tasks-update to keep it all current (add --comprehensive for a deep scan), or
 /tasks-remove to remove the hooks and fold memory back into the repo when you're done.
 ```

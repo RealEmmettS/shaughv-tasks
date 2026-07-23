@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 A plain-English companion lives at [HUMAN_CHANGELOG.md](./HUMAN_CHANGELOG.md) and is kept in lockstep with this file — see the changelog rule in [CLAUDE.md](./CLAUDE.md).
 
+## [1.0.2] — 2026-07-23
+
+### Improved
+- `tasks-create` now treats "scope a task", "define done", and related prompts as first-class triggers. Non-trivial tasks get explicit in-scope and deferred work, a functional bar, a separate evidence bar, and ownership for costly gates before the verification checklist is authored.
+- Ambitious or high-uncertainty work is now decomposed progressively: preserve the full end goal, get the smallest end-to-end version working first, then advance through separately observable hardening and qualification tasks.
+- Optional long soaks, exhaustive platform matrices, physical-device checks, external approvals, and similar evidence can no longer become ownerless indefinite gates by accident. The skill surfaces cost and deferral risk to the operator; a deferral is recorded and moved to a separately owned Backlog task instead of remaining an open verification item.
+- The shared task-detail contract adds a `Scope` section plus structured functional/evidence/gate-ownership acceptance. Verification remains a hard, waivable gate, and waiving useful evidence now preserves it as linked backlog work.
+- Task execution now has a bounded convergence rule: every cycle must produce a pass, concrete failure evidence, or a narrower hypothesis; after two materially identical cycles, the agent records the blocker, checks whether the task needs a smaller working rung, and then changes the experiment, improves observability, returns the gate to its owner, or asks for a decision.
+- Suggested target-repo instructions, the authoring guide, plugin discovery copy, and public documentation now teach the same finish-line and convergence contract.
+
+### Behind the scenes
+- Bumped the Claude/Codex manifests and portable board marker to 1.0.2, added the missing Claude marketplace description, and regenerated the tracked Codex package from the authoritative root skills.
+
 ## [1.0.1] — 2026-07-20
 
 ### Improved

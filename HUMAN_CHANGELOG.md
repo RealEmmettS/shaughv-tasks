@@ -6,6 +6,18 @@ For the technical version with versions, file paths, and links, see CHANGELOG.md
 
 ---
 
+## Tasks with a finish line — late July 2026
+
+**Improved**
+- When you ask an assistant to create, plan, or scope a meaningful task, it now writes down what is included, what is deliberately deferred, what must actually work, what proof is required, and who owns any costly checks.
+- If the goal is too ambitious to attack as one piece, the assistant keeps the real end goal visible but starts with the smallest end-to-end version that can actually work. It then turns hardening, integrations, polish, and final proof into clear later steps instead of mixing everything into one enormous attempt.
+- Routine checks still block completion until they pass or are explicitly waived. Long soaks, exhaustive device or platform checks, and outside approvals no longer become endless blockers just because an assistant thought they might be useful: the assistant explains the time and risk, asks for a decision, and preserves deferred proof as a separately owned backlog item.
+- Repeating the same failed attempt is now explicitly bounded. If two attempts produce the same evidence, the assistant must record what happened, check whether the work needs a smaller first rung, and then change the experiment, improve the error reporting, return the decision to its owner, or ask you—rather than grinding indefinitely.
+- Future assistants receive this same guidance when the task system writes or refreshes a repository's working instructions, so the clearer finish line survives handoffs and new sessions.
+
+**Behind the scenes**
+- Every supported plugin install and portable board bundle now identifies this refinement as the same patch release, and the plugin catalog has a proper plain-English description.
+
 ## Drag-and-drop that lands where you point — late July 2026
 
 **Improved**
