@@ -6,9 +6,10 @@ description: >
   down tasks", "uninstall the task system", "flatten my tasks into the repo", "promote my
   memory", "I'm done with the dashboard", or otherwise wants the `.tasks/` scaffolding gone
   with its knowledge preserved. Merges `.tasks/CLAUDE.md` working memory into the repo's root
-  `CLAUDE.md`, moves `.tasks/memory/` into a repo-level `memory/`, optionally preserves open
-  tasks, then deletes `.tasks/` (dashboard included). Destructive — always confirm and show
-  the migration plan first. The inverse of /tasks-start.
+  `CLAUDE.md`, moves `.tasks/memory/` into a repo-level `memory/`, preserves open obligations
+  and explicitly dispositions the remaining Backlog, then deletes `.tasks/` (dashboard
+  included). Destructive — always confirm and show the migration plan first. The inverse of
+  /tasks-start.
 argument-hint: "[--keep-tasks] [--dry-run]"
 ---
 
@@ -46,7 +47,8 @@ Show the user exactly what will happen before touching anything:
   .claude/settings*.json →  board-maintenance hooks removed (other hooks/keys kept)
   .tasks/CLAUDE.md      →  merge into ./CLAUDE.md  (## Memory section)
   .tasks/memory/        →  merge into ./memory/    (glossary.md, people/, projects/, context/)
-  .tasks/TASKS.md       →  3 open items → ## Open threads in ./CLAUDE.md; Completed items archived
+  .tasks/TASKS.md       →  3 Active/To-Do + 1 evidence-debt Backlog → ## Open threads
+                           2 other Backlog items → PRESERVE or DISCARD (your choice); Completed dropped
   .tasks/MILESTONES.md  →  1 open milestone → ## Open threads (grouped with its open tasks)
   .tasks/secure/        →  NOT promoted — you'll choose: delete or relocate (never folded into CLAUDE.md)
   .tasks/vendor/, config.json, board-config.js, .board-version.json, .install-manifest.json, milestones/, board-server.mjs, dashboard.html → deleted with .tasks/
@@ -100,9 +102,17 @@ repo-level memory skill), target that instead — match the repo, don't impose `
 Tasks aren't "memory", so by default they don't survive teardown — but don't silently drop
 open work:
 
-- **Default:** summarize remaining **Active** and **To-Do** items into an `## Open
-  threads` list at the bottom of the repo's `CLAUDE.md` (or a short `TODO` note), so nothing
-  in flight is lost. Drop the `Completed`/`Backlog` archive unless asked to keep it.
+- **Default:** preserve each remaining **Active** and **To-Do** item as a compact typed entry
+  under `## Open threads` in the repo's `CLAUDE.md` (or a short TODO artifact): current
+  result/status; verified state and exact evidence pointers; unresolved check, contradiction, or
+  blocker; failed-route signature/re-entry condition that prevents blind repetition; and exact
+  next bounded action. Do not migrate the transcript or full attempt history.
+- **Backlog requires an explicit disposition.** Before showing the destructive plan, inventory
+  every unchecked Backlog item and its detail file. Automatically preserve any item that records
+  deferred evidence debt, an unresolved acceptance obligation, or an open dependency/child of a
+  preserved task or milestone. List the remaining Backlog titles/count in the plan and ask once
+  whether to preserve them as compact open threads or discard them. No open Backlog item
+  disappears under the generic word “archive.” Completed history may be dropped unless requested.
 - **Open milestones get the same treatment**, grouped: an `## Open threads` entry per
   still-open milestone — `Milestone: Phoenix GA (3/7 tasks done, target 2026-08-01)` — with
   its still-open child tasks nested beneath it, so the grouping survives as prose.

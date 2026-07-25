@@ -181,9 +181,10 @@ Archive of child tasks cleared from the board (see below):
 Use the smallest structure that gives the operator and the next agent the right visibility:
 
 - **Description plan/checklist** — belongs in `.tasks/tasks/<id>.md` when the steps are part
-  of the parent task's handoff narrative: reasoning, implementation sequence, notes,
-  constraints, commands, acceptance detail, or "how to do this" context. A plan in the
-  description explains the work; it is not the board-visible checklist.
+  of the parent task's handoff narrative: a stable dependency skeleton plus a short
+  next-action window with predictions and a redirect condition. Preserve coarse later
+  dependencies and phase gates; revise the local window from evidence. It is not the
+  board-visible checklist.
 - **Proper subtasks** — belong as indented checkbox rows in `.tasks/TASKS.md` and are
   visible/editable in the dashboard modal's **Subtasks** section. Use these for small,
   directly required steps that should be checked off on the board before the parent task is
@@ -230,12 +231,14 @@ that led here (options considered, what was chosen and rejected, and why).
 ## Scope
 What is in scope and what is explicitly deferred/out of scope. Record any dated operator
 decision that changes the finish line, especially a costly evidence gate moved to a separate
-owned backlog task.
+owned backlog task. Name preservation invariants, approval boundaries, and the authoritative
+source/current-state oracle for load-bearing facts.
 
 ## Plan
-The full approach: reasoning, implementation sequence, files/areas/commands involved, the
-design, constraints, edge cases. Board-trackable small steps belong in proper subtasks, not
-only here.
+A stable global dependency skeleton and phase gates, followed by a short next-action window.
+For each near-term action, name the live obligation/hypothesis, predicted observation, oracle,
+and redirect condition. Preserve coarse later dependencies without prematurely scripting them;
+revise the local window when evidence changes. Board-trackable small steps are proper subtasks.
 
 ## Impact
 What completing this changes in the system — **intended** effects, and **possible unintended**
@@ -245,13 +248,27 @@ ones (side-effects, risks, blast radius, things to watch / not break).
 **Functional bar:** the smallest truthful outcome that must actually work.
 **Evidence bar:** the proof required for the appropriate confidence or release level.
 **Gate ownership:** who or what requires each costly gate, and which gates may be deferred.
+**Valid bounded outcomes:** verified / partial / blocked / refuted / indeterminate /
+not verified / unknown within budget, as applicable.
+**Budget / stop rule:** for open-ended work, the finite search/validation bound or checkpoint.
 Links to specs / PRs / threads.
+
+## Attempts
+Conditional — use for uncertain, diagnostic, or repeated work:
+| Obligation / starting state | Premise / causal hypothesis | Strategy / action | Prediction | Oracle / observation / evidence pointer | State delta / information gain | Verdict / re-entry |
+|---|---|---|---|---|---|---|
+
+## Evidence
+Conditional — use for consequential completion:
+| Criterion | Oracle / invocation | Raw result or pointer | Interpretation | Limitation | Status |
+|---|---|---|---|---|---|
+| | | | | | PASS / FAIL / NOT RUN / INDETERMINATE |
 
 ## Verification
 The tickable version of Acceptance — concrete, observable pass/fail checks, kept current:
 - [ ] `npm test` passes on the changed package
 - [x] Staging /health returns 200 after deploy
-- [~] Operator confirmed the panel copy (waived 2026-07-02 — agent: copy superseded by #d4e)
+- [~] Panel-copy approval deferred by operator (waived 2026-07-02 — operator: moved to #d4e)
 
 ## Status
 What's already done vs. what's left, and exactly where to resume.
@@ -264,7 +281,7 @@ What's already done vs. what's left, and exactly where to resume.
 
 - **Lead the description with a `TT;DR:` line** (a TT;DR — a short, plain-English, jargon-free
   one-or-two-sentence summary; see the `ttdr` skill if it's installed): so a tired operator
-  grasps the task at a glance. The exhaustive detail follows underneath. The board renders the
+  grasps the task at a glance. Compact decision-relevant detail follows underneath. The board renders the
   `TT;DR:` line as a highlighted callout.
 - **`## Verification` is the checklist; `## Acceptance` is the narrative.** Acceptance
   defines the functional bar, evidence bar, and gate ownership; Verification turns the
@@ -274,30 +291,23 @@ What's already done vs. what's left, and exactly where to resume.
   have a named owner or written policy behind it. Items have three states:
   `[ ]` open, `[x]` passed, `[~]` waived. **A task cannot be completed while any item is
   still `[ ]`** — every item must be passed or waived first; the board enforces the same
-  gate. Waive by appending `(waived YYYY-MM-DD — <who>: <reason>)` to the item. The
-  operator may waive from the board without giving a reason; **an agent must record a
-  reason** — in the item's `(waived …)` note and as an `## Activity` line — so the record
-  shows why a check was skipped. Verification lives only in the detail file, never in
-  `TASKS.md`.
-- **Write the description as a self-contained handoff document — be exhaustively comprehensive.**
-  Assume a *different*, independent agent (or you, much later) will pick this task up cold, at
-  whatever stage it's currently in, with **none** of the context in your head right now, and
-  must be able to investigate, analyze, plan, and finish it from the description alone. There is
-  no length limit — err on the side of too much. The headings above are a guide, not a
-  straitjacket; below the TT;DR, cover at least:
-  - **What & why** — exactly what the task is and what it's for.
-  - **Origin / decisions** — *why we decided on it*: the decisions and reasoning that led here,
-    the alternatives weighed and rejected — **or** an explicit note that it was a **direct order
-    from the operator** (so the next agent doesn't relitigate a settled call).
-  - **System impact** — what it changes, separating **intended** impact from **possible
-    unintended** impact (side-effects, risks, what it must not break).
-  - **Plan & context** — the approach, files/areas/commands, constraints, edge cases, acceptance
-    criteria, and links — everything an independent agent needs to act without re-deriving it.
-    If the task has small board-trackable steps, keep those as proper subtasks in `TASKS.md`;
-    subtask-specific details belong under the subtask, and the parent description can explain
-    why the checklist matters without duplicating it.
-  - **Where it stands** — what's done vs. left, so the handoff is seamless.
-  `TASKS.md` is just the one-line index; the description is where the thinking lives.
+  gate. `[~]` means an authorized operator, policy, or accepted contract change explicitly
+  removed, deferred, or made the criterion not applicable. Append
+  `(waived YYYY-MM-DD — <who>: <reason>)` and log the decision. A reason records the decision; it
+  does not grant authority. **Missing, unavailable, or unrun required evidence is not a waiver**:
+  leave it `[ ]` and report `PARTIAL`, `BLOCKED`, or `NOT VERIFIED`. Verification lives only in
+  the detail file, never in `TASKS.md`.
+- **Write the description as a compact typed handoff.** Assume a different agent will pick the
+  task up cold and must make the next correct decision without trusting unsupported prose. Keep:
+  - objective, origin, authority, scope/non-goals, preservation invariants, and acceptance;
+  - verified current state with exact evidence pointers, clearly separated from inference;
+  - material decisions and why;
+  - live load-bearing premises, causal hypotheses, and earliest disconfirming signals;
+  - failed/superseded routes and re-entry conditions;
+  - unresolved contradictions, open obligations, risks, and owner decisions;
+  - budget/stop state, exact next bounded action, and expected observation.
+  Keep raw chronology, huge logs, and bulky sources at stable paths and point to them only when
+  relevant. `TASKS.md` is the one-line index; the detail file is the active decision packet.
 - **Append a one-line `## Activity` entry** as you make meaningful changes to a task (start,
   finish, move, key decisions, what you modified, where you left off). This is the operator's
   window into what the agent actually did, and the breadcrumb trail the next agent reads first.
@@ -305,12 +315,9 @@ What's already done vs. what's left, and exactly where to resume.
   body itself current as the plan evolves so a resumed task is never working from a stale plan.
 - **The task list IS the cross-session continuity layer — keep Active tasks resumable.** There
   is no separate "session" file: the **Active** column is what's in flight, and each Active
-  task's `## Status` ("exactly where to resume") plus its `## Activity` log are what a future
-  session (or another agent) reads to pick the work back up mid-stream. So while a task is
-  Active, keep its `## Status` and `## Activity` current **as you work** — when you start, hit a
-  key decision or finding, change something, or stop — not just at the end. `/tasks-start` reads
-  exactly this on resume and leads with "here's where we left off," so the discipline is what
-  makes resuming days later, mid-task, reliable.
+  task's `## Status`, unresolved Verification, current `## Evidence`, latest material
+  `## Attempts` row, and `## Activity` are what a future session reads. Keep them current when
+  evidence, a decision, a route, or the next action changes—not for every conversational turn.
 - **The detail file is optional** — a task with no `.tasks/tasks/<id>.md` is fine (the board
   shows an empty description). Create it lazily the first time a task earns a real description.
 - **When you delete a task, delete its `.tasks/tasks/<id>.md` too** so a future task that
@@ -331,7 +338,7 @@ For every non-trivial task, keep two bars explicit:
 
 Never silently weaken required evidence. When a non-essential evidence gate is expensive,
 blocking, or has no clear owner, tell the operator the expected cost and deferral risk and
-ask for one decision. If deferred, record the dated decision, waive any already-created
+ask for one decision. If an authorized owner defers it, record the dated decision, waive any already-created
 verification item with a reason, and create/link a separately owned Backlog task for that
 evidence debt. Do not let the work disappear, and do not keep the current task open forever
 for an ownerless recommendation.
@@ -342,10 +349,20 @@ validator cannot see, a silent failure, or an identical retry produced no new in
 Put the candidate state where the actual validator can observe it; when a check fails without
 explaining why, improve its reporting before changing more product code.
 
-After **two consecutive cycles with materially identical evidence**, stop repeating the same
-action. Update `## Status` and `## Activity` with what was tried, the evidence, and the exact
-blocker. First ask whether the task is too ambitious at its current grain. If it is, preserve
-the full end goal but re-scope the work into a progressive ladder:
+After **two structurally equivalent cycles with no information gain**, freeze that route—not the
+whole objective—and update `## Attempts`, `## Status`, and `## Activity`. Compare target,
+starting state, premise/causal hypothesis, strategy family, evidence source/oracle, prediction,
+observation, and state delta. Then audit:
+
+1. load-bearing premise and the first contradictory signal;
+2. observer/source of truth and whether it can see the candidate;
+3. evaluator or acceptance oracle integrity;
+4. artifact, runtime, environment, permissions, and confounders;
+5. representation or strategy family;
+6. task grain.
+
+Invalidate dependent claims when a premise is contradicted. If grain is the issue, preserve the
+full end goal but re-scope the work into a progressive ladder:
 
 1. the smallest end-to-end version that can actually run and produce useful evidence;
 2. separately observable hardening/integration steps; and
@@ -354,9 +371,15 @@ the full end goal but re-scope the work into a progressive ladder:
 Make small same-session steps proper subtasks; make independently owned, verified, or
 resumable rungs separate linked tasks; use a milestone when several tasks serve the same end
 goal. Start with the basic working rung, then move upward. Otherwise change the experiment,
-improve observability, split/defer the gate through its owner, or ask the operator for the
-missing decision. Merely renaming or rerunning the same attempt is not a new experiment. Tool
-retries and unattended validation must always have a bound.
+improve observability, change representation/oracle/method, split an authorized deferred gate,
+or ask the operator for the missing decision. Merely renaming or rerunning the same attempt is
+not a new experiment. Two cycles are an audit trigger, not a universal task limit; declared noisy
+replication needs an independence model, sample count, and stop rule. Tool retries and unattended
+validation must always have a bound. Classify a recurrence before recovery: token repetition needs
+interruption/compaction; epistemic repetition needs a new discriminating source; action-policy
+repetition needs a different intervention family; false-premise trajectories invalidate dependent
+state. At the task budget or stop condition, preserve the strongest supported result and return a
+truthful bounded outcome—do not keep work Active merely to continue.
 
 ## How to interact
 
@@ -381,21 +404,27 @@ checklist** (see above). Move it to Active when work actually starts — and add
    remain open, finish them, ask whether they should be dropped, or leave the parent open.
    A parent task is never marked done over an unchecked subtask — the board refuses it too.
 2. **Verification (hard gate, waivable):** every `## Verification` item must be `[x]` or
-   `[~]`. Verify what you can now; for anything you genuinely can't or shouldn't verify,
-   waive it **with a recorded reason** — `(waived YYYY-MM-DD — agent: <why>)` on the item
-   plus an `## Activity` line — or hand it to the operator (operators may waive without a
-   reason). When the waived check still represents useful evidence debt, create and link an
-   owned Backlog task so the waiver does not make the work disappear. Never flip a task done
-   with `[ ]` verification items remaining.
+   `[~]`. Run the required oracle. If evidence is missing or unavailable, leave the item `[ ]`
+   and report `PARTIAL`, `BLOCKED`, or `NOT VERIFIED`; an agent cannot convert inability into a
+   waiver. Use `[~]` only after an authorized owner/policy explicitly removes, defers, or makes
+   the criterion not applicable, with the dated decision recorded. When useful evidence is
+   deferred, create and link an owned Backlog task. Never flip a task done with `[ ]` items.
+3. **Evidence receipt (for consequential work):** update `## Evidence` with criterion, oracle,
+   invocation, raw result/pointer, interpretation, limitation, and status. The task's terminal
+   claim is the weakest mandatory row.
 
 Only then flip `[ ]`→`[x]`, append `(done YYYY-MM-DD)`, move to Completed, and append a closing
 `## Activity` line to its detail file noting what landed.
+If the contract, checklist, evidence, or subtasks must change later, reopen the task first;
+never edit a completed task into a state its existing completion receipt no longer proves.
 
 **"Done with a milestone":** a milestone can't close while any task tagged with its
 `(ms #id)` is still open — hard rule, board-enforced. Ensure every child is in Completed (or
-archived in the milestone's `## Completed`), then flip its line in `MILESTONES.md` to `[x]`,
-append `(done YYYY-MM-DD)`, and add a closing `## Activity` line to
-`.tasks/milestones/<id>.md`.
+archived in the milestone's `## Completed`). If the milestone outcome has integration,
+cross-task, or final-qualification criteria not entailed by ordinary children, require a final
+milestone-tagged qualification task with its own Verification and Evidence receipt; it must be
+complete too. Only then flip the milestone line to `[x]`, append `(done YYYY-MM-DD)`, and add a
+closing `## Activity` line to `.tasks/milestones/<id>.md`.
 
 **"What's next" / "my queue":** read To-Do (queued-up work) and surface the next items to
 pull into Active. Park not-now ideas in Backlog.

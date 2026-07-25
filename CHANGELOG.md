@@ -7,6 +7,97 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 A plain-English companion lives at [HUMAN_CHANGELOG.md](./HUMAN_CHANGELOG.md) and is kept in lockstep with this file — see the changelog rule in [CLAUDE.md](./CLAUDE.md).
 
+## [1.1.0] — 2026-07-24
+
+The durable task contract now carries compact evidence and causal state across Claude, Codex,
+operators, and future sessions without turning the board into a transcript archive. Missing proof
+can no longer be converted into an agent waiver or an externally asserted completion.
+
+### Added
+- `tasks-management` adds conditional `## Attempts` rows for uncertain/diagnostic/repeated work:
+  obligation and starting state, load-bearing premise/causal hypothesis, strategy/action,
+  prediction, oracle plus raw observation/evidence pointer, state delta/information gain, verdict,
+  and re-entry condition.
+- `tasks-management` adds conditional `## Evidence` completion receipts for consequential work:
+  criterion, authoritative oracle/invocation, raw result or pointer, semantic interpretation,
+  limitation, and `PASS` / `FAIL` / `NOT RUN` / `INDETERMINATE`. The task's final claim is the
+  weakest mandatory row.
+- Milestone creation/completion now requires a final milestone-tagged qualification task whenever
+  cross-task integration or acceptance is not entailed by ordinary children. The existing
+  board-enforced child gate protects the epic outcome without a dashboard schema change.
+
+### Improved
+- Per-task detail files are compact typed continuation packets rather than unlimited exhaustive
+  narratives: objective/acceptance/authority, verified state and exact evidence pointers,
+  decisions/invariants, live premises and disconfirming signals, failed routes/re-entry conditions,
+  unresolved obligations, a stable global dependency skeleton, and a short next-action window
+  with predictions and a redirect condition. Coarse later dependencies remain visible without
+  stale full overplanning; raw logs and chronology stay at stable pointers.
+- `tasks-create` records authoritative sources/current-state oracles, preservation invariants,
+  truthful bounded outcomes, and cheap load-bearing-premise falsifiers for long, ambiguous, or
+  high-consequence tasks while keeping routine work light. Reliability claims require declared
+  repeated evidence rather than one pass.
+- The bounded-convergence audit freezes one non-informative route, compares structured attempts,
+  then checks premise, observer/source of truth, evaluator, artifact/environment, strategy, and
+  task grain. It distinguishes token, epistemic, action-policy, and false-premise recurrence, and
+  open-ended work records a finite budget or stop rule. A contradictory signal invalidates
+  dependent claims; two cycles remain an audit trigger, not a universal task stop.
+- `/tasks-start` resumes from acceptance, unresolved checks, evidence, latest material attempt,
+  failed-route state, Status, and next action. Its injected target-repo guidance and SessionStart
+  nudge are shorter and typed; approved plans put only genuinely in-flight bounded work in Active;
+  subagent completion is ingested as evidence before board completion.
+- `/tasks-update` distinguishes external completion, board completion, and acceptance verification;
+  surfaces semantic stagnation, stale contradictions, repeated symptom patches, unsupported
+  completion, and one-run reliability claims immediately; and reports external-but-unverified work
+  honestly.
+- `tasks-memory` explicitly treats memory as context, not authority for current runtime state,
+  completion, permissions, or time-sensitive facts. `tasks-remove` preserves compact typed open
+  work without migrating transcripts or full attempt histories; evidence-debt Backlog obligations
+  survive automatically and the remaining Backlog receives an explicit preserve/discard decision.
+
+### Fixed
+- `[~]` now means an authorized operator, policy, or accepted contract change explicitly removed,
+  deferred, or made a criterion not applicable. A reason records that decision; it does not grant
+  authority. Missing, unavailable, or unrun required evidence remains `[ ]` and leaves the task
+  `PARTIAL`, `BLOCKED`, or `NOT VERIFIED`.
+- The dashboard now requires an authority acknowledgement and reason before waiving, removing, or
+  changing any Verification criterion; settled edits reset open, every decision enters
+  Activity, and a legacy/malformed reasonless waiver cannot unlock completion. Completion waits
+  for the local save queue, re-reads the durable detail, then couples that exact content revision
+  to the checked `TASKS.md` write under serialized server locks. A concurrent checklist or board
+  edit returns a retryable conflict rather than admitting stale completion. The `file://`
+  fallback identity-matches `TASKS.md` to the selected `.tasks/` folder and refuses stale detail
+  saves, but intentionally locks completion and deletion because browser file access cannot make
+  either cross-file commit atomic. Detail and lifecycle controls stay locked across their
+  asynchronous boundary, and modal epochs prevent late reads or saves from corrupting a newly
+  opened task.
+  External `TASKS.md` refreshes defer while modal detail is unsaved and otherwise rebind the
+  modal to the new task object, preventing detached-object edits or stale completion.
+  Generic detail-change events no longer replace an open modal and erase unblurred field drafts;
+  close/reopen refreshes the view, while completion always re-reads durable state.
+  `TASKS.md` writes now use serialized content-hash compare-and-swap, with mtime only as a
+  backward-compatible fallback; every newly checked or removed task requires its matching
+  completion or deletion receipt. Guarded deletion moves detail to an unserved, unwatched,
+  gitignored `.task-detail-tombstones/` path before the board write and treats failed final
+  cleanup as a safe warning.
+  Task-detail writes carry a
+  content revision in live mode and compare exact loaded bytes in static mode, refusing a
+  detected stale whole-file save instead of overwriting newer agent evidence. Missing or
+  completed tasks reject stale detail writes. Completed tasks are read-only until reopened; both
+  the modal and live detail route enforce that boundary so a later contract edit cannot
+  invalidate a completion receipt in place.
+- External tracker status can no longer justify auto-completion or an agent waiver.
+
+### Behind the scenes
+- `README.md`, `CLAUDE.md`, target-repo instruction templates, and board-maintenance nudges now
+  teach the same model-neutral state contract.
+- `tasks-start` keeps its executable core below 500 lines and moves detailed runtime bootstrap
+  mechanics behind a contents-mapped direct reference.
+- Claude/Codex manifests and `skills/tasks-start/assets/board-version.json` bumped `1.0.2` →
+  `1.1.0`; discovery copy now exposes evidence receipts, attempt ledgers, and bounded convergence.
+- No new skills, dashboard UI schema, agents, hooks bundled in the plugin, MCP servers, commands,
+  or test framework were added.
+
 ## [1.0.2] — 2026-07-23
 
 ### Improved

@@ -31,23 +31,23 @@ asks to expand scope.
 | Skill | Role |
 |---|---|
 | `tasks-start` | Stands up `.tasks/` (TASKS.md, MILESTONES.md, working memory, deep memory, `secure/`, `config.json`, dashboard), asks ONCE whether the board is git-tracked or local (persisted to `config.json`, never re-asked), launches the live board, bootstraps memory. The only skill that carries assets. |
-| `tasks-create` | Guided creation: milestone vs task vs subtask categorization, explicit in/out scope, functional vs evidence bars, progressive working slices for ambitious work, costly-gate ownership, linking (`(needs …)` / `(ms …)` / `(owner …)`), and default-on verification-checklist authoring. |
-| `tasks-update` | Syncs tasks from a connected tracker, triages stale items + at-risk milestones, archives cleared milestone work (progress never regresses), fills memory gaps. |
-| `tasks-management` | Reference (`user-invocable: false`) — the full contract: TASKS.md + MILESTONES.md formats, milestone → task → subtask hierarchy, scoped finish lines, progressive decomposition, verification checklists (`[ ]`/`[x]`/`[~]` waived, reasons required for agent waivers), gate ownership, bounded convergence, completion gates, and multi-operator conventions. |
+| `tasks-create` | Guided creation: level selection, scope/non-goals, invariants, functional/evidence bars, authoritative oracles and load-bearing premises for consequential work, finite budgets for open-ended work, progressive rungs, links/owners, default Verification, and conditional Evidence/Attempts. |
+| `tasks-update` | Syncs external status without confusing it with acceptance, surfaces semantic stagnation/unsupported completion and unbounded open work plus stale/at-risk items, archives cleared milestone work, and fills memory gaps. |
+| `tasks-management` | Reference (`user-invocable: false`) — formats, hierarchy, compact typed continuation state, evidence receipts, structured attempts, authorized-only waivers (`[~]` never means unavailable evidence), milestone qualification, recurrence classification, bounded route audits, completion gates, and multi-operator conventions. |
 | `tasks-memory` | Reference (`user-invocable: false`) — the two-tier `.tasks/CLAUDE.md` + `.tasks/memory/` model, the secrets policy, and the `secure/` private tier. |
 | `tasks-boards` | Reference (`user-invocable: false`) — multi-board machines: resolve this repo's board from its own `.board-server.json`, verify identity via `/api/ping` root, never trust a port. |
-| `tasks-remove` | Decommissions the system, folds memory + open milestones back into the repo's own `CLAUDE.md` + `memory/`, handles `secure/` explicitly (never promoted), deletes `.tasks/`. |
+| `tasks-remove` | Decommissions the system, folds memory + open tasks/milestones/evidence debt back into the repo's own `CLAUDE.md` + `memory/`, explicitly dispositions remaining Backlog, handles `secure/` (never promoted), and deletes `.tasks/`. |
 
 ## Persistence model (the point of this plugin)
 
 Tasks and memory are **persistent across sessions**. `/tasks-start` is idempotent — re-run
 it days later and it reloads the existing `.tasks/` and resumes. The **task list itself is
-the continuity layer**: the Active column shows what's in flight, each task's
-`.tasks/tasks/<id>.md` carries a `## Status` ("exactly where to resume") and a timestamped
-`## Activity` log, and on resume `tasks-start` reads those and leads with "here's where we
-left off." A fresh `/tasks-start` always scaffolds the memory tree + config up front (even
-before the interactive bootstrap), so a persistent skeleton exists no matter what. Keep that
-property intact when editing — it's why the plugin exists.
+the continuity layer**: the Active column shows what's in flight, and each
+`.tasks/tasks/<id>.md` carries compact acceptance, unresolved verification, current evidence,
+latest material attempt/failed route, status, activity, and exact next action. On resume,
+`tasks-start` reads that typed packet rather than loading an exhaustive transcript. A fresh
+`/tasks-start` still scaffolds the memory tree + config up front. Keep that durable,
+model-neutral property intact.
 
 ## Cross-references to shaughv-code skills
 

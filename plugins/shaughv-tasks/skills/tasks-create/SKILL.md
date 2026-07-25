@@ -1,17 +1,14 @@
 ---
 name: tasks-create
 description: >
-  Interactively create well-formed work in the tasks-* system — a milestone, a task, or a
-  subtask — with the right level chosen, the right links (milestone, prerequisites, owner),
-  an explicit scope/finish line, and a verification checklist authored by default. Use
-  whenever the user says /tasks-create, "add a task", "create a task", "new task", "scope a
-  task", "define done", "set acceptance criteria", "plan a task", "start a milestone", "add a
-  milestone", "break this down into tasks", "add a subtask", "capture this as a task", or
-  otherwise wants new work put on the board correctly rather than dropped in as a bare line.
-  Decides milestone vs task vs subtask; separates the functional bar from the evidence bar;
-  records gate ownership; seeds the per-task handoff file and verification checklist; and
-  links work with (ms #id) / (needs #id). Writes the formats defined by tasks-management;
-  pairs with tasks-start, tasks-update, tasks-management, tasks-memory, and tasks-remove.
+  Create a well-formed milestone, task, or subtask in the tasks-* system with the right level,
+  links, scope, finish line, and default verification. Use for /tasks-create, "add/create/new
+  task", "scope a task", "define done", "set acceptance criteria", "plan a task", "start/add a
+  milestone", "break this down", "add a subtask", or "capture this as a task." Separates the
+  functional and evidence bars, records gate ownership, preserves authoritative sources and
+  invariants for consequential work, seeds a compact resumable detail file, and links work with
+  (ms #id) / (needs #id). Writes the tasks-management contract; pairs with tasks-start,
+  tasks-update, tasks-memory, and tasks-remove.
 argument-hint: "[milestone|task|subtask] [title]"
 ---
 
@@ -66,18 +63,25 @@ Tie-breakers:
    Activity line.
 5. Child tasks: offer to tag existing tasks with `(ms #id)` and/or create new ones now
    (each via the task flow below, pre-tagged).
-6. Remind (once): a milestone can't close while any child task is open — the board
-   enforces it.
+6. Compare the milestone outcome with ordinary child acceptance. If integration, cross-task,
+   release, or final-qualification evidence is not entailed by those children, create a final
+   `(ms #id)` qualification task with its own Verification and Evidence receipt.
+7. Remind (once): a milestone can't close while any child—including the qualification task—is
+   open. The board enforces the child gate.
 
 ## Creating a task
 
 1. Gather: title; context (what/for whom/due); which column (default **To-Do** — Active
    only if work starts right now).
 2. Scope and finish line: for anything non-trivial, propose the in-scope outcome,
-   explicitly deferred/out-of-scope work, functional bar, evidence bar, and gate owner
-   using the contract below. If the task is ambitious or uncertainty is high, propose a
-   progressive delivery ladder with the smallest working version first. Confirm only the
-   choices that materially change the task.
+   explicitly deferred/out-of-scope work, preservation invariants, functional bar, evidence
+   bar, and gate owner using the contract below. For long, ambiguous, or high-consequence work,
+   also record the authoritative source/current-state oracle, valid bounded non-success outcomes,
+   a finite search/validation budget or checkpoint/stop rule, and one or two load-bearing premises
+   with the cheapest falsifier and earliest contradictory signal. If ambitious or uncertain, use
+   receding-horizon planning: record the stable dependency skeleton, then detail only the short
+   next-action window with predictions and a redirect condition. Confirm only choices that
+   materially change the task.
 3. Milestone: does it belong to one? Offer the existing milestones by name, or spin one up
    first. Tag `(ms #id)`.
 4. Prerequisites: if it depends on other work, get those tasks' ids — **creating any
@@ -88,8 +92,9 @@ Tie-breakers:
 7. Mint the id (unique across both files) and write the line in canonical token order:
    `- [ ] **Title** - note (needs …) (ms …) (owner …) #id`.
 8. Seed `.tasks/tasks/<id>.md` for anything non-trivial: `TT;DR:` line, then Why / Scope /
-   Plan / Impact / Acceptance / **Verification** / Status / Activity per
-   `tasks-management` — **Verification is default-on** (see below).
+   Plan / Impact / Acceptance / conditional **Attempts** and **Evidence** / **Verification** /
+   Status / Activity per `tasks-management` — Verification is default-on; Attempts and Evidence
+   stay absent or compact for routine work.
 9. If it went straight to Active, add the `## Activity` line saying so.
 
 ## Scoping the finish line
@@ -99,6 +104,10 @@ propose one compact scope contract:
 
 - **In scope** — the result this task is responsible for.
 - **Deferred / out of scope** — adjacent work this task is not responsible for.
+- **Authoritative source/current-state oracle** — where load-bearing facts and the current
+  candidate are checked.
+- **Preservation invariants** — behavior, data, interfaces, user changes, or evaluators that must
+  not be weakened.
 - **Functional bar** — the smallest truthful outcome that must actually work for the task
   to be complete. This is never satisfied by a build, draft, or claim when the requested
   behavior itself has not been exercised.
@@ -107,6 +116,16 @@ propose one compact scope contract:
   approval). Verification items implement this bar.
 - **Gate owner** — who or what requires each costly gate: the operator, written project or
   release policy, an external approver, or the agent's own recommendation.
+- **Valid bounded outcomes** — verified, partial, blocked, refuted, indeterminate, not verified,
+  or unknown within a finite budget, as applicable.
+- **Budget / stop rule** — for open-ended work, the finite wall-clock, tool, cost, experiment, or
+  checkpoint bound that forces a truthful terminal state instead of indefinite route switching.
+
+For a long, ambiguous, or high-consequence task, add:
+
+- one or two **load-bearing premises** whose falsity invalidates the most downstream work;
+- the cheapest falsifying probe and earliest expected contradictory signal;
+- downstream task/claim state that becomes unverified if the premise fails.
 
 Infer sensible defaults and present them as a proposal; do not interview the operator one
 field at a time. Ask one combined question only when a choice materially changes cost,
@@ -119,7 +138,7 @@ Never silently omit required evidence, but do not silently promote optional evid
 an ownerless hard gate either. State the expected cost and the risk of deferral, then honor
 the owner's decision.
 
-When the operator defers a non-essential evidence gate:
+When an authorized operator or policy defers a non-essential evidence gate:
 
 1. Record the dated decision under `## Scope`, `## Acceptance`, and `## Activity`.
 2. Create a separately owned **Backlog** task for the evidence debt, linked with `(needs
@@ -177,6 +196,14 @@ tickable. Each item must support the recorded functional or evidence bar and hav
 owner when it is costly. A pure note-task with genuinely nothing to verify may leave the
 section empty — but the template still includes the section, so verification is the default
 rather than an afterthought.
+
+`[~]` is not “the agent could not run it.” It requires an authorized contract change that
+removes, defers, or makes the criterion not applicable. Missing required evidence stays `[ ]` and
+the task remains partial, blocked, or not verified.
+
+When the task claims **reliability**, one passing run is insufficient. Define the repeated evidence
+needed—equivalent lexical/order variants, seeds, target-like trials, or a justified sample—and the
+stop rule. Do not infer repeat-run reliability from `pass@1`.
 
 ## What this skill does not do
 

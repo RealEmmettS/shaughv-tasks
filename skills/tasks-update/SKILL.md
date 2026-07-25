@@ -63,27 +63,36 @@ Fetch tasks assigned to the user (open / in-progress) and compare against `.task
 | Found, not present | no | offer to add |
 | Found, present | match by fuzzy title | skip |
 | In TASKS.md, not external | no | flag as possibly stale |
-| Completed externally | still Active | offer to mark done |
+| Completed externally | still Active | record external status, then run board acceptance gates |
 
 Present the diff; let the user decide. If no source is connected, skip to step 3.
 
-**Completing during sync respects the gates.** Before flipping a task done because it was
-completed externally, run `tasks-management`'s completion gates: subtasks all checked
-(hard), and every `## Verification` item `[x]` or `[~]` — verify what you can, or waive
-with a recorded reason; never auto-complete a task with `[ ]` verification items.
+**External completion is evidence, not the acceptance oracle.** Before flipping a task done,
+run `tasks-management`'s completion gates: subtasks checked; required Verification passed; and,
+for consequential work, Evidence receipts current. `[~]` requires an authorized contract change;
+missing or unavailable evidence remains `[ ]`. Never auto-complete or agent-waive a task because
+the tracker says done.
 
 ### 3. Triage stale items
 
 Review Active tasks and milestones and flag, leading with the most urgent:
 
+- Two structurally equivalent attempts with no information gain, even if worded differently.
+- A contradictory observation that did not invalidate dependent Status or claims.
+- Repeated symptom patches under the same untested causal premise.
+- Asserted completion without a matching authoritative receipt.
+- A reliability claim supported by only one run.
+- Open-ended work with no finite search/validation budget, checkpoint, or stop rule.
 - **Overdue** (due date in the past) and **due today**.
 - **At-risk milestones** — past their `(target …)` date with open children. Report each
   with progress: `Phoenix GA: 3/7 done, target 2026-08-01 (overdue) — at risk`.
 - Tasks in Active 30+ days with no movement.
 - Tasks with no context (no person, no project).
 
-For each: mark done? reschedule? move to Backlog? break down (hand to the `iterative-plan`
-skill if installed, otherwise split it into a small, concretely demoable next action)?
+For each: verify/leave open? classify token, epistemic, action-policy, or false-premise
+recurrence? retire or change the route? instrument? reschedule? move to Backlog? break down (hand
+to `iterative-plan` if installed, otherwise split into a small, concretely demoable next action)?
+Surface semantic stagnation immediately; do not wait for the 30-day age threshold.
 
 **Clearing old Completed items archives milestone work first.** When tidying the Completed category
 (items older than ~a week), append each milestone-tagged task's line to its milestone's
@@ -118,7 +127,8 @@ relationships → cross-reference people; deadlines → project files.
 
 ```
 Update complete:
-- Tasks: +3 from tracker, 1 completed, 2 triaged (1 overdue surfaced)
+- Tasks: +3 from tracker, 1 externally completed / acceptance verified, 2 triaged
+- Acceptance: 1 board-complete; 1 external-complete but still not verified
 - Milestones: Phoenix GA advanced 2/7 → 3/7; 1 at risk (target passed)
 - Memory: 2 gaps filled, 1 project enriched
 - All tasks decoded ✓

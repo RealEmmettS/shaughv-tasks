@@ -62,8 +62,10 @@ First look in the **current working directory** for a `.tasks/` folder:
   `.tasks/MILESTONES.md`, `.tasks/CLAUDE.md`, and `.tasks/memory/`; read `.tasks/config.json`
   for the persisted setup choices (git tracking, hooks target) — **the resume path never
   re-asks anything recorded there**; and for **every task in the Active column** read its
-  `.tasks/tasks/<id>.md` (`## Status` + the most-recent `## Activity` line) so you can resume
-  mid-task. For any milestone past its `(target …)` date with open children, read its
+  `.tasks/tasks/<id>.md`: TT;DR, Acceptance, unresolved Verification, current Evidence,
+  latest material Attempts row, Status, and the most-recent Activity line. Resume from the
+  exact next bounded action; retrieve bulky linked evidence only for a named question. For any
+  milestone past its `(target …)` date with open children, read its
   `.tasks/milestones/<id>.md` `## Status` too. Then continue through **step 2 (repair /
   upgrade) before step 3** — step 2 is mandatory on every run, including resumes.
   `/tasks-start` is idempotent and doubles as "relaunch / repair my board." Re-verify the
@@ -176,6 +178,7 @@ Create the `.tasks/` folder if needed, then populate or repair it:
 
   ```
   secure/
+  .task-detail-tombstones/
   .board-server.json
   .board-nudge.json
   .board-server.log
@@ -188,7 +191,7 @@ Create the `.tasks/` folder if needed, then populate or repair it:
   *.tmp
   ```
 
-  Deliberately **not** ignored: `dashboard.html`, `board-server.mjs`, `board-config.js`, and
+  Reconcile this scoped file on upgrades. Deliberately **not** ignored: `dashboard.html`, `board-server.mjs`, `board-config.js`, and
   `.board-version.json` — on a tracked board they're committed so collaborators who clone get
   a working, project-named, version-identifiable board with zero plugin install
   (`node .tasks/board-server.mjs ensure`).
@@ -256,33 +259,9 @@ Ask it right after the skeleton above exists, record the answer, move on:
 
 #### Node dependency (detect → bootstrap → offline fallback)
 
-Both the installer above and the live board in step 3 need **`node` on PATH**. Decide once,
-here, before running `install`:
-
-- **Node present** (`node --version` succeeds) → run `install`, then step 3 launches the
-  server normally. This is the common case.
-- **Node absent** → the board can't run as a server at all, so try to provision Node, in
-  this order, non-interactively, and pick whatever the platform offers:
-  - **Windows:** `winget install --id OpenJS.NodeJS.LTS -e --silent --accept-package-agreements --accept-source-agreements`
-  - **macOS:** `brew install node`
-  - **Linux:** `nvm install --lts` if nvm is present, else `sudo -n apt-get install -y nodejs npm` only if passwordless sudo works.
-
-  Installing Node is a **global, out-of-tree change** — it can affect the whole machine.
-  Mention it before doing it ("Node isn't installed; the live board needs it — want me to
-  install the Node LTS via winget?") unless the user has already said to just make it work.
-  If you do install it, tell `install` to record the change so it can be cleanly reversed
-  later:
-
-  ```
-  node .tasks/board-server.mjs install --node-bootstrap "winget:OpenJS.NodeJS.LTS"
-  ```
-
-  (Use `brew:node`, `apt:nodejs`, or `nvm:lts` for the other managers; the installer writes
-  the matching reverse command into the manifest so `/tasks-remove` can offer to undo it.)
-- **Node still unavailable** (no installer, or it failed/needs UAC) → fall back to the
-  **static `file://` flow** in step 3. The board works fully without Node — it just loses
-  the live two-way sync and runs from the bundled offline assets + system fonts. Never block
-  setup on Node.
+Before running `install`, follow the normative [Global Node
+bootstrap](references/board-server.md#global-node-bootstrap): detect Node, obtain authority for
+machine-wide installs, record successful provisioning, and use its guarded static fallback.
 
 ### 3. Launch the live board (localhost)
 
@@ -312,10 +291,9 @@ URL. Multiple boards on one machine at once is a normal, supported setup; see th
 > Your live task board is at **http://localhost:<port>** (opening it now). Light (vintage) /
 > dark (brutalist) theme toggle is in the top-right.
 
-**No Node?** Fall back to the static flow: tell the user to open `.tasks/dashboard.html`
-from their file browser, then **Select TASKS.md** → `.tasks/TASKS.md` and **Select Folder**
-→ `.tasks/` for the Memory tab. (The dashboard auto-detects `file://` and uses the File
-System Access API.)
+**No Node?** Use the read/edit-only static flow: open `.tasks/dashboard.html`, then **Select TASKS.md** → `.tasks/TASKS.md` and **Select Folder** → `.tasks/`. The dashboard
+uses the File System Access API, but completion and deletion stay locked because a browser
+cannot atomically bind their detail-file changes to the `TASKS.md` lifecycle write.
 
 ### 4. Wire the board-maintenance hooks (ask once)
 
@@ -350,40 +328,13 @@ top-level description of how this repo uses the task system.
 - If either file is missing a clear "Task management system" / "Tasks" section, offer to add
   one; if the operator asked for unattended setup, add it directly. Never clobber existing
   instructions — append or update only the task-system section.
-- The section should explain:
-  - `.tasks/TASKS.md` is the board/list source of truth; `.tasks/MILESTONES.md` holds the
-    milestones (dated epics) that tasks join with an `(ms #id)` tag.
-  - `.tasks/tasks/<id>.md` holds each task's rich handoff, `## Verification` checklist,
-    `## Status`, and `## Activity`.
-  - Proper subtasks are the dashboard modal's **Subtasks** items / indented checkbox rows in
-    `TASKS.md`, not "sub-items" and not plain checklist text buried in the parent description.
-  - Subtasks can have their own indented description lines for agent-facing detail:
-    `    > detail for this subtask`.
-  - Parent task descriptions are for reasoning, implementation sequence, context, impact,
-    acceptance, and resume notes.
-  - Non-trivial tasks record in/out scope, a functional bar, an evidence bar, and who owns
-    costly gates. Optional evidence may be deferred only by a dated decision plus an owned
-    backlog task; ambitious or looping work is re-scoped into a basic working version first,
-    followed by separately observable steps toward the full goal.
-  - Large dependent work should be a separate top-level task linked with `(needs #id)`.
-  - Completion gates: a task can't be done over unchecked subtasks, or over `[ ]`
-    verification items (verify or waive-with-reason first); a milestone can't close over
-    open child tasks.
-  - **Secrets never go in `TASKS.md`, detail files, `CLAUDE.md`, or `memory/`** — use env
-    vars / the OS keychain, or `.tasks/secure/` (gitignored) as the fallback.
-  - On a shared (git-tracked) board: attribute `## Activity` lines, respect `(owner name)`,
-    pull before board sessions and commit after meaningful task changes.
-  - Keep Active task `## Status` and `## Activity` current as work happens so `/tasks-start`
-    can resume from the board.
-  - Multiple boards can run on one machine: resolve this repo's board from
-    `.tasks/.board-server.json` and verify identity before using a board URL/API — never
-    assume a port (see `tasks-boards`).
-  - Reference `tasks-start`, `tasks-create`, `tasks-management`, `tasks-update`,
-    `tasks-memory`, `tasks-boards`, and `tasks-remove`; mention companion skills such as
-    `ttdr`, `personal-productivity`, `iterative-plan`, or `git-workflow` only as optional
-    if installed.
-  - Include the skill-routing and freshness fallback from the suggested section below so an
-    agent in a stale harness can still find the current contract.
+- The section should stay concise and explain:
+  - board and milestone sources of truth, task ids/links, and proper subtasks;
+  - compact per-task state: contract, unresolved Verification, conditional Evidence/Attempts,
+    Status, Activity, failed routes, and exact next action;
+  - missing evidence is never an agent waiver; milestones may need a final qualification task;
+  - secrets, shared-board attribution/ownership, and board identity;
+  - skill routing and the GitHub freshness fallback.
 
 Suggested section:
 
@@ -392,51 +343,38 @@ Suggested section:
 
 This repo uses the SHAUGHV `tasks-*` system. The board source of truth is
 `.tasks/TASKS.md`; milestones (dated epics) live in `.tasks/MILESTONES.md` and tasks join
-one with an `(ms #id)` tag; each task's rich handoff lives at `.tasks/tasks/<id>.md` with
-its `## Verification` checklist, `## Status`, and `## Activity` kept current while work is
-in flight.
+one with `(ms #id)`. Each task's compact continuation packet lives at
+`.tasks/tasks/<id>.md`: contract/acceptance, unresolved `## Verification`, conditional
+`## Evidence` and `## Attempts`, `## Status`, and `## Activity`.
 
 Use proper subtasks for small required steps that should be visible and checkable in the
-dashboard modal: indented checkbox rows under the parent task in `.tasks/TASKS.md`, optionally
-followed by indented description lines (`    > detail for this subtask`). Do not bury those
-board-trackable steps as plain text in the parent task description, and do not call them
-"sub-items." Use the parent description for reasoning, context, plan, impact, acceptance, and
-resume notes. If related work is large enough to need its own status, activity log, or owner,
-make it a separate top-level task and link it with `(needs #id)`.
+dashboard: indented checkbox rows under the parent in `TASKS.md`, optionally followed by
+`    > detail`. Work needing its own status, owner, evidence, or handoff is a separate
+top-level task linked with `(needs #id)`.
 
 Completion gates (board-enforced): a task can't be marked done while a subtask is unchecked,
-or while a `## Verification` item is still `[ ]` — verify it or waive it with a recorded
-reason (`(waived YYYY-MM-DD — agent: <why>)`); a milestone can't close while a child task is
-open. Use `/tasks-create` for a guided way to add a milestone, task, or subtask with a
-verification checklist.
+or while a `## Verification` item is `[ ]`. `[~]` is only an authorized removal, deferral,
+or not-applicable decision; missing/unavailable evidence stays open and the task remains
+partial, blocked, or not verified. A milestone cannot close over open children; add a final
+qualification child when ordinary tasks do not entail the milestone outcome.
 
-For non-trivial tasks, distinguish the functional bar (what must actually work) from the
-evidence bar (the proof required), record what is explicitly out of scope, and identify who
-owns costly gates. If non-essential evidence is deferred, record the dated decision and
-create an owned Backlog task rather than leaving an ownerless gate to block the current task.
-After two attempts produce materially identical evidence, stop retrying, update Status and
-Activity, and ask whether the task is too ambitious at its current grain. Preserve the full
-goal, but split it into the smallest end-to-end working version, then separately observable
-hardening and qualification steps. Start with that basic rung; otherwise change the
-experiment or return the gate to its owner.
+For non-trivial work, record scope/non-goals, invariants, functional/evidence bars, gate owners,
+authoritative oracles, truthful outcomes, and a finite stop rule for open work. Keep verified
+state/evidence separate from hypotheses. Plan with a stable dependency skeleton plus a short
+next-action window, predictions, and redirect condition. Log Attempts only for uncertain/repeated
+work and Evidence for consequential completion. After equivalent no-information cycles, freeze
+that route, classify/audit the recurrence, then change the experiment or return a truthful boundary.
 
 Never put secrets (API keys, tokens, credentials) in `TASKS.md`, detail files, `CLAUDE.md`,
 or `memory/` — use env vars / the OS keychain, or `.tasks/secure/` (gitignored).
 
-The live board's port is per-repo, never assumed: resolve it from
-`.tasks/.board-server.json` (or `node .tasks/board-server.mjs status`) and verify identity
-before using a board URL or API — multiple boards can run on this machine at once (see
-`tasks-boards`).
+Resolve the per-repo live board from `.tasks/.board-server.json` (or
+`node .tasks/board-server.mjs status`) and verify identity before using its URL/API.
 
-Relevant skills: `tasks-start`, `tasks-create`, `tasks-management`, `tasks-update`,
-`tasks-memory`, `tasks-boards`, `tasks-remove`. Companion skills such as `ttdr`,
-`personal-productivity`, `iterative-plan`, or `git-workflow` are optional if installed.
-
-Skill routing: use `/tasks-start` to initialize, repair, upgrade, or resume the board;
-`/tasks-create` is the preferred way to add a well-formed milestone, task, or subtask;
-`tasks-management` is the format and completion contract; `/tasks-update` syncs and triages
-current work; `tasks-memory` governs workplace memory; `tasks-boards` governs live-server
-identity; and `/tasks-remove` decommissions the system.
+Routing: `/tasks-start` initializes/resumes; `/tasks-create` adds scoped work;
+`tasks-management` defines formats/completion; `/tasks-update` syncs/triages;
+`tasks-memory` governs workplace memory; `tasks-boards` governs board identity;
+`/tasks-remove` decommissions. Companion skills are optional if installed.
 
 If the installed tasks plugin is missing or may be older than the board, first try the
 harness's native plugin update. If that is unavailable, fails, or still leaves version
@@ -449,12 +387,14 @@ latest operating guidance: https://github.com/RealEmmettS/shaughv-tasks/tree/mai
 
 If everything was already initialized (the relaunch path), **lead with where we left off** — a
 short summary built from the state you loaded in step 1: the **Active** tasks and, for each, its
-`## Status` / latest `## Activity` (exactly where it stands and the next step), then anything
-overdue or due today. This is what makes "resume days later, mid-task" the default:
+acceptance state, unresolved Verification, current Evidence receipt, latest material Attempt or
+failed-route/re-entry condition, `## Status`, and exact next action; then anything overdue or due
+today. Do not replay the full chronology or load bulky evidence without a named question. This is
+what makes "resume days later, mid-task" the default:
 
 ```
 Here's where we left off:
-- <Active task> — <where it stands; next step>   (from .tasks/tasks/<id>.md)
+- <Active task> — <verified state; unresolved gate/route; next bounded action>
 - … (overdue / due-today items next)
 
 Task system loaded from .tasks/. Live board: http://localhost:<port from .tasks/.board-server.json>

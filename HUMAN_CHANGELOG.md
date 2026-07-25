@@ -6,6 +6,74 @@ For the technical version with versions, file paths, and links, see CHANGELOG.md
 
 ---
 
+## Tasks that remember proof, not chatter — late July 2026
+
+**Added**
+- Important tasks can now carry a small proof receipt: what had to be true, which real-world check
+  decided it, where the raw result lives, what that result actually supports, and whether the check
+  passed, failed, was not run, or could not decide.
+- Uncertain or repeatedly failing tasks can keep a compact attempt record: the belief being tested,
+  the action, the prediction, what really happened, what changed, and what evidence would justify
+  trying that route again.
+- A milestone now gets a final qualification task when finishing its ordinary children would not
+  itself prove that the pieces work together or that the promised outcome is ready.
+
+**Improved**
+- Task descriptions now lead with the compact state a fresh assistant needs: objective and finish
+  line, verified facts and proof, important decisions, live assumptions, failed routes, unresolved
+  obligations, the stable dependency map, and the short window of actions worth detailing now.
+  Each near-term action says what should be observed and when to change course; later steps stay
+  coarse instead of becoming a stale master plan. Huge logs and old chronology remain available by
+  link instead of flooding every resumed session.
+- Long or consequential work records the source that decides current truth, what must not break,
+  the early assumption most likely to invalidate later work, and the cheapest way to disprove it.
+  A routine task still stays light.
+- When two attempts are really the same and teach nothing, the assistant stops only that route. It
+  checks the premise, observer, success test, environment, approach, and task size before choosing
+  a different experiment. It distinguishes repeated words, repeated evidence, repeated actions,
+  and work built on a false premise, because each needs a different recovery. Open-ended work also
+  gets a finite budget or stop point. A changed result remains productive; noisy work can still use
+  a declared repeat plan.
+- Reopening a board now summarizes acceptance, missing checks, current proof, the latest meaningful
+  attempt, failed-route conditions, and the next action. Approved future plan steps stay queued;
+  only work actually underway enters Active.
+- Connected trackers can still say something is complete, but the board now checks the real finish
+  line before agreeing. Updates also surface persuasive “done” claims without proof, repeated
+  symptom patches, contradictions nobody acted on, and reliability claims based on one run.
+- Workplace memory remains useful for names and context while clearly yielding to current system
+  state. Removing the board preserves the compact open-work state, not a transcript; deferred
+  evidence obligations survive automatically, and you explicitly choose what happens to the rest
+  of the Backlog.
+
+**Fixed**
+- An assistant can no longer skip a required check merely because it cannot run it. A skipped check
+  now requires a real owner or policy decision to remove, defer, or declare it irrelevant; missing
+  proof keeps the task honestly partial, blocked, or not verified.
+- The dashboard itself now enforces that rule: waiving, removing, or changing any check
+  requires an explicit authority acknowledgement and recorded reason; changed settled checks
+  reopen; and an old reasonless waiver cannot silently unlock completion. It waits until that
+  record is actually saved, rereads the durable checklist, and makes the server prove that exact
+  checklist was still current when it records completion. If another person or assistant edits
+  either file at the same time, one operation is refused for review instead of silently winning.
+  The same guarded operation deletes a task and retires its detail together; a stale tab cannot
+  erase proof for a task that survived a conflict, recreate detail after deletion, or mark a task
+  complete by bypassing the receipt. Board conflicts compare the actual content, not only a
+  timestamp that two rapid writes might share.
+  The no-server fallback still verifies the matching task folder and refuses stale edits, but
+  completion and deletion wait for the live board because a browser cannot safely commit two
+  files as one.
+  Switching or closing a task cannot let a late background read or save spill into the next
+  task, and outside refreshes no longer erase unblurred modal drafts. A tab that loaded an older
+  checklist is checked and refused when a newer agent edit is detected. Once completed, a task's
+  contract and proof stay read-only until someone deliberately reopens it.
+- A completion checkbox in another app no longer becomes proof by itself.
+
+**Behind the scenes**
+- The live board did not need a new screen or data format: it already preserves the new optional
+  sections. Updated every installation description, portable board marker, resume instruction, and
+  maintenance reminder together, and kept detailed setup mechanics in navigable optional
+  guidance, without adding another helper, connection, command, or test system.
+
 ## Tasks with a finish line — late July 2026
 
 **Improved**

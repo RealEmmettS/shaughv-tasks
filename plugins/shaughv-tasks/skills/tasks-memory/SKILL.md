@@ -61,6 +61,10 @@ If a lookup needs a *credential*, it is deliberately **not** in memory — check
 `.tasks/secure/` or the environment/keychain, and never copy the value back into
 `TASKS.md`, detail files, or `memory/`.
 
+Memory decodes language and preserves context; it is not authoritative for current runtime
+state, task completion, permissions, or time-sensitive facts. Verify any load-bearing memory
+claim against its current source before using it to close work or authorize an action.
+
 ## Secrets & sensitive data
 
 **Secrets never live in memory.** API keys, tokens, passwords, private keys, connection

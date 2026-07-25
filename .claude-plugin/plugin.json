@@ -1,7 +1,7 @@
 {
   "name": "shaughv-tasks",
-  "version": "1.0.2",
-  "description": "Emmett Shaughnessy's standalone task + workplace-memory plugin — the seven SHAUGHV tasks-* skills (/tasks-start, /tasks-create, /tasks-update, /tasks-remove, plus the tasks-management, tasks-memory, and tasks-boards reference skills). /tasks-start stands up a self-contained `.tasks/` folder in any repo — a TASKS.md Kanban list, MILESTONES.md dated milestones with derived progress that tasks join via (ms #id), per-task handoff files with explicit functional/evidence finish lines, progressive working slices, named gate ownership, bounded convergence, and default-on verification checklists (hard, waivable completion gates with recorded waivers), owners and prerequisites, CLAUDE.md working memory + a memory/ deep store, a gitignored secure/ private tier for secrets, and a durable project-named SHAUGHV live dashboard with a milestone rail — backed by a zero-dependency Node board server with two-way sync, identity-verified ports (multiple boards per machine, one per repo), optimistic-concurrency writes, a tiered offline-capable asset loader, and opt-in board-maintenance hooks. Ask-once git tracking persisted to config.json: share the board (and the dashboard itself) with your team through git, or keep it local. Built for operator + agent collaboration: tasks, milestones, and memory persist across sessions, operators, and agents — resume exactly where anyone left off.",
+  "version": "1.1.0",
+  "description": "Emmett Shaughnessy's standalone task + workplace-memory plugin — seven SHAUGHV tasks-* skills that create a self-contained `.tasks/` board and memory in any repo: milestones, prerequisites/owners, compact typed continuation packets, functional/evidence finish lines, preservation invariants, authoritative oracles, conditional evidence receipts and causal attempt ledgers, authorized-only waivers, milestone qualification tasks, progressive working slices, and bounded route audits. The project-named dashboard runs on a zero-dependency identity-verified Node server; boards may be git-shared or local, with a gitignored secure/ tier. Durable task state remains model-neutral and resumable across Claude, Codex, operators, and other agents without transcript dumps or false completion from unavailable evidence.",
   "author": {
     "name": "Emmett Shaughnessy",
     "email": "hey@emmetts.dev",
@@ -31,5 +31,8 @@
     "resume",
     "persistence",
     "agent-memory"
+    ,"evidence-receipt"
+    ,"attempt-ledger"
+    ,"bounded-convergence"
   ]
 }

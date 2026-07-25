@@ -11,6 +11,22 @@ It uses **only Node built-ins** — no `npm install`, no build step. It requires
 PATH; if Node is absent, fall back to the legacy `file://` dashboard flow (open
 `dashboard.html` from a file browser and use the Select-file pickers).
 
+## Contents
+
+- [Subcommands](#subcommands)
+- [How it serves and live-syncs](#how-it-serves-and-live-syncs)
+- [The board-maintenance hooks](#the-board-maintenance-hooks-written-into-the-target-repo)
+- [TASKS.md format contract](#tasksmd-format-contract-server--dashboard-must-agree)
+- [MILESTONES.md format contract](#milestonesmd-format-contract)
+- [Completion gates](#completion-gates-dashboard-enforced-render-violations-honestly)
+- [Per-task detail files](#per-task-detail-files-taskstasksidmd)
+- [config.json and secure](#configjson-and-secure-setup-owned-the-server-stays-out)
+- [Tiered dependencies](#tiered-dependencies)
+  - [Install chain](#the-install-chain-server-side)
+  - [Global Node bootstrap](#global-node-bootstrap)
+  - [Static route and runtime loader](#the-static-route)
+  - [Install manifest and teardown](#the-install-manifest-tasksinstall-manifestjson)
+
 ## Subcommands
 
 Run from the repo root (the `.tasks/` folder is a child of it):
@@ -42,26 +58,40 @@ To launch + open the board (what `/tasks-start` does): `node .tasks/board-server
   root before writing through any API (full rules: the `tasks-boards` skill).
 - HTTP API (the server stays **dumb** about markdown — the browser keeps all parse/serialize):
   - `GET /` → serves `dashboard.html`.
-  - `GET /api/tasks` → raw `TASKS.md`; response carries `X-Board-Mtime` and `X-Board-Id`.
-  - `POST /api/tasks` → atomic write. Send `X-Base-Mtime` (the mtime you loaded); if the
-    file changed underneath you the server returns **409** with the latest content, so an
-    agent's write is never silently stomped. Current dashboards also send
-    `X-Expected-Board-Id`; a stale tab pointed at a different board is rejected before write.
+  - `GET /api/tasks` → raw `TASKS.md`; response carries `X-Board-Revision`,
+    `X-Board-Mtime`, and `X-Board-Id`.
+  - `POST /api/tasks` → serialized atomic write. Current clients send
+    `X-Base-Board-Revision`; content-hash CAS rejects stale writes with **409** even when two
+    filesystem timestamps collide. `X-Base-Mtime` remains the older-client fallback. A dashboard
+    completion also sends
+    `X-Completion-Task-Id` and the re-read `X-Completion-Detail-Revision`; under the same
+    per-task lock used by detail writes, the server returns **412** if that checklist changed
+    before the checked board write. Any newly checked transition without this receipt is rejected.
+    Deletion sends `X-Delete-Task-Id`; the server moves its detail out of the live id path, writes
+    the board removal, then cleans the tombstone. An unlink failure can retain only that hidden,
+    unserved, unwatched, gitignored tombstone under `.task-detail-tombstones/`, never a live-id
+    detail or a restored local task. Unguarded task removal is rejected.
+    Current dashboards also send `X-Expected-Board-Id`; a stale tab pointed at a different board
+    is rejected before write.
   - `GET|POST /api/milestones` → raw `MILESTONES.md`, exactly the same semantics as
     `/api/tasks` (mtime header, 409-with-latest, atomic write). GET returns the
     `# Milestones` skeleton when the file doesn't exist yet; the file is only created on
     first write.
   - `GET|POST|DELETE /api/milestone?id=<id>` → a milestone's rich detail file at
-    `.tasks/milestones/<id>.md`, exactly the same semantics as `/api/task?id=` (same
-    `^[0-9a-z]{2,8}$` id validation, lazy files, atomic writes, delete-with-the-milestone).
+    `.tasks/milestones/<id>.md`. It shares `/api/task?id=` id validation, lazy-file behavior,
+    atomic replacement, and delete-with-the-milestone, but is not part of the task Verification
+    revision contract.
   - `GET /api/config` → raw `.tasks/config.json` bytes (`{}` if missing). **Read-only** —
     the server never parses or writes it; setup (`/tasks-start`) owns it.
   - `GET /board-config.js` → the generated, no-store project-title companion used by the
     dashboard in both localhost and `file://` modes. Missing files return an empty identity.
   - `GET /api/events` → **SSE**; a `change` event fires when board state changes on disk or
     through any browser tab,
-    with a `kind` of `tasks`, `milestones`, `config`, or `memory` so the browser reloads
-    the right surface. Implemented with `fs.watchFile` on `TASKS.md` and `MILESTONES.md`
+    with a `kind` of `tasks`, `milestones`, `detail`, `config`, or `memory` so the browser
+    refreshes or flags the affected surface. A generic detail event never replaces an open
+    modal because it cannot identify the task and unblurred field drafts may exist; completion
+    re-reads its own detail, while close/reopen is the explicit visual refresh boundary.
+    Implemented with `fs.watchFile` on `TASKS.md` and `MILESTONES.md`
     (reliable cross-platform) plus a best-effort recursive `fs.watch`. **`secure/` is
     excluded from watching** — edits there never produce events.
   - `GET|POST /api/memory/tree`, `/api/memory/file?path=` → memory tab; writes are
@@ -70,10 +100,16 @@ To launch + open the board (what `/tasks-start` does): `node .tasks/board-server
   - `GET|POST|DELETE /api/task?id=<id>` → a task's rich detail file at `.tasks/tasks/<id>.md`
     (the description + activity log behind the dashboard's task modal). `id` is validated
     `^[0-9a-z]{2,8}$` (the task's trailing `#id`). GET returns the raw markdown (empty string
-    if the file doesn't exist yet — detail files are lazy/optional); POST atomically writes it;
-    **DELETE removes it** (the dashboard calls DELETE when a task is deleted, so a reused id
-    can't inherit stale detail). Browser writes broadcast to sibling tabs immediately while
-    their matching filesystem-watch echo is de-duplicated.
+    if the file doesn't exist yet — detail files are lazy/optional) plus
+    `X-Detail-Revision`. POST requires that value as `X-Base-Revision`; the server serializes
+    compare-and-write operations per task and returns **409 with the latest content** on a stale
+    base, or **428** when the precondition is absent. Successful POST uses atomic replacement
+    and returns the new revision. A checked task's detail is immutable through this route
+    (**423**) until the task is reopened, preventing a later contract edit from invalidating a
+    completion receipt in place. Current dashboard deletion is the guarded `/api/tasks`
+    transaction above. **DELETE** is orphan cleanup only and returns **409** while `TASKS.md`
+    still names the task. Browser writes broadcast to sibling tabs immediately while their
+    matching filesystem-watch echo is de-duplicated.
   - `GET /vendor/*` → static read of a provisioned display asset from `.tasks/vendor/`
     (anime.js, the brand woff2s, the brand mark, `fonts.css`). Same path confinement as the
     memory API (`path.resolve` under `vendor/`, traversal / NUL / drive-escape → 403; encoded
@@ -82,7 +118,13 @@ To launch + open the board (what `/tasks-start` does): `node .tasks/board-server
     dashboard's runtime loader falls through to its CDN / inline fallback. See
     [Tiered dependencies](#tiered-dependencies).
 - `dashboard.html` auto-detects: over `http(s)` it uses this API + SSE; over `file://` it
-  uses the legacy File System Access API. One file, both modes.
+  uses the File System Access API. Static mode identity-matches the selected `TASKS.md` against
+  `TASKS.md` inside the selected `.tasks/` folder before reading/writing `tasks/<id>.md`;
+  each static whole-file write compares the current durable bytes with the loaded base and
+  refuses a detected external change. Static completion is intentionally locked: File System
+  Access cannot atomically couple a detail revision with the checked `TASKS.md` write. Use the
+  live localhost board for completion and deletion; deletion likewise cannot atomically remove
+  the board entry and retire its detail file in static mode. One file, both modes.
 - In live mode, the source line is derived from `/api/ping.tasksPath` and carries the full
   canonical path + localhost origin in its tooltip. In `file://` mode the browser exposes only
   the selected handle's name, so the UI says **Selected file** instead of implying a full path.
@@ -222,13 +264,27 @@ Same byte-pipe rules: the server only moves the file; the dashboard parses/seria
 
 - **Subtasks (hard, no waiver):** a task cannot be checked done while any subtask is
   unchecked. Already-enforced alongside the prerequisite lock.
-- **Verification (hard, waivable):** a task cannot be checked done while any
-  `## Verification` item in its detail file is still `[ ]`. Every item must be `[x]`
+- **Verification (hard, waivable only by authority):** a task cannot be checked done while
+  any `## Verification` item in its detail file is still `[ ]`. Every item must be `[x]`
   (passed) or `[~]` (waived) first. The gate lives on the **checked action in the task
   modal** — the only UI path that completes a task — where the detail file is already
-  loaded (zero extra fetches). The board's waive control stamps
-  `(waived YYYY-MM-DD — <name>)` (operator; reason optional). Agents editing files must
-  include a reason: `(waived YYYY-MM-DD — agent: <why>)`.
+  loaded. Live mode waits for pending detail writes, re-reads the durable checklist, and sends
+  that exact revision with the checked board write. The server serializes task writes and
+  compares the detail revision under the per-task detail lock; a concurrent edit makes one
+  request retry rather than admitting a stale completion. Static mode may read and edit details
+  but refuses completion because it cannot provide this cross-file atomic guard. The board's
+  waive and remove controls require an explicit
+  authority acknowledgement and reason, append an Activity record, and stamp
+  `(waived YYYY-MM-DD — <who>: <reason>)` for waivers. `[~]` records that an authorized
+  operator, policy, or accepted contract change removed, deferred, or made the criterion
+  inapplicable; it is never a substitute for evidence an agent could not obtain. Editing any
+  criterion requires the same audited contract-change flow; a passed/waived edit also resets it
+  open. Completion
+  rejects legacy/malformed waivers without a dated who-and-reason record.
+- **Completed-task immutability:** reopen a task before changing its title, routing fields,
+  subtasks, description, checklist, evidence, or activity. The live dashboard locks these
+  controls, and the detail route returns **423** if another tab tries to write after completion.
+  This keeps the checked state tied to the contract and evidence it actually certified.
 - **Milestones (hard):** a milestone cannot be checked done while any task carrying its
   `(ms #id)` is unchecked. Deleting a milestone from the board also removes its `(ms #id)`
   tag from all tasks and deletes its detail file.
@@ -248,12 +304,13 @@ and `## Activity`:
 ```markdown
 TT;DR: plain-English one-or-two-sentence summary (rendered as a callout).
 
-Full plan — markdown is rendered (headings, lists, code, **bold**, _italic_, `code`, links).
+Stable dependency skeleton plus a short next-action window with its prediction, oracle, and
+redirect condition. Markdown renders headings, lists, code, **bold**, _italic_, `code`, and links.
 
 ## Verification
 - [ ] `npm test` passes on the changed package
 - [x] Staging /health returns 200 after deploy
-- [~] Operator confirmed the panel copy (waived 2026-07-02 — agent: copy superseded by #d4e)
+- [~] Panel-copy approval deferred (waived 2026-07-02 — operator: moved to #d4e)
 
 ## Activity
 - 2026-06-25 14:02 — created
@@ -273,9 +330,11 @@ Full plan — markdown is rendered (headings, lists, code, **bold**, _italic_, `
 - In milestone detail files the same parser also recognizes `## Completed` — the archive of
   cleared child-task lines that keeps counting toward milestone progress.
 - Files are **lazy/optional** — a task with no detail file shows an empty description. They're
-  created on first write and **deleted when the task is deleted** (the modal's delete fires
-  `DELETE /api/task?id=`; milestone deletes fire `DELETE /api/milestone?id=`). Agents editing
-  `TASKS.md` by hand should mirror that: remove `.tasks/tasks/<id>.md` when they remove a task.
+  created on first write and **deleted when the task is deleted**. In live mode, the modal uses
+  the guarded `POST /api/tasks` removal transaction; direct task-detail DELETE is orphan cleanup
+  only. Static mode refuses task deletion because it cannot couple both files. Milestone deletes
+  still fire `DELETE /api/milestone?id=`. Agents editing files by hand must remove the board line
+  and `.tasks/tasks/<id>.md` as one reviewed change.
 
 ## config.json and secure/ (setup-owned; the server stays out)
 
@@ -298,6 +357,9 @@ Full plan — markdown is rendered (headings, lists, code, **bold**, _italic_, `
   path-guarded to `CLAUDE.md`/`memory/`, detail APIs are id-regex + fixed-dir, the vendor
   route is confined to `vendor/`), and the recursive watcher ignores it so edits there never
   surface over SSE.
+- **`.tasks/.task-detail-tombstones/`** — internal, gitignored, unserved, and unwatched. A
+  guarded deletion briefly moves live detail here before committing the board removal; only a
+  failed final filesystem cleanup leaves anything behind.
 
 ## Tiered dependencies
 
@@ -338,7 +400,36 @@ brand mark degrade independently and are recorded per-asset.
 
 ### Global Node bootstrap
 
-`install` runs *under* Node, so Node is normally already present. Two seams cover the rest:
+Both the installer and live board require `node` on `PATH`. Before running `install`, call
+`node --version` and follow exactly one route:
+
+- **Node present** — run `node .tasks/board-server.mjs install`, then launch normally.
+- **Node absent** — the live server cannot start. A Node install is a global, out-of-tree
+  machine change, so mention it and obtain operator authority unless the user already gave
+  explicit authority such as "just make it work." Attempt the available platform route
+  non-interactively:
+
+  | Platform | Command | Bootstrap record |
+  |---|---|---|
+  | Windows | `winget install --id OpenJS.NodeJS.LTS -e --silent --accept-package-agreements --accept-source-agreements` | `winget:OpenJS.NodeJS.LTS` |
+  | macOS | `brew install node` | `brew:node` |
+  | Linux with nvm | `nvm install --lts` | `nvm:lts` |
+  | Linux without nvm | `sudo -n apt-get install -y nodejs npm`, only when passwordless sudo works | `apt:nodejs` |
+
+  After a successful bootstrap, refresh command discovery if needed and run:
+
+  ```text
+  node .tasks/board-server.mjs install --node-bootstrap "<manager>:<id>"
+  ```
+
+  The bootstrap record gives `/tasks-remove` the matching opt-in reversal.
+- **Node still unavailable** — continue with the static `file://` route; never block setup.
+  Have the operator open `.tasks/dashboard.html`, select `.tasks/TASKS.md`, and select the
+  matching `.tasks/` folder. Static mode loses live two-way sync but can read and write task
+  details after identity-matching those handles. Completion and deletion always remain
+  live-board-only because static browser access cannot atomically couple their cross-file writes.
+
+Once Node can run `install`, two additional seams cover partial dependency availability:
 
 - If npm is missing and the full tier is requested (and not `--no-global`/`--offline`), `install`
   makes a **best-effort, non-interactive** global Node install (winget / brew / apt-gated-on-`sudo -n`),

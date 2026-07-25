@@ -13,12 +13,14 @@ SHAUGHV-branded board:
 - **Milestones** (`.tasks/MILESTONES.md`) — dated, epic-scale groupings tasks roll up into with
   an `(ms #id)` tag; derived progress bars on the board's milestone rail, and a hard rule that a
   milestone can't close while a child task is open.
-- **Per-task handoff files** (`.tasks/tasks/<id>.md`) — a TT;DR-led description, a plan, a
-  scoped functional finish line, a separate evidence bar with named gate ownership, a
-  **verification checklist** (default-on; every check must be passed or waived-with-a-record
-  before the task can complete), and a timestamped activity log, so any agent can pick a task
-  up cold without inheriting an unbounded proof loop. Ambitious or stuck work is reshaped
-  into a basic working version first, then observable steps toward the full goal.
+- **Per-task continuation packets** (`.tasks/tasks/<id>.md`) — a TT;DR-led compact contract,
+  scoped functional/evidence bars, authoritative oracles and preservation invariants,
+  default-on **verification**, conditional **evidence receipts** and **attempt ledgers**, current
+  status, failed-route re-entry conditions, a stable dependency skeleton, and a short next-action
+  window with predictions and a redirect condition. Missing required evidence stays open—it
+  cannot be turned into an agent waiver. Ambitious or stuck work keeps the full goal while
+  changing the route or moving through observable working rungs; open-ended work has a finite
+  budget or stop rule instead of unlimited strategy switching.
 - **Two-tier workplace memory** (`.tasks/CLAUDE.md` hot cache + `.tasks/memory/` deep store) —
   so the agent decodes your people, projects, acronyms, and shorthand like a colleague — plus a
   gitignored **`.tasks/secure/`** for secrets and private notes that must never be committed.
@@ -106,21 +108,21 @@ claude --plugin-dir C:/Users/hey/git/shaughv-tasks
 | Skill | Purpose |
 |---|---|
 | `tasks-start` | Stand up a self-contained `.tasks/` task + workplace-memory system (TASKS.md, MILESTONES.md, working memory, deep memory, `secure/`, `config.json`, and a SHAUGHV-branded board/list/memory `dashboard.html` with a vintage-cream / brutalist-dark theme toggle), persist the real project-facing board title, ask once whether the board is git-tracked or local, launch the live board, teach the target repo's CLAUDE.md/AGENTS.md how to use the task system, and bootstrap memory from your real task list and connected tools. Idempotent — re-run it to repair or upgrade the copied board bundle, relaunch, and resume where you left off; it never re-asks a recorded choice, replaces a meaningful title, or downgrades a newer board. |
-| `tasks-create` | The guided front door for creating work: decides milestone vs task vs subtask with you, defines in/out scope, separates the functional and evidence bars, turns ambitious work into a basic working version plus progressive steps, assigns costly gates, links prerequisites and milestones, and authors the default-on verification checklist. |
-| `tasks-update` | Repair/upgrade an existing board and its durable project title, sync tasks from a connected tracker (Asana/Linear/Jira/GitHub Issues), triage overdue and stale items (including at-risk milestones), archive cleared milestone work so progress never regresses, and fill memory gaps; `--comprehensive` deep-scans chat/email/calendar/docs for missed todos and new memories. |
-| `tasks-management` | Reference for the full contract — `.tasks/TASKS.md`, `.tasks/MILESTONES.md`, per-task and per-milestone detail files, the milestone → task → subtask hierarchy, scoped finish lines, progressive working slices, verification checklists with waivers, gate ownership, bounded convergence, completion gates, the read/write/complete verbs, multi-operator conventions, and how to surface overdue / due-today / at-risk items. |
+| `tasks-create` | The guided front door for creating work: decides milestone vs task vs subtask, defines scope/non-goals and preservation invariants, separates functional/evidence bars, records authoritative oracles and truthful outcomes for consequential work, creates progressive rungs, assigns gates, links dependencies, and authors default verification plus conditional evidence/attempt state. |
+| `tasks-update` | Repair/upgrade an existing board and title, sync connected trackers without treating external completion as verification, surface semantic stagnation and unsupported completion as well as overdue/at-risk work, archive cleared milestone progress, and fill memory gaps; `--comprehensive` scans connected sources for missed work. |
+| `tasks-management` | Reference for the full contract — board/milestone formats, hierarchy, compact typed continuation packets, evidence receipts, causal attempt state, authorized waivers, milestone qualification tasks, bounded route audits, completion gates, interaction verbs, and multi-operator conventions. |
 | `tasks-memory` | The two-tier workplace-memory model (`.tasks/CLAUDE.md` hot cache + `.tasks/memory/` deep store) that lets the agent decode shorthand, nicknames, acronyms, and project codenames like a colleague — plus the secrets policy and the `secure/` private tier. |
 | `tasks-boards` | Reference for multi-board machines: how agents find, identity-verify, and talk to the RIGHT board when several repos each run their own (a port is not an identity). |
-| `tasks-remove` | Decommission the system and flatten it back into the repo — merge working memory into the root `CLAUDE.md`, move deep memory into a repo-level `memory/`, preserve open tasks and milestones, handle `secure/` explicitly (never promoted), then delete `.tasks/`. The inverse of `/tasks-start`. |
+| `tasks-remove` | Decommission the system and flatten it back into the repo — merge working memory into the root `CLAUDE.md`, move deep memory into a repo-level `memory/`, preserve open tasks, milestones, and evidence-debt obligations, explicitly disposition the remaining Backlog, handle `secure/` explicitly (never promoted), then delete `.tasks/`. The inverse of `/tasks-start`. |
 
 ## Persistence across sessions
 
 The task list **is** the continuity layer. The **Active** column shows what's in flight; each
-task's `.tasks/tasks/<id>.md` carries a `## Status` ("exactly where to resume") and a timestamped
-`## Activity` log; and `/tasks-start`, on resume, reads those and leads with "here's where we left
-off." A fresh `/tasks-start` always scaffolds the memory tree and configuration up front, so a
-persistent skeleton exists even before any interactive setup. Nothing lives in a database — it's
-all human-readable, diffable markdown under `.tasks/`.
+task's `.tasks/tasks/<id>.md` carries the acceptance state, unresolved verification, current
+evidence receipt, latest material attempt/failed route, status, activity, and exact next action.
+`/tasks-start` reads that compact packet and leads with "here's where we left off." Raw logs and
+chronology stay at stable pointers rather than being dumped into every new session. Nothing lives
+in a database—it is human-readable, diffable markdown under `.tasks/`.
 
 Small required steps belong in the dashboard's **Subtasks** field, not buried as plain text in a
 task description. Those subtasks are stored as indented checkbox rows in `TASKS.md`, and can carry
