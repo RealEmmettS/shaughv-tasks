@@ -1,6 +1,6 @@
 {
   "name": "shaughv-tasks",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Emmett Shaughnessy's standalone Codex task + workplace-memory skill bundle. Seven SHAUGHV tasks-* skills stand up a self-contained .tasks/ board and memory in any repo: dated milestones, prerequisites/owners, compact typed task handoffs, explicit functional/evidence finish lines, preservation invariants, authoritative oracles, conditional evidence receipts and causal attempt ledgers, authorized-only waivers, qualification tasks for milestone outcomes, progressive working slices, and bounded route audits. A project-named localhost dashboard runs on a zero-dependency identity-verified Node server; boards may be git-shared or local, with a gitignored secure/ tier. Tasks remain model-neutral and resumable across sessions, operators, Claude, Codex, and other agents without transcript dumps or false completion from missing evidence.",
   "author": {
     "name": "Emmett Shaughnessy",

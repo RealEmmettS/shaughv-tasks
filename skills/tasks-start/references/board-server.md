@@ -365,12 +365,11 @@ redirect condition. Markdown renders headings, lists, code, **bold**, _italic_, 
 
 The board **progressively enhances**. Its core (the Kanban board, live sync, the Slot Roll and
 FLIP motion) is built from Node + browser built-ins and works with **zero** external assets. On
-top of that it can layer optional enhancements — the **anime.js** motion driver, the vendored
-**brand fonts** (IBM Plex Mono + Unbounded), the **animated brand mark**, and `fonts.css`. The
-board looks and behaves **identically at every tier**; tiers differ only in *where the bytes
-come from*, never in *what the board does*. Makira (the SHAUGHV body face) is a **commercial
-license** and is **never bundled or mirrored** — it loads from the CDN when reachable and
-otherwise falls back to the system font stack (the motion is glyph-agnostic, so it's invisible).
+top of that it layers the **anime.js** motion driver, eight authorized **brand-font WOFF2s**
+(Makira + Gail Rock at weights 400, 500, 600, and 700), the **animated brand mark**, and
+`fonts.css` — 11 sha256-pinned assets in total. Makira is the board's body/display face; Gail Rock
+is the technical monospace face. The shipped tier keeps that typography intact without a network.
+The true zero-asset floor remains fully functional and falls back to system fonts.
 
 ### The `install` chain (server side)
 
@@ -384,7 +383,7 @@ through):
 | Tier | Source | How |
 |---|---|---|
 | **full** | npm | `npm install` the pinned `animejs` into a **transient** `.tasks/node_modules`, verify, copy the artefact into `vendor/`, then **prune `node_modules`** (nothing npm-related persists). |
-| **vendor** | pinned CDN fetch | `https` GET each asset (anime.js, woff2s, brand mark) straight into `vendor/`. |
+| **vendor** | pinned CDN fetch | `https` GET each available asset straight into `vendor/`; the byte-identical Makira CDN files are secondary candidates, while Gail Rock deliberately has no network candidate. |
 | **shipped** | the plugin bundle | copy from the absolute assets directory supplied by `/tasks-start` in `SHAUGHV_TASKS_ASSETS_DIR`; host plugin-root variables are compatibility fallbacks. This is the offline-capable floor-with-assets in Claude Code, Codex, and standalone skills.sh installs. |
 | **offline** | nothing | provision nothing; the dashboard inlines its built-in engine + system fonts. Cannot fail. |
 
@@ -394,6 +393,10 @@ right behaviour for a disconnected machine); `--tier offline` forces the true fl
 **always exits 0** — the offline floor is a valid outcome — and is **idempotent**: an
 already-valid asset is reused (its provenance preserved), and a re-run rebuilds the manifest
 from actual on-disk state, so a deleted asset is re-provisioned (integrity self-heal).
+
+`fonts.css` is pinned like every binary, so an older board's stale stylesheet is replaced on its
+next install. Reconciliation also removes only the two retired plugin-owned directories
+`vendor/fonts/ibm-plex-mono/` and `vendor/fonts/unbounded/`; unrelated vendor content is untouched.
 
 The achieved `tier` recorded is that of `anime.min.js` (the marquee enhancement); fonts and the
 brand mark degrade independently and are recorded per-asset.
@@ -452,11 +455,12 @@ provisioning and secret edits never spam SSE.
 ### The dashboard's runtime loader (browser side)
 
 Over `http(s)` (SERVER_MODE) the dashboard prefers the local `/vendor/*` copies, self-heals to the
-CDN, and finally to system fonts / its built-in engine — per resource, resolving (never
-rejecting), so degradation is automatic and silent:
+CDN where an exact candidate exists, and finally uses system fonts / its built-in engine — per
+resource, resolving (never rejecting), so degradation is automatic and silent:
 
-- **fonts** — inject `/vendor/fonts.css` (itself local-first → CDN per `@font-face`) after the CDN
-  `<link>`s; Makira + anything unvendored still resolves from the CDN / system stack.
+- **fonts** — the dashboard links `./vendor/fonts.css` directly. Its relative `@font-face` URLs
+  resolve from both localhost and `file://`; Makira tries the shipped file first and its
+  byte-identical private CDN file second, while Gail Rock is shipped-first with system fallbacks.
 - **anime.js** — `/vendor/anime.min.js` → CDN → leave `window.anime` undefined. The Slot Roll
   checks `window.anime` **per call**, so a late load is picked up with no reload; when present it
   drives the per-glyph roll from the **same computed tuple** as the built-in CSS driver (identical
@@ -466,7 +470,8 @@ rejecting), so degradation is automatic and silent:
   dependency-free text fallback registers so the mark still reads "SHAUGHV" offline.
 
 `prefers-reduced-motion` is honoured above the driver check, so reduced-motion snaps regardless of
-tier. Over `file://` the static CDN tags are used as before (no `/vendor/` to reach).
+tier. Over `file://`, the same relative stylesheet and font URLs resolve from the selected board
+folder.
 
 ### The install manifest (`.tasks/.install-manifest.json`)
 
@@ -493,7 +498,7 @@ Written **eagerly** (`status:"in-progress"`) and updated after each asset, then 
       "succeeded": true, "reverseCommand": "winget uninstall --id OpenJS.NodeJS.LTS -e",
       "reverseRisk": "high", "note": "…" }
   ],
-  "notes": ["Makira … never bundled …"]
+  "notes": ["Makira and Gail Rock are bundled as authorized exact WOFF2 assets …"]
 }
 ```
 

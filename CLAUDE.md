@@ -114,7 +114,7 @@ rules if you need a refresher.)
 - The `skills/` directory MUST stay lowercase. Case-only renames on Windows need a two-step
   `mv` (e.g. `mv skills tmp && mv tmp skills`).
 - `skills/tasks-start/assets/vendor/**` is pinned `binary` in `.gitattributes` (root + the
-  Codex mirror). Those 8 files are sha256-verified by `board-server.mjs` at install time and
+  Codex mirror). Those 11 files are sha256-verified by `board-server.mjs` at install time and
   byte-compared by `build-codex-plugin.ps1 -Check`; never let an editor or EOL normalization
   touch them.
 - `board-server.mjs` and `dashboard.html` resolve their own paths at runtime from the

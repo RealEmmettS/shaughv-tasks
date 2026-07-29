@@ -89,7 +89,7 @@ commit, using the labels **Added**, **Improved**, **Fixed**, **Removed**, **Secu
 - The `skills/` directory MUST stay lowercase. Case-only renames on Windows need a two-step
   `mv` (e.g. `mv skills tmp && mv tmp skills`).
 - `.gitattributes` pins `skills/tasks-start/assets/vendor/**` (and its Codex mirror) as
-  `binary` so the 8 sha256-pinned board assets stay byte-exact across OS checkout and pass the
+  `binary` so the 11 sha256-pinned board assets stay byte-exact across OS checkout and pass the
   `build-codex-plugin.ps1 -Check` byte-compare. Nothing in this mirror is *generated* text
   (manifest + skills are copied verbatim), so — unlike shaughv-code — no `.mcp.json text eol=lf`
   pin is needed.

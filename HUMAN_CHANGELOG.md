@@ -6,6 +6,35 @@ For the technical version with versions, file paths, and links, see CHANGELOG.md
 
 ---
 
+## A task board that reads like a product and verifies like a console — late July 2026
+
+**Added**
+- Makira and Gail Rock now travel with the board in the four weights it actually uses, so the
+  intended typography stays available without a connection.
+
+**Improved**
+- Makira now carries the human layer: names, descriptions, notes, people, navigation, editable
+  values, and actions. Gail Rock carries the operational layer: workflow states, labels, IDs,
+  dates, counts, proof, paths, activity, freshness, and raw writing surfaces.
+- Buttons read as product actions instead of terminal commands, while compact system utilities
+  retain Gail Rock where its fixed rhythm makes state and technical output easier to scan.
+- Both the live board and a directly opened board use the same local font files before considering
+  any fallback.
+
+**Fixed**
+- An older board now receives the new type definitions on its next start instead of keeping its
+  previous font setup.
+- Mobile navigation now stays on-screen, and long names no longer collide with their short IDs in
+  task and milestone details.
+
+**Removed**
+- The two previous board fonts and their leftover local folders are retired cleanly during an
+  upgrade.
+
+**Behind the scenes**
+- The installer now tracks the complete set of fonts, motion, stylesheet, and brand assets without
+  changing task data or how anyone uses the board.
+
 ## Tasks that remember proof, not chatter — late July 2026
 
 **Added**

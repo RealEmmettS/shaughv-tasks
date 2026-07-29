@@ -210,13 +210,15 @@ Create the `.tasks/` folder if needed, then populate or repair it:
 
   This is an **internal subcommand, not a user-facing command** — never tell the user to run
   it. It provisions the board's optional enhancement assets (the anime.js motion driver, the
-  vendored brand fonts, the animated brand mark) into `.tasks/vendor/` using a
+  authorized Makira + Gail Rock brand fonts, the animated brand mark) into `.tasks/vendor/` using a
   **try-everything chain** — npm → pinned CDN fetch → the plugin's shipped copies → a fully
   offline floor — and writes `.tasks/.install-manifest.json` recording exactly what it did
-  (so `/tasks-remove` can fully undo it). **It always succeeds**: the board looks and behaves
-  identically at every tier; lower tiers just source fewer bytes externally (Makira, a
-  commercial font, is never bundled and falls back to the system stack offline). It prints a
-  one-line `tier=…` summary you can surface in step 10. Re-running it is safe and idempotent.
+  (so `/tasks-remove` can fully undo it). **It always succeeds**: the shipped tier provisions all
+  11 pinned assets from the plugin with no network, including Makira and Gail Rock weights 400,
+  500, 600, and 700. The true zero-asset floor keeps the board functional with system fallbacks.
+  Upgrades replace a stale `fonts.css` and remove the retired plugin-owned IBM Plex Mono and
+  Unbounded font directories. It prints a one-line `tier=…` summary you can surface in step 10.
+  Re-running it is safe and idempotent.
 - **`.tasks/CLAUDE.md` + `.tasks/memory/` (scaffold now, enrich later)** — if absent, this is
   a fresh setup. Create the persistent skeleton **immediately**, before any interactive
   bootstrapping, so a durable memory + config scaffold exists even if the operator stops here:

@@ -11,7 +11,7 @@
       "name": "shaughv-tasks",
       "source": "./",
       "description": "Emmett Shaughnessy's standalone task + workplace-memory plugin — a live board with milestones, compact typed handoffs, evidence receipts, causal attempt ledgers, authorized-only waivers, qualification tasks, bounded route audits, git-shareable state, a secure store, and reliable cross-agent resume.",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "homepage": "https://github.com/RealEmmettS/shaughv-tasks",
       "keywords": [
         "shaughv",

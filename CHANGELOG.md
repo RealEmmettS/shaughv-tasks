@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 A plain-English companion lives at [HUMAN_CHANGELOG.md](./HUMAN_CHANGELOG.md) and is kept in lockstep with this file — see the changelog rule in [CLAUDE.md](./CLAUDE.md).
 
+## [1.1.1] — 2026-07-28
+
+The board now uses a deliberate two-family type system: Makira carries reading, naming, and
+actions; Gail Rock carries technical state, compact metadata, and verification surfaces.
+
+### Added
+- Bundle the authorized Makira and Gail Rock WOFF2 files at weights 400, 500, 600, and 700 so the
+  complete board type system provisions from shipped bytes offline.
+
+### Improved
+- Apply Makira to board, task, and milestone names; descriptions and notes; people and editable
+  values; primary navigation; and action buttons. Apply Gail Rock to workflow columns, section and
+  field labels, identifiers, dates, counts, status/evidence chips, paths, activity, freshness, raw
+  Markdown editors, and compact system utilities.
+- Link the pinned local `fonts.css` with relative URLs so both localhost and direct `file://` boards
+  resolve the same shipped font files. Makira retains its byte-identical private CDN files as
+  secondary fallbacks; Gail Rock remains shipped-first with system fallbacks.
+- Expand the installer inventory from eight to 11 assets: eight fonts, `fonts.css`, anime.js, and
+  the animated brand mark.
+
+### Fixed
+- Pin `fonts.css` itself so upgrading a 1.1.0 board replaces the stale type declarations rather
+  than retaining a hash-valid but obsolete font configuration.
+- Reflow the mobile header so navigation and utilities stay inside the viewport, and constrain
+  long task and milestone titles so their compact IDs no longer overlap them.
+
+### Removed
+- Remove IBM Plex Mono and Unbounded from board links, shipped files, installer entries, and live
+  documentation. Asset reconciliation safely removes their two plugin-owned font directories.
+
+### Behind the scenes
+- Keep all plugin manifests and the portable board marker in 1.1.1 lockstep; task data, routes,
+  skill commands, and board migrations are unchanged.
+
 ## [1.1.0] — 2026-07-24
 
 The durable task contract now carries compact evidence and causal state across Claude, Codex,
