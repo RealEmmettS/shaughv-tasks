@@ -1,33 +1,20 @@
-/* SHAUGHV task board — locally vendored type system.
- *
- * Makira carries reading, naming, and action. Gail Rock carries compact state,
- * identifiers, counts, dates, paths, and evidence metadata. The dashboard links this
- * stylesheet directly so the same relative URLs work over localhost and file:// once
- * the board installer has provisioned .tasks/vendor/.
- *
- * Only the weights painted by the dashboard are shipped: 400/500/600/700 for both
- * families. Makira keeps its byte-identical private CDN copies as secondary sources;
- * Gail Rock is shipped-first and falls through to the dashboard's system mono stack. */
+/* Supplied SHAUGHV fonts: Makira 300-700 and Gail Rock 400-700. Local files only. */
 
 @font-face {
   font-family: "Makira"; font-style: normal; font-weight: 400; font-display: swap;
-  src: url("./fonts/makira/Makira-Regular.woff2") format("woff2"),
-       url("https://cdn.shaughv.com/fonts/makira/woff2/Makira-Regular.woff2") format("woff2");
+  src: url("./fonts/makira/Makira-Regular.woff2") format("woff2");
 }
 @font-face {
   font-family: "Makira"; font-style: normal; font-weight: 500; font-display: swap;
-  src: url("./fonts/makira/Makira-Medium.woff2") format("woff2"),
-       url("https://cdn.shaughv.com/fonts/makira/woff2/Makira-Medium.woff2") format("woff2");
+  src: url("./fonts/makira/Makira-Medium.woff2") format("woff2");
 }
 @font-face {
   font-family: "Makira"; font-style: normal; font-weight: 600; font-display: swap;
-  src: url("./fonts/makira/Makira-SemiBold.woff2") format("woff2"),
-       url("https://cdn.shaughv.com/fonts/makira/woff2/Makira-SemiBold.woff2") format("woff2");
+  src: url("./fonts/makira/Makira-SemiBold.woff2") format("woff2");
 }
 @font-face {
   font-family: "Makira"; font-style: normal; font-weight: 700; font-display: swap;
-  src: url("./fonts/makira/Makira-Bold.woff2") format("woff2"),
-       url("https://cdn.shaughv.com/fonts/makira/woff2/Makira-Bold.woff2") format("woff2");
+  src: url("./fonts/makira/Makira-Bold.woff2") format("woff2");
 }
 
 @font-face {
@@ -46,3 +33,5 @@
   font-family: "Gail Rock"; font-style: normal; font-weight: 700; font-display: swap;
   src: url("./fonts/gail-rock/Gail-Rock-Bold.woff2") format("woff2");
 }
+
+@font-face { font-family: "Makira"; font-style: normal; font-weight: 300; font-display: swap; src: url("./fonts/makira/Makira-Light.woff2") format("woff2"); }

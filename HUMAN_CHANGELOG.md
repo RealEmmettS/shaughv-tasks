@@ -6,6 +6,35 @@ For the technical version with versions, file paths, and links, see CHANGELOG.md
 
 ---
 
+## A calmer workspace for planning and following the work — September 2026
+
+**Added**
+- Open a task beside the board and keep the surrounding work in view. Smaller screens get
+  a focused detail view with the same controls.
+- Read the plan, scope, evidence, and current status directly inside a task.
+- Let appearance follow your computer, or choose light or dark yourself.
+- Set up reminders separately for Codex and Claude, with each choice remembered.
+
+**Improved**
+- A clearer project heading, quieter task cards, and consistent memory and milestone views
+  give the workspace a stronger SHAUGHV identity. Makira Light joins the supplied type family.
+- Drafts stay available when you cancel navigation or change a task's properties.
+- Both agents can find the same workplace memory, including after the board is removed.
+- Keyboard navigation and focus make the board easier to use without a mouse.
+
+**Fixed**
+- Keep memory and milestone drafts available after a failed save, and confirm before
+  discarding unsaved work.
+- Starting a board now reports a failure if it cannot verify that the right project is running.
+- Reminders work from nested folders, and background startup avoids extra Windows consoles.
+
+**Security**
+- Task and memory links are handled more safely, and unusual file names remain plain text.
+
+**Behind the scenes**
+- The board still runs without an application framework or a separate build setup, and the
+  supplied fonts and brand assets travel with it for offline use.
+
 ## A task board that reads like a product and verifies like a console — late July 2026
 
 **Added**

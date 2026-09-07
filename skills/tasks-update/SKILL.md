@@ -34,7 +34,7 @@ Before syncing task content, run the **existing-board** portion of `/tasks-start
 create/repair/upgrade gate (step 2) without launching the browser or repeating fresh-setup
 questions. In particular:
 
-- Compare the loaded skill's versioned three-file dashboard bundle with the target marker;
+- Compare the loaded skill's versioned five-file dashboard bundle with the target marker;
   upgrade the whole bundle only when the source is newer, repair missing equal-version
   members, and never downgrade a newer target.
 - Enforce the durable title invariant. Preserve a meaningful `config.json.boardTitle`; if it

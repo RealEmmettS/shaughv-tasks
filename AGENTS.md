@@ -21,7 +21,7 @@ asks to expand scope.
 > Note: that rule is about **bundling those things in the plugin**. A skill that writes hooks
 > into a *target* repo when run does not violate it. `/tasks-start` ships
 > `skills/tasks-start/assets/board-server.mjs` and offers to wire board-maintenance hooks into
-> the **target repo's** `.claude/settings*.json`; `/tasks-remove` removes both. Those hooks
+> the **target repo's** `.claude/settings*.json` or `.codex/hooks.json`; `/tasks-remove` removes both. Those hooks
 > live in the target repo, never in this plugin.
 
 The bundle is consumable three ways: (1) the Claude Code marketplace install in the README,
@@ -89,7 +89,7 @@ commit, using the labels **Added**, **Improved**, **Fixed**, **Removed**, **Secu
 - The `skills/` directory MUST stay lowercase. Case-only renames on Windows need a two-step
   `mv` (e.g. `mv skills tmp && mv tmp skills`).
 - `.gitattributes` pins `skills/tasks-start/assets/vendor/**` (and its Codex mirror) as
-  `binary` so the 11 sha256-pinned board assets stay byte-exact across OS checkout and pass the
+  `binary` so the 13 sha256-pinned board assets stay byte-exact across OS checkout and pass the
   `build-codex-plugin.ps1 -Check` byte-compare. Nothing in this mirror is *generated* text
   (manifest + skills are copied verbatim), so — unlike shaughv-code — no `.mcp.json text eol=lf`
   pin is needed.

@@ -5,8 +5,8 @@ description: >
   repository itself. Use whenever the user says /tasks-remove, "remove the task system", "tear
   down tasks", "uninstall the task system", "flatten my tasks into the repo", "promote my
   memory", "I'm done with the dashboard", or otherwise wants the `.tasks/` scaffolding gone
-  with its knowledge preserved. Merges `.tasks/CLAUDE.md` working memory into the repo's root
-  `CLAUDE.md`, moves `.tasks/memory/` into a repo-level `memory/`, preserves open obligations
+  with its knowledge preserved. Promotes `.tasks/CLAUDE.md` working memory to `memory/workplace.md` with
+  pointers from both hosts' effective root instructions, moves `.tasks/memory/` into a repo-level `memory/`, preserves open obligations
   and explicitly dispositions the remaining Backlog, then deletes `.tasks/` (dashboard
   included). Destructive — always confirm and show the migration plan first. The inverse of
   /tasks-start.
@@ -16,7 +16,7 @@ argument-hint: "[--keep-tasks] [--dry-run]"
 # /tasks-remove
 
 Take down the `.tasks/` system **without losing what it learned.** The working memory and
-deep memory get promoted into the repo's own `CLAUDE.md` and `memory/` so the repo keeps the
+deep memory get promoted into the repo's `memory/` with pointers from both hosts' root instructions so the repo keeps the
 context permanently; then `.tasks/` is deleted. This is the inverse of `/tasks-start`.
 
 This is **destructive** (it deletes a folder). Always show the migration plan and get an
@@ -44,8 +44,8 @@ Show the user exactly what will happen before touching anything:
 /tasks-remove plan for <repo>:
 
   board server          →  stopped (node .tasks/board-server.mjs stop)
-  .claude/settings*.json →  board-maintenance hooks removed (other hooks/keys kept)
-  .tasks/CLAUDE.md      →  merge into ./CLAUDE.md  (## Memory section)
+  native host settings →  only identified board hooks removed; other settings kept
+  .tasks/CLAUDE.md      →  merge into ./memory/workplace.md; root host instructions point here
   .tasks/memory/        →  merge into ./memory/    (glossary.md, people/, projects/, context/)
   .tasks/TASKS.md       →  3 Active/To-Do + 1 evidence-debt Backlog → ## Open threads
                            2 other Backlog items → PRESERVE or DISCARD (your choice); Completed dropped
@@ -66,21 +66,16 @@ Proceed? (or /tasks-remove --keep-tasks to leave a TASKS.md at the repo root)
 
 Wait for confirmation. If `--dry-run`, stop here.
 
-## 3. Promote working memory → repo `CLAUDE.md`
+## 3. Promote working memory into shared repo memory
 
-Merge `.tasks/CLAUDE.md` into the repo's root `CLAUDE.md`:
+Merge .tasks/CLAUDE.md into memory/workplace.md, preserving existing facts and surfacing
+conflicts. Strip only the bootstrap marker. Preserve the people/terms/projects/preferences
+tables. If the repo has an established shared memory location, use it instead.
 
-- **If root `CLAUDE.md` doesn't exist:** create it. Put the migrated content under a clear
-  `# Memory` (or `## Workplace memory`) section so it reads as project memory Claude Code
-  auto-loads.
-- **If it exists:** merge, don't clobber. Append the people / terms / projects / preferences
-  under a `## Workplace memory` section. De-duplicate against anything already there; if a
-  fact conflicts, keep the repo's existing line and note the alternate rather than
-  overwriting.
-- Preserve the table formats from `tasks-memory` so the promoted memory stays scannable.
-- **Strip the bootstrap marker.** `.tasks/CLAUDE.md` starts with an internal
-  `<!-- tasks-bootstrap: pending|done -->` comment used only by `/tasks-start`'s resume logic —
-  drop it from the promoted content; it has no meaning in the repo's own `CLAUDE.md`.
+Update only the task-system section of the effective Codex root instructions
+(AGENTS.override.md if present, otherwise AGENTS.md) and root CLAUDE.md with an explicit
+pointer to the promoted document. Both hosts must be able to find the same context after
+teardown. Preserve unrelated instructions. Do not create competing full copies.
 
 ## 4. Promote deep memory → repo `memory/`
 
@@ -103,7 +98,7 @@ Tasks aren't "memory", so by default they don't survive teardown — but don't s
 open work:
 
 - **Default:** preserve each remaining **Active** and **To-Do** item as a compact typed entry
-  under `## Open threads` in the repo's `CLAUDE.md` (or a short TODO artifact): current
+  under `## Open threads` in `memory/workplace.md` (or a linked TODO artifact): current
   result/status; verified state and exact evidence pointers; unresolved check, contradiction, or
   blocker; failed-route signature/re-entry condition that prevents blind repetition; and exact
   next bounded action. Do not migrate the transcript or full attempt history.
@@ -125,12 +120,13 @@ Before deleting, tear down what `/tasks-start` set up **outside** `.tasks/`:
 
 - **Stop the live server:** run `node .tasks/board-server.mjs stop` (kills the server via its
   recorded PID and clears its state files). Harmless if it isn't running.
-- **Remove the board-maintenance hooks:** open `.claude/settings.local.json` (and
-  `.claude/settings.json` — check both). In each, delete ONLY the hook entries whose
-  `command` contains the marker **`board-server.mjs hook`** (across `SessionStart`,
-  `PostToolUse`, `SubagentStart`, `SubagentStop`). Prune any hook array that becomes empty,
-  then `hooks` if it empties, then the file itself if it becomes `{}`. **Never remove a hook
-  you can't positively identify by that marker** — every other hook and key stays untouched.
+- **Remove the board-maintenance hooks:** follow the ownership rules in
+  [host setup](../tasks-start/references/hosts.md). Inspect both Claude settings files,
+  the recorded Codex source, .codex/hooks.json, and inline Codex hooks if present.
+  Remove only saved board commands, the generated shaughv-tasks-board-v1 bridge, or
+  legacy board-server.mjs hook commands. Preserve sibling commands and unrelated settings.
+  Remove only task-system instruction sections and replace them with the shared memory
+  pointer from step 3. Remove an installer-owned local exclude entry only if recorded.
 
 - **Handle `secure/` first — never promote it.** `.tasks/secure/` holds secrets and
   private notes; it is **never** folded into the repo's `CLAUDE.md` or `memory/`. If it's
@@ -138,7 +134,7 @@ Before deleting, tear down what `/tasks-start` set up **outside** `.tasks/`:
   path the operator names, e.g. a gitignored `./.secure/`)? Never silently delete and never
   silently promote credentials.
 
-Then delete the `.tasks/` folder, including `dashboard.html`, `board-server.mjs`,
+Then delete the `.tasks/` folder, including `dashboard.html`, `dashboard.css`, `board-hooks.mjs`, `board-server.mjs`,
 `.board-version.json`, `config.json`, `board-config.js`, `MILESTONES.md` + `milestones/`, and everything the installer provisioned
 **inside** it — `vendor/`, any `node_modules/` / `package.json`, and
 `.install-manifest.json`. Because all of that lives under `.tasks/`,
@@ -178,10 +174,11 @@ the manifest's `global[]` with `wasPreexisting:false` and `succeeded:true`:
 
 ```
 Task system removed. Migrated into <repo>:
-- ./CLAUDE.md      ← working memory (X people, X terms, X projects) + 3 open threads (incl. 1 milestone)
+- ./memory/workplace.md ← working memory (X people, X terms, X projects) + 3 open threads (incl. 1 milestone)
 - ./memory/        ← glossary, X people, X projects, company context
 - secure/          ← deleted | relocated to <path> (your choice — never promoted)
-- board server     ← stopped; board-maintenance hooks removed from .claude/settings*.json
+- host instructions ← both point to shared migrated memory
+- board server     ← stopped; only owned native host hooks removed
 - .tasks/          ← deleted (dashboard, board-server.mjs, milestones, config, vendor/, install manifest included)
 - global Node      ← kept (or: removed via <command>) — only shown if setup installed one
 
@@ -192,14 +189,14 @@ live board back up.
 ## Safety
 
 - **Never delete before the migration files are written and verified.** Read back the merged
-  `CLAUDE.md` / `memory/` to confirm the content landed, then delete `.tasks/`.
+  shared memory and both effective host instruction pointers to confirm the content landed, then delete `.tasks/`.
 - **Merge, don't overwrite.** The repo's existing memory always wins on conflict; surface
   conflicts instead of silently resolving them.
 - **Never promote `secure/`.** Secrets and private notes are relocated or deleted on the
   operator's explicit choice — never merged into the repo's `CLAUDE.md` or `memory/`, and
   never echoed into the report.
 - **Remove hooks by marker, never by position.** The board hooks are identified by the
-  `board-server.mjs hook` string in their command — an unrelated `SessionStart` /
+  saved command or exact bridge ownership marker (including legacy `board-server.mjs hook`) — an unrelated `SessionStart` /
   `PostToolUse` / subagent hook in the same settings file is never touched.
 - If anything is ambiguous (where repo-level memory should live, whether to keep tasks), ask
   once rather than guessing — this step is hard to undo.

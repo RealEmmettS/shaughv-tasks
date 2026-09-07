@@ -23,7 +23,7 @@ asks to expand scope.
 > violated by a skill that writes hooks into a *target* repo when run. The `tasks-*` skills
 > do exactly this: `/tasks-start` ships a zero-dependency Node board server
 > (`skills/tasks-start/assets/board-server.mjs`) and offers to wire board-maintenance hooks
-> into the **target repo's** `.claude/settings*.json`; `/tasks-remove` tears both back down.
+> into the **target repo's** `.claude/settings*.json` or `.codex/hooks.json`; `/tasks-remove` tears both back down.
 > Those hooks live in whatever repo the skill is run in — never in this plugin.
 
 ## The seven skills
@@ -114,7 +114,7 @@ rules if you need a refresher.)
 - The `skills/` directory MUST stay lowercase. Case-only renames on Windows need a two-step
   `mv` (e.g. `mv skills tmp && mv tmp skills`).
 - `skills/tasks-start/assets/vendor/**` is pinned `binary` in `.gitattributes` (root + the
-  Codex mirror). Those 11 files are sha256-verified by `board-server.mjs` at install time and
+  Codex mirror). Those 13 files are sha256-verified by `board-server.mjs` at install time and
   byte-compared by `build-codex-plugin.ps1 -Check`; never let an editor or EOL normalization
   touch them.
 - `board-server.mjs` and `dashboard.html` resolve their own paths at runtime from the
