@@ -68,6 +68,8 @@ const RETIRED_VENDOR_DIRS = ['fonts/ibm-plex-mono', 'fonts/unbounded'];
 // byte-exact to the files shipped under skills/tasks-start/assets/vendor/ and, where declared,
 // to the CDN/npm artefacts they mirror.
 const PINNED = {
+  'shaughv-loader.js': { sha256: '5395bdc375e67448f0b6482727af23e222fdca9ee391b609e0d5f3327873f569' },
+  'fonts/makira/Makira-Light.woff2': { sha256: 'eb1d3f4394492e24e482809195442df24ec62cce14741a5fc2985a6251a29d5f' },
   'anime.min.js': {
     sha256: 'b5ce1be3c3f530f192e0f2571d1942846096d66119cbada34bfdc912c4873f35',
     npm: { pkg: 'animejs', version: '3.2.2', file: path.join('animejs', 'lib', 'anime.min.js') },
@@ -107,7 +109,7 @@ const PINNED = {
   },
   // The stylesheet is pinned too: a 1.1.0 board must replace its existing copy on upgrade.
   'fonts.css': {
-    sha256: '8d675e7194079c3e01f637c8446c2467cd0392795518dc61008e2f73f3fe3ecb',
+    sha256: 'd17b9440e5519ccb21ea223341c5ac4ebd85d3b70da2917d680665e8bcc48115',
   },
 };
 
@@ -387,6 +389,11 @@ async function serve({ open = false, port: requested } = {}) {
       if (pathname === '/' || pathname === '/index.html' || pathname === '/dashboard.html') {
         const html = await fsp.readFile(DASHBOARD, 'utf8').catch(() => '<h1>dashboard.html missing</h1>');
         return send(res, 200, 'text/html; charset=utf-8', html);
+      }
+
+      if (pathname === '/dashboard.css' && req.method === 'GET') {
+        const css = await fsp.readFile(path.join(TASKS_DIR, 'dashboard.css'), 'utf8');
+        return send(res, 200, 'text/css; charset=utf-8', css, { 'Cache-Control': 'no-store' });
       }
 
       if (pathname === '/board-config.js' && req.method === 'GET') {
@@ -866,18 +873,17 @@ async function ensure({ open = false } = {}) {
   try { const fd = fs.openSync(LOG_FILE, 'a'); out = fd; err = fd; } catch { /* */ }
   const child = spawn(process.execPath, [fileURLToPath(import.meta.url), 'serve', '--port', String(port)], {
     detached: true,
+    windowsHide: true,
     stdio: ['ignore', out, err],
   });
   child.unref();
   // Wait briefly for it to come up so callers learn the real port and can open it.
-  const url = `http://127.0.0.1:${port}/`;
   for (let i = 0; i < 30; i++) {
     const r = await probeRunning();
     if (r) { if (open) openInBrowser(`http://127.0.0.1:${r.port}/`); return `http://127.0.0.1:${r.port}/`; }
     await new Promise((r) => setTimeout(r, 100));
   }
-  if (open) openInBrowser(url);
-  return url;
+  throw new Error('Board startup did not pass the identity check. Inspect ' + LOG_FILE);
 }
 
 // ---------------------------------------------------------------------------
@@ -942,7 +948,7 @@ async function hook(event) {
 
   // A PostToolUse on the ExitPlanMode tool is the "plan approved" moment.
   let ev = event;
-  if (event === 'PostToolUse' && input?.tool_name === 'ExitPlanMode') ev = 'ExitPlanMode';
+  if (process.env.SHAUGHV_TASKS_HOOK_HOST !== 'codex' && event === 'PostToolUse' && input?.tool_name === 'ExitPlanMode') ev = 'ExitPlanMode';
 
   // Decide the reminder FIRST (using a placeholder URL) — a non-commit/push Bash
   // command returns null and we exit without even touching the server or cooldown.

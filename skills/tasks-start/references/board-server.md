@@ -57,7 +57,7 @@ To launch + open the board (what `/tasks-start` does): `node .tasks/board-server
   normal setup; agents must resolve ports from their own repo's state file and verify the
   root before writing through any API (full rules: the `tasks-boards` skill).
 - HTTP API (the server stays **dumb** about markdown — the browser keeps all parse/serialize):
-  - `GET /` → serves `dashboard.html`.
+  - `GET /` → serves `dashboard.html`; `GET /dashboard.css` serves its styles.
   - `GET /api/tasks` → raw `TASKS.md`; response carries `X-Board-Revision`,
     `X-Board-Mtime`, and `X-Board-Id`.
   - `POST /api/tasks` → serialized atomic write. Current clients send
@@ -134,67 +134,16 @@ To launch + open the board (what `/tasks-start` does): `node .tasks/board-server
 
 ## The board-maintenance hooks (written into the TARGET repo)
 
-`/tasks-start` offers (ask once, suggest yes) to merge this block into the target repo's
-Claude settings. The target file follows the git choice recorded in `.tasks/config.json`:
-**`.claude/settings.json`** when `"git": "tracked"` (the reminder is worth sharing with
-everyone on the shared board), **`.claude/settings.local.json`** when `"git"` is
-`"ignored"` or `"none"` (personal, gitignored). The operator can override; record the
-actual target as `config.json` `"hooks"` (`"shared"` / `"local"`):
+Use [host setup](hosts.md) as the normative installation, consent, migration, and removal
+contract. Generate the active host's JSON with `node .tasks/board-hooks.mjs codex` or
+`node .tasks/board-hooks.mjs claude`. The plugin ships no root hooks or hook registration.
+The generated bridge uses the host payload's cwd and the nearest ancestor board, so a
+nested shell directory and paths with spaces work. It does not write settings itself.
 
-```json
-{
-  "hooks": {
-    "SessionStart": [
-      { "hooks": [ { "type": "command", "command": "node .tasks/board-server.mjs hook SessionStart" } ] }
-    ],
-    "PostToolUse": [
-      { "matcher": "Bash|ExitPlanMode", "hooks": [ { "type": "command", "command": "node .tasks/board-server.mjs hook PostToolUse" } ] }
-    ],
-    "SubagentStart": [
-      { "hooks": [ { "type": "command", "command": "node .tasks/board-server.mjs hook SubagentStart" } ] }
-    ],
-    "SubagentStop": [
-      { "hooks": [ { "type": "command", "command": "node .tasks/board-server.mjs hook SubagentStop" } ] }
-    ]
-  }
-}
-```
-
-What fires when (verified against the Claude Code hooks doc):
-- **SessionStart** (no matcher → also re-fires on resume / `/clear` / after compaction):
-  ensures the board is alive and injects the standing "keep `.tasks/TASKS.md` current"
-  reminder. Plain stdout is injected as agent-visible context for this event.
-- **PostToolUse** `Bash|ExitPlanMode`: matchers filter on **tool name only**, so the script
-  reads `tool_input.command` from stdin and nudges (agent-visible `additionalContext`) ONLY
-  on `git commit` / `git push`; an `ExitPlanMode` tool call triggers the "mirror the plan"
-  nudge. Any other Bash command produces no output.
-- **SubagentStart / SubagentStop** (match all agent types): nudge when a subagent spawns /
-  finishes, via `additionalContext`.
-
-Nudges are de-duped **per semantic type** (`commit`, `push`, `plan`, `subagent-start`,
-`subagent-stop`) with a 30s cooldown — so a commit nudge never swallows a later push nudge,
-and a subagent fan-out can't spam. `SessionStart` is never cooled down.
-
-The command path is **relative** (`.tasks/board-server.mjs`) on purpose: it's shell-agnostic
-(no env-var expansion that would differ between Git Bash and PowerShell) and resolves when
-the hook runs from the repo root (Claude Code's default). If a hook ever fires from another
-directory, `node` simply won't find the script and the hook no-ops — a safe implicit gate.
-The script also hard-gates on `.tasks/dashboard.html` existing before doing anything.
-
-### Merge rule (install)
-
-Read the settings file if it exists (else start from `{}`), **preserve every existing key
-and hook**, and append only the entries above (create each event array if absent). Never
-clobber unrelated hooks.
-
-### Teardown match (used by /tasks-remove)
-
-Every command we add contains the stable marker **`board-server.mjs hook`**. To remove the
-hooks, delete from `.claude/settings.local.json` (and `.claude/settings.json` — check both)
-ONLY the hook entries whose `command` contains that marker; prune any array that becomes
-empty, then `hooks` if it becomes empty, then the file if it becomes `{}`. Never remove a
-hook you can't positively identify by the marker. Also run `node .tasks/board-server.mjs
-stop` to kill the running server before deleting `.tasks/`.
+The server handles SessionStart, PostToolUse, SubagentStart, and SubagentStop. PostToolUse
+ignores commands other than git commit/push. Claude also recognizes ExitPlanMode; the
+Codex bridge explicitly excludes that approval interpretation. Per-type cooldowns remain
+30 seconds; SessionStart always supplies context. No hook opens a browser tab.
 
 ## TASKS.md format contract (server ↔ dashboard must agree)
 
@@ -348,7 +297,7 @@ redirect condition. Markdown renders headings, lists, code, **bold**, _italic_, 
   the versioned app bundle, not gitignored, and reconciled on every start/update so custom
   project identity survives upgrades and direct `file://` opens.
 - **`.tasks/.board-version.json`** — tracked source-of-truth marker for the copied board
-  application bundle (`dashboard.html` + `board-server.mjs`). `/tasks-start` compares it on
+  application bundle (`dashboard.html` + `dashboard.css` + `board-server.mjs` + `board-hooks.mjs`). `/tasks-start` compares it on
   every relaunch and moves the whole bundle forward only when the loaded skill is newer;
   `config.json.pluginVersion` is reconciled after a successful copy. A newer target is never
   downgraded by an older plugin install.
@@ -365,11 +314,12 @@ redirect condition. Markdown renders headings, lists, code, **bold**, _italic_, 
 
 The board **progressively enhances**. Its core (the Kanban board, live sync, the Slot Roll and
 FLIP motion) is built from Node + browser built-ins and works with **zero** external assets. On
-top of that it layers the **anime.js** motion driver, eight authorized **brand-font WOFF2s**
-(Makira + Gail Rock at weights 400, 500, 600, and 700), the **animated brand mark**, and
-`fonts.css` — 11 sha256-pinned assets in total. Makira is the board's body/display face; Gail Rock
+top of that it layers the **anime.js** motion driver, nine authorized **brand-font WOFF2s**
+(Makira Light 300 plus Makira and Gail Rock at 400, 500, 600, and 700), the **animated brand mark**, canonical loader, and
+`fonts.css` — 13 sha256-pinned assets in total. Makira is the board's body/display face; Gail Rock
 is the technical monospace face. The shipped tier keeps that typography intact without a network.
-The true zero-asset floor remains fully functional and falls back to system fonts.
+Missing assets must be reported as degraded presentation; repair the supplied font files
+before accepting typography. The stylesheet declares only Makira and Gail Rock.
 
 ### The `install` chain (server side)
 
@@ -385,7 +335,7 @@ through):
 | **full** | npm | `npm install` the pinned `animejs` into a **transient** `.tasks/node_modules`, verify, copy the artefact into `vendor/`, then **prune `node_modules`** (nothing npm-related persists). |
 | **vendor** | pinned CDN fetch | `https` GET each available asset straight into `vendor/`; the byte-identical Makira CDN files are secondary candidates, while Gail Rock deliberately has no network candidate. |
 | **shipped** | the plugin bundle | copy from the absolute assets directory supplied by `/tasks-start` in `SHAUGHV_TASKS_ASSETS_DIR`; host plugin-root variables are compatibility fallbacks. This is the offline-capable floor-with-assets in Claude Code, Codex, and standalone skills.sh installs. |
-| **offline** | nothing | provision nothing; the dashboard inlines its built-in engine + system fonts. Cannot fail. |
+| **offline** | nothing | no assets provisioned; core data access still works, but typography/branding requires repair. |
 
 Per-asset, the chain walks the allowed tiers high→low; the first sha-valid source wins. `--tier`
 caps the highest tier tried; `--offline` means "no network, no npm" (caps at **shipped**, the
@@ -454,20 +404,12 @@ provisioning and secret edits never spam SSE.
 
 ### The dashboard's runtime loader (browser side)
 
-Over `http(s)` (SERVER_MODE) the dashboard prefers the local `/vendor/*` copies, self-heals to the
-CDN where an exact candidate exists, and finally uses system fonts / its built-in engine — per
-resource, resolving (never rejecting), so degradation is automatic and silent:
-
-- **fonts** — the dashboard links `./vendor/fonts.css` directly. Its relative `@font-face` URLs
-  resolve from both localhost and `file://`; Makira tries the shipped file first and its
-  byte-identical private CDN file second, while Gail Rock is shipped-first with system fallbacks.
-- **anime.js** — `/vendor/anime.min.js` → CDN → leave `window.anime` undefined. The Slot Roll
-  checks `window.anime` **per call**, so a late load is picked up with no reload; when present it
-  drives the per-glyph roll from the **same computed tuple** as the built-in CSS driver (identical
-  motion — asserted via `window.__slotTuples` parity). **FLIP stays on WAAPI at every tier.**
-- **brand mark** — `/vendor/animated-brand-mark.js` (self-guards `customElements.define`, so it's
-  safe alongside the CDN `<script>`); if `<shaughv-mark>` is still undefined shortly after, a tiny
-  dependency-free text fallback registers so the mark still reads "SHAUGHV" offline.
+The dashboard loads relative `./vendor/` assets in both localhost and file mode.
+Font declarations use only the supplied local WOFF2 files. The canonical brand mark,
+loader, and anime.js are local scripts, with no duplicate remote script loads. The
+installer still verifies every downloaded or copied candidate against its pinned hash.
+If anime.js is unavailable, the existing built-in Slot Roll driver remains available;
+FLIP uses WAAPI. Missing fonts or brand assets need installer repair before visual acceptance.
 
 `prefers-reduced-motion` is honoured above the driver check, so reduced-motion snaps regardless of
 tier. Over `file://`, the same relative stylesheet and font URLs resolve from the selected board

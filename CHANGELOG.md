@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 A plain-English companion lives at [HUMAN_CHANGELOG.md](./HUMAN_CHANGELOG.md) and is kept in lockstep with this file — see the changelog rule in [CLAUDE.md](./CLAUDE.md).
 
+## [1.2.0] — 2026-09-07
+
+### Added
+- Dock task details beside the board on wide screens, with an overlay on smaller screens.
+- Expose ordered Scope, Plan, Evidence, Status, and other task-record sections, including tables.
+- Add System / Light / Dark appearance with live OS tracking and preserved explicit choices.
+- Add a portable native-hook generator for Codex and Claude, independent per-host setup choices,
+  and explicit shared-memory pointers from each host's effective root instructions.
+- Bundle the supplied Makira Light weight and canonical SHAUGHV loader as pinned local assets.
+
+### Improved
+- Redesign the board, list, milestones, and memory around SHAUGHV typography, precise borders,
+  compact navigation, readable task properties, keyboard controls, and responsive detail views.
+- Lead install guidance with Codex and document native hook trust, namespaced Claude skills,
+  additive configuration migration, and teardown into one shared workplace-memory document.
+- Preserve description drafts through panel navigation and property re-renders; preserve the
+  exact bytes and order of unknown detail sections, including fenced Markdown headings.
+
+### Fixed
+- Retain failed memory and milestone drafts, confirm discards, and block duplicate or
+  overlapping edits while their saves are pending.
+- Report server startup failure when the expected board identity never becomes available.
+- Hide detached Windows server processes and resolve hooks from host payload cwd even when
+  the shell is in a nested directory; never interpret a Codex plan update as approval.
+- Avoid duplicate remote brand scripts and use only the supplied local font declarations.
+
+### Security
+- Share escaped, protocol-limited Markdown rendering between tasks and memory. Remove dynamic
+  inline memory handlers and escape file/directory/section names before placing them in HTML.
+
+### Behind the scenes
+- Keep the zero-dependency runtime; package dashboard CSS and the hook generator with the
+  versioned board bundle, synchronize all manifests, and regenerate the Codex mirror.
+
 ## [1.1.1] — 2026-07-28
 
 The board now uses a deliberate two-family type system: Makira carries reading, naming, and

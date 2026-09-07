@@ -14,7 +14,7 @@ user-invocable: false
 # Task boards: one per repo, many per machine
 
 A **board** is a repo's `.tasks/` folder plus (optionally) the live server that repo runs.
-Any number of boards can run on the same machine at the same time — a Claude agent in one
+Any number of boards can run on the same machine at the same time — an agent in one
 repo and a Codex agent in another, each with their own board, is a normal, supported setup.
 
 The one rule that prevents every cross-board accident:

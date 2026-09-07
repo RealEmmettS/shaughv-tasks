@@ -1,7 +1,7 @@
 ---
 name: tasks-memory
 description: >
-  Two-tier workplace-memory model that lets Claude decode Emmett's shorthand, acronyms,
+  Two-tier workplace-memory model that lets the agent decode Emmett's shorthand, acronyms,
   nicknames, project codenames, and internal language like a colleague would. Reference this
   whenever working with the tasks-* system's memory: deciding what goes in working memory vs
   deep memory, adding "remember that X means Y", recalling "who is X / what does X mean", or
@@ -13,12 +13,12 @@ user-invocable: false
 
 # Workplace Memory
 
-Memory makes Claude a colleague who speaks the user's internal language instead of asking
+Memory makes the agent a colleague who speaks the user's internal language instead of asking
 round-trip clarifying questions.
 
 ```
 User: "ask todd to do the PSR for oracle"
-              ↓ Claude decodes
+              ↓ The agent decodes
 "Ask Todd Martinez (Finance lead) to prepare the Pipeline Status Report for the Oracle
  Systems deal ($2.3M, closing Q2)"
 ```

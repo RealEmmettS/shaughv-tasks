@@ -4,12 +4,12 @@ description: >
   Initialize Emmett's task + workplace-memory system in the current repo or folder and
   open the SHAUGHV dashboard. Use whenever the user says /tasks-start, "set up my tasks",
   "start the task system", "set up task tracking", "bootstrap my memory", "set up the
-  productivity system", or otherwise wants a place to track todos and teach Claude their
+  productivity system", or otherwise wants a place to track todos and teach the agent their
   people, projects, and shorthand. Creates a self-contained `.tasks/` folder (TASKS.md,
   CLAUDE.md working memory, memory/ deep store, and a branded dashboard.html) so nothing
   clutters the repo root, then optionally scans connected tools (Slack, Asana/Linear/Jira,
   Microsoft 365 / Google, Notion) to seed memory. Trigger even when the user doesn't say
-  "tasks" but clearly wants to start tracking work or onboard Claude to their workplace
+  "tasks" but clearly wants to start tracking work or onboard the agent to their workplace
   language. Pairs with tasks-create, tasks-update, tasks-management, tasks-memory, and
   tasks-remove.
 ---
@@ -25,7 +25,7 @@ directory — nothing is scattered across the repo root.
 The whole system is contained in one place so it's obvious what belongs to it, easy to
 point the dashboard at, and trivial to tear down later (see `/tasks-remove`). When the
 user is done, `/tasks-remove` flattens the useful parts (working memory, deep memory) back
-into the repo's own `CLAUDE.md` and `memory/` and deletes `.tasks/`.
+into the repo's `memory/` with pointers from both hosts' root instructions and deletes `.tasks/`.
 
 ```
 .tasks/
@@ -44,6 +44,8 @@ into the repo's own `CLAUDE.md` and `memory/` and deletes `.tasks/`.
   board-config.js   ← generated title companion for localhost and file:// dashboard modes
   .board-version.json ← tracked version marker for the copied dashboard + server bundle
   .gitignore        ← scoped ignore: secure/ + runtime files (always scaffolded)
+  dashboard.css     ← shared workspace styles
+  board-hooks.mjs   ← prints optional native hook configuration for the current host
   dashboard.html    ← the SHAUGHV-branded UI (served on localhost; file:// fallback)
   board-server.mjs  ← zero-dep Node server: serves the dashboard + live-syncs TASKS.md
 ```
@@ -53,6 +55,10 @@ into the repo's own `CLAUDE.md` and `memory/` and deletes `.tasks/`.
 > user explicitly promotes it with `/tasks-remove`.
 
 ## Instructions
+
+Read [host setup](references/hosts.md) for Codex/Claude invocation, effective root
+instructions, independent hook choices, and safe settings merge/removal. Codex is the
+primary workflow; all durable task and memory formats remain shared.
 
 ### 1. Check what exists (current dir, then ancestors)
 
@@ -151,14 +157,14 @@ Create the `.tasks/` folder if needed, then populate or repair it:
     is not gitignored, and therefore survives dashboard upgrades and works when
     `dashboard.html` is opened directly with `file://`.
 - **Board application bundle (upgrade-only)** — the bundle is
-  `<assets-dir>/dashboard.html`, `<assets-dir>/board-server.mjs`, and
-  `<assets-dir>/board-version.json`; the target paths are `.tasks/dashboard.html`,
-  `.tasks/board-server.mjs`, and `.tasks/.board-version.json`. The `.mjs` is the
+  `dashboard.html`, `dashboard.css`, `board-server.mjs`, `board-hooks.mjs`, and
+  `board-version.json` from `<assets-dir>`; copy them into `.tasks/`, renaming only
+  `board-version.json` to `.board-version.json`. The `.mjs` is the
   zero-dependency Node server that serves the dashboard on localhost and live-syncs the
   board (see [`references/board-server.md`](references/board-server.md)). Determine the
   target version from `.tasks/.board-version.json`, falling back to the first valid semantic
   `pluginVersion` in `.tasks/config.json` and `.tasks/.install-manifest.json`.
-  - Fresh/missing/invalid target version, or source version **newer** → copy all three files
+  - Fresh/missing/invalid target version, or source version **newer** → copy all five files
     as one bundle. Only after every copy succeeds, set `config.json.pluginVersion` to the
     source version while preserving every other config key.
   - Equal versions → preserve existing app files; repair any missing member from the same
@@ -191,10 +197,11 @@ Create the `.tasks/` folder if needed, then populate or repair it:
   *.tmp
   ```
 
-  Reconcile this scoped file on upgrades. Deliberately **not** ignored: `dashboard.html`, `board-server.mjs`, `board-config.js`, and
+  Reconcile this scoped file on upgrades. Deliberately **not** ignored: `dashboard.html`, `dashboard.css`, `board-server.mjs`, `board-hooks.mjs`, `board-config.js`, and
   `.board-version.json` — on a tracked board they're committed so collaborators who clone get
-  a working, project-named, version-identifiable board with zero plugin install
-  (`node .tasks/board-server.mjs ensure`).
+  the project-named, version-identifiable board source. Display assets in `vendor/` are
+  local: run `/tasks-start` once after cloning to provision the supplied fonts and scripts,
+  then launch directly with `node .tasks/board-server.mjs ensure`.
 - **`.tasks/secure/`** — create the directory with a short local `secure/README.md`
   explaining the convention (it's gitignored, so it exists only for someone browsing the
   folder; the committable pointer lives in `.tasks/CLAUDE.md` — see `tasks-memory`).
@@ -214,8 +221,9 @@ Create the `.tasks/` folder if needed, then populate or repair it:
   **try-everything chain** — npm → pinned CDN fetch → the plugin's shipped copies → a fully
   offline floor — and writes `.tasks/.install-manifest.json` recording exactly what it did
   (so `/tasks-remove` can fully undo it). **It always succeeds**: the shipped tier provisions all
-  11 pinned assets from the plugin with no network, including Makira and Gail Rock weights 400,
-  500, 600, and 700. The true zero-asset floor keeps the board functional with system fallbacks.
+  13 pinned assets from the plugin with no network, including Makira Light 300, Makira and Gail Rock weights 400,
+  500, 600, and 700. If every asset source is unavailable, report the degraded display and
+  repair from the shipped package before accepting the board's typography as complete.
   Upgrades replace a stale `fonts.css` and remove the retired plugin-owned IBM Plex Mono and
   Unbounded font directories. It prints a one-line `tier=…` summary you can surface in step 10.
   Re-running it is safe and idempotent.
@@ -290,43 +298,30 @@ server is started. After `ensure`, read the actual port from `.tasks/.board-serv
 URL. Multiple boards on one machine at once is a normal, supported setup; see the
 `tasks-boards` skill for the full multi-board rules.
 
-> Your live task board is at **http://localhost:<port>** (opening it now). Light (vintage) /
-> dark (brutalist) theme toggle is in the top-right.
+> Your live task board is at **http://localhost:<port>** (opening it now). Appearance in the top-right offers System, Light, and Dark; System follows the OS.
 
 **No Node?** Use the read/edit-only static flow: open `.tasks/dashboard.html`, then **Select TASKS.md** → `.tasks/TASKS.md` and **Select Folder** → `.tasks/`. The dashboard
 uses the File System Access API, but completion and deletion stay locked because a browser
 cannot atomically bind their detail-file changes to the `TASKS.md` lifecycle write.
 
-### 4. Wire the board-maintenance hooks (ask once)
+### 4. Configure the current host's optional hooks
 
-So every future Claude session in this repo keeps the board honest — and the operator keeps
-continuous visibility — offer to install a small set of Claude Code hooks:
-
-> Want me to add hooks so any Claude session here is reminded to keep `.tasks/TASKS.md`
-> current — at session start, after commits/pushes, and around subagents — and so the live
-> board auto-revives if it isn't running? Removed cleanly by `/tasks-remove`. (yes/no)
-
-If yes, merge the hook block from
-[`references/board-server.md`](references/board-server.md) into the repo's Claude settings:
-
-- Target the file that matches the git choice recorded in `.tasks/config.json`:
-  **`.claude/settings.json`** when `"git": "tracked"` (a shared board deserves a shared
-  reminder), **`.claude/settings.local.json`** when `"git"` is `"ignored"` or `"none"`
-  (personal, gitignored). The operator can override; record the actual target in
-  `config.json` as `"hooks": "shared"` or `"local"`.
-- **Merge, don't clobber:** read the file if it exists (else `{}`), preserve every existing
-  key and hook, and append only our entries. Each command carries the marker
-  `board-server.mjs hook` so `/tasks-remove` can find and remove exactly them.
-
-Skip silently if the user declines — the board still works, it just won't self-maintain.
+Follow [host setup](references/hosts.md). Inspect and honor the recorded choice for the
+active host. Ask only when that host has no decision and existing authorization does not
+already cover it. Explain that hooks revive the board and remind the agent at session
+start, after commits/pushes, and around subagents. A decline is persisted, not re-asked.
+Generate the correct native block with board-hooks.mjs; merge/read back only owned
+entries and record the real target. Codex review/trust stays in its native UI.
+Do not install the other host's hooks without authorization. The board and skills work
+without hooks.
 
 ### 5. Ensure repo instructions mention the task system
 
 On every setup or relaunch, check the target repo's **root `CLAUDE.md` and `AGENTS.md`**. These
-files are what future agents read before they discover `.tasks/`, so they need a concise
+files (or effective `AGENTS.override.md` for Codex) are what future agents read before they discover `.tasks/`, so they need a concise
 top-level description of how this repo uses the task system.
 
-- Read both files if they exist. If one is missing, treat it as needing the section.
+- Read the effective Codex instructions and Claude root instructions if they exist. If one is missing, treat it as needing the section.
 - If either file is missing a clear "Task management system" / "Tasks" section, offer to add
   one; if the operator asked for unattended setup, add it directly. Never clobber existing
   instructions — append or update only the task-system section.
@@ -343,7 +338,9 @@ Suggested section:
 ```markdown
 ## Task management system
 
-This repo uses the SHAUGHV `tasks-*` system. The board source of truth is
+This repo uses the SHAUGHV `tasks-*` system. Before task work, read `.tasks/CLAUDE.md`
+for shared workplace memory in both Codex and Claude Code; read deeper `.tasks/memory/`
+files as needed. The board source of truth is
 `.tasks/TASKS.md`; milestones (dated epics) live in `.tasks/MILESTONES.md` and tasks join
 one with `(ms #id)`. Each task's compact continuation packet lives at
 `.tasks/tasks/<id>.md`: contract/acceptance, unresolved `## Verification`, conditional
@@ -477,7 +474,7 @@ Task system ready in .tasks/:
 - Secure:     .tasks/secure/ (gitignored — secrets and private notes go here, never in tasks/memory)
 - Board:      live at http://localhost:<port> (from .tasks/.board-server.json — never assume 4317)
 - Assets:     tier=<full|vendor|shipped|offline> (from the install summary)
-- Hooks:      board-maintenance hooks added to .claude/settings.json|settings.local.json (or skipped)
+- Hooks:      current host, enabled/declined/unavailable, actual target, native review if pending
 
 Use /tasks-create to add scoped milestones/tasks/subtasks with explicit finish lines and
 verification checklists,

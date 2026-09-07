@@ -1,7 +1,7 @@
 ---
 name: tasks-management
 description: >
-  How Claude reads, writes, and reasons about the task list in `.tasks/TASKS.md`. Reference
+  How the agent reads, writes, and reasons about the task list in `.tasks/TASKS.md`. Reference
   this whenever the user asks about their tasks, wants to add or complete tasks, asks
   "what's on my plate", "what am I waiting on", "what's due", or wants commitments tracked —
   inside a repo that uses the tasks-* system. Defines the TASKS.md and MILESTONES.md formats,
@@ -14,7 +14,7 @@ user-invocable: false
 
 # Task Management
 
-Tasks live in **`.tasks/TASKS.md`** — a plain-markdown file both Claude and the user (and
+Tasks live in **`.tasks/TASKS.md`** — a plain-markdown file both the agent and the user (and
 the dashboard) read and write. The dashboard board/list views read and write this exact
 file and auto-save.
 
