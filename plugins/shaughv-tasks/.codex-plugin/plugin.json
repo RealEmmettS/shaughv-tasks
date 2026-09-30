@@ -1,7 +1,7 @@
 {
   "name": "shaughv-tasks",
-  "version": "1.2.0",
-  "description": "Emmett Shaughnessy's standalone Codex task + workplace-memory skill bundle. Seven SHAUGHV tasks-* skills stand up a self-contained .tasks/ board and memory in any repo: dated milestones, prerequisites/owners, compact typed task handoffs, explicit functional/evidence finish lines, preservation invariants, authoritative oracles, conditional evidence receipts and causal attempt ledgers, authorized-only waivers, qualification tasks for milestone outcomes, progressive working slices, and bounded route audits. A project-named localhost dashboard runs on a zero-dependency identity-verified Node server; boards may be git-shared or local, with a gitignored secure/ tier. Tasks remain model-neutral and resumable across sessions, operators, Claude, Codex, and other agents without transcript dumps or false completion from missing evidence.",
+  "version": "1.3.0",
+  "description": "A local task board and project memory for Codex. Plan work, track dependencies and completion checks, and resume in a new chat with the context intact. Seven portable skills also support Claude Code and capability-aware ChatGPT handoffs.",
   "author": {
     "name": "Emmett Shaughnessy",
     "email": "hey@emmetts.dev",
@@ -31,16 +31,17 @@
     "handoff",
     "resume",
     "persistence",
-    "agent-memory"
-    ,"evidence-receipt"
-    ,"attempt-ledger"
-    ,"bounded-convergence"
+    "agent-memory",
+    "evidence-receipt",
+    "attempt-ledger",
+    "bounded-convergence",
+    "chatgpt"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "shaughv-tasks",
-    "shortDescription": "Emmett's standalone task + workplace-memory skill bundle.",
-    "longDescription": "Run /tasks-start to stand up a self-contained .tasks/ board and workplace memory with a live localhost dashboard. /tasks-create adds scoped milestones/tasks/subtasks with model-neutral contracts, default Verification, conditional Evidence receipts and Attempts, preservation invariants, authoritative oracles, and truthful bounded outcomes. Missing required evidence remains open rather than becoming an agent waiver; milestone qualification children protect epic outcomes. /tasks-update surfaces semantic stagnation and unsupported completion as well as stale work. Secrets stay out of tasks/memory. Skills-only; the board is a local Node server, not MCP.",
+    "shortDescription": "Your tasks and project context, ready for the next chat.",
+    "longDescription": "Set up a local task board with tasks-start. Search and filter work, plan milestones, choose prerequisites, and keep task plans and completion checks beside the board. Tasks and shared workplace memory stay in readable project files. Copy a saved task handoff into ChatGPT, then reconcile proposed changes in Codex. Portable skills also support Claude Code and other agents with project access.",
     "developerName": "Emmett Shaughnessy",
     "category": "Productivity",
     "capabilities": [
@@ -50,9 +51,9 @@
     ],
     "websiteURL": "https://github.com/RealEmmettS/shaughv-tasks",
     "defaultPrompt": [
-      "Run /tasks-start to set up my task board and workplace memory.",
-      "Use /tasks-create to add scoped work with an explicit finish line, authoritative evidence, and resumable state.",
-      "Use /tasks-update to sync and triage my tasks and fill memory gaps."
+      "Use tasks-start to set up my task board and project memory.",
+      "Use tasks-create to break this work into tasks with clear completion checks.",
+      "Use tasks-update to show what is blocked and what I can move forward next."
     ],
     "brandColor": "#FF5E1A",
     "screenshots": []

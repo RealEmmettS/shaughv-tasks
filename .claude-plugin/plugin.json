@@ -1,7 +1,7 @@
 {
   "name": "shaughv-tasks",
-  "version": "1.2.0",
-  "description": "Emmett Shaughnessy's standalone task + workplace-memory plugin — seven SHAUGHV tasks-* skills that create a self-contained `.tasks/` board and memory in any repo: milestones, prerequisites/owners, compact typed continuation packets, functional/evidence finish lines, preservation invariants, authoritative oracles, conditional evidence receipts and causal attempt ledgers, authorized-only waivers, milestone qualification tasks, progressive working slices, and bounded route audits. The project-named dashboard runs on a zero-dependency identity-verified Node server; boards may be git-shared or local, with a gitignored secure/ tier. Durable task state remains model-neutral and resumable across Claude, Codex, operators, and other agents without transcript dumps or false completion from unavailable evidence.",
+  "version": "1.3.0",
+  "description": "A local task board and project memory for Codex. Plan work, track dependencies and completion checks, and resume in a new chat with the context intact. Seven portable skills also support Claude Code and capability-aware ChatGPT handoffs.",
   "author": {
     "name": "Emmett Shaughnessy",
     "email": "hey@emmetts.dev",
@@ -30,9 +30,10 @@
     "handoff",
     "resume",
     "persistence",
-    "agent-memory"
-    ,"evidence-receipt"
-    ,"attempt-ledger"
-    ,"bounded-convergence"
+    "agent-memory",
+    "evidence-receipt",
+    "attempt-ledger",
+    "bounded-convergence",
+    "chatgpt"
   ]
 }

@@ -1,13 +1,7 @@
 ---
 name: tasks-memory
 description: >
-  Two-tier workplace-memory model that lets the agent decode Emmett's shorthand, acronyms,
-  nicknames, project codenames, and internal language like a colleague would. Reference this
-  whenever working with the tasks-* system's memory: deciding what goes in working memory vs
-  deep memory, adding "remember that X means Y", recalling "who is X / what does X mean", or
-  decoding a request full of internal terms. Working memory lives in `.tasks/CLAUDE.md`; deep
-  memory in `.tasks/memory/`. Set up by /tasks-start, refreshed by /tasks-update, and
-  promoted into the repo by /tasks-remove.
+  Read or update shared workplace context for a shaughv-tasks project: people, terms, preferences, and project notes. Use for "remember this for the project", "who is this", or "what does this term mean" when using the task system. Owns .tasks/CLAUDE.md and .tasks/memory/, not the host app's account-wide memory.
 user-invocable: false
 ---
 

@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 A plain-English companion lives at [HUMAN_CHANGELOG.md](./HUMAN_CHANGELOG.md) and is kept in lockstep with this file — see the changelog rule in [CLAUDE.md](./CLAUDE.md).
 
+## [1.3.0] — 2026-09-29
+
+### Added
+- Shared task capture, text search, status and owner filters, result counts, and keyboard
+  shortcuts in Board and List. Remember each board's layout; default new narrow views to List.
+- Named prerequisite selection with cycle prevention, linked dependencies, and missing-ID warnings.
+- Copy a saved task handoff for Codex or ChatGPT, including preserved custom detail sections.
+- Persistent board/detail save feedback, a completion summary, and explicit complete/reopen actions.
+
+### Improved
+- Tighten spacing and hierarchy while retaining SHAUGHV typography and both appearances.
+  Use restrained entry/exit, checkbox, focus, and save feedback with reduced-motion support.
+- Put current status and plans ahead of reference material; keep completed records readable.
+- Route Completed moves through the verification flow; save successful completion into Completed
+  and return reopened work to To-Do (or the first available open column).
+- Reorganize skill entry points around Codex workflows, with setup, formats, scoping, and task
+  contracts in linked references. Document capability-aware ChatGPT snapshot reconciliation.
+- Rewrite the README and plugin listing around the product and everyday use.
+
+### Fixed
+- Read Windows line endings consistently in task and milestone files.
+- Preserve edits made while a board save is pending and prevent a reload from silently
+  discarding pending task-list edits. Keep save failures visible with an explicit retry.
+- Cancel obsolete board animation ghosts and keep them out of the accessibility tree.
+
+### Behind the scenes
+- Regenerate the skills-only Codex package from its root sources; keep all host versions aligned.
+
 ## [1.2.0] — 2026-09-07
 
 ### Added

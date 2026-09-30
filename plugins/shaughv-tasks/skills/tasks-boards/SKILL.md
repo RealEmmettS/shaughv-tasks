@@ -1,13 +1,7 @@
 ---
 name: tasks-boards
 description: >
-  How agents find, verify, and talk to the RIGHT task board when more than one exists —
-  multiple repos with their own .tasks/ boards running on the same machine, nested boards,
-  or a board already open when the operator starts work in a new repo. Reference this
-  before interacting with a live board server (reading or writing through its HTTP API, or
-  telling the operator a board URL), whenever a port doesn't respond the way you expect, or
-  whenever there's any chance the server on a port belongs to a different repo. Set up by
-  /tasks-start; the board identity rules here are implemented by board-server.mjs.
+  Find and verify the correct live shaughv-tasks board before opening its URL or using its API. Use for multiple projects, nested boards, port conflicts, or a board that appears to show the wrong project. A responding port alone does not identify a board.
 user-invocable: false
 ---
 

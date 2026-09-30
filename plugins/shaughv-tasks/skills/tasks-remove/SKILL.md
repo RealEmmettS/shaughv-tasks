@@ -1,15 +1,7 @@
 ---
 name: tasks-remove
 description: >
-  Decommission the tasks-* system in a repo and flatten its useful parts back into the
-  repository itself. Use whenever the user says /tasks-remove, "remove the task system", "tear
-  down tasks", "uninstall the task system", "flatten my tasks into the repo", "promote my
-  memory", "I'm done with the dashboard", or otherwise wants the `.tasks/` scaffolding gone
-  with its knowledge preserved. Promotes `.tasks/CLAUDE.md` working memory to `memory/workplace.md` with
-  pointers from both hosts' effective root instructions, moves `.tasks/memory/` into a repo-level `memory/`, preserves open obligations
-  and explicitly dispositions the remaining Backlog, then deletes `.tasks/` (dashboard
-  included). Destructive — always confirm and show the migration plan first. The inverse of
-  /tasks-start.
+  Retire a shaughv-tasks board while preserving its useful memory and open work. Use for "remove the task system", "retire this board", or tasks-remove. Show the migration plan before removing owned files or hooks. --dry-run previews the plan; --keep-tasks preserves the task list.
 argument-hint: "[--keep-tasks] [--dry-run]"
 ---
 

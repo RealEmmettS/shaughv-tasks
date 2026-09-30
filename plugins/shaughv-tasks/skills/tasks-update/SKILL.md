@@ -1,15 +1,7 @@
 ---
 name: tasks-update
 description: >
-  Sync the task list and refresh workplace memory from current activity, for repos using the
-  tasks-* system. Use whenever the user says /tasks-update, "sync my tasks", "catch me up",
-  "triage my tasks", "what changed", "pull in my new assignments", "what am I missing", or
-  wants stale items triaged and memory gaps filled. Repairs/upgrades the existing dashboard
-  bundle and its durable project title before syncing. Default mode syncs from a connected
-  project tracker (Asana/Linear/Jira/GitHub Issues), triages overdue/stale items, and decodes
-  tasks for memory gaps. `--comprehensive` additionally deep-scans chat, email, calendar, and
-  docs to surface missed todos and suggest new memories. Operates on `.tasks/`. Reads
-  tasks-management and tasks-memory.
+  Review, triage, and sync an existing shaughv-tasks board. Use for "triage my tasks", "sync my tasks", "what changed on my board", or tasks-update. Repairs the board bundle, flags overdue or unsupported completion, and fills relevant memory gaps. Use --comprehensive only for a requested wider scan of connected activity sources.
 argument-hint: "[--comprehensive]"
 ---
 
@@ -28,10 +20,12 @@ If `.tasks/` doesn't exist, suggest `/tasks-start` first.
 ### 1. Load current state
 
 Read `.tasks/TASKS.md`, `.tasks/MILESTONES.md`, `.tasks/config.json`, and
-`.tasks/CLAUDE.md` + `.tasks/memory/`.
+`.tasks/CLAUDE.md`. Read relevant active task notes and deeper memory only as needed.
+Without writable project access, follow [ChatGPT handoffs](../tasks-management/references/chatgpt.md)
+and return a proposed update rather than claiming files changed.
 
 Before syncing task content, run the **existing-board** portion of `/tasks-start`'s
-create/repair/upgrade gate (step 2) without launching the browser or repeating fresh-setup
+[create/repair/upgrade gate](../tasks-start/references/setup.md) (step 2) without launching the browser or repeating fresh-setup
 questions. In particular:
 
 - Compare the loaded skill's versioned five-file dashboard bundle with the target marker;

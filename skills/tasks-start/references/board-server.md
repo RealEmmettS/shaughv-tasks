@@ -452,3 +452,26 @@ not a separate pass). The manifest's `global[]` is the exception: for each `wasP
 `succeeded:true` entry, `/tasks-remove` **offers** the recorded `reverseCommand` (default **keep**,
 never auto-run, high-risk caveat surfaced). No manifest → legacy marker-only teardown, no global
 reversal. Unknown `schemaVersion` → delete `.tasks/` and print the raw `global[]` for manual cleanup.
+
+
+## Everyday controls and handoffs
+
+Search and status/owner filters apply to both Board and List and combine with the selected
+milestone. New task is shared across layouts (`N`); `/` focuses search outside editors.
+The layout choice is remembered per board, with List as the first-use narrow-screen default.
+
+Choose prerequisites by name. Existing links open their task; missing task IDs remain visibly
+flagged. The picker excludes direct and transitive cycles. The missing-ID warning does not
+change the existing parser/server dependency rules.
+
+Moving an open task toward Completed opens its detail for review instead of implying that
+its checks passed. Mark complete uses the existing revision-bound verification transaction
+and includes the Completed column move. Reopen task returns it to To-Do, or the first open
+column when To-Do is absent. Custom boards without a completion column retain their column.
+
+Copy handoff waits for saved task notes and copies a dated task snapshot, including custom
+sections. It does not send data to another service. Follow the
+[ChatGPT workflow](../../tasks-management/references/chatgpt.md) to reconcile proposed updates
+with current files. Board and detail persistence are shown separately; a failed task-list save
+exposes Save for retry. Current status and plans stay prominent, while background records and
+activity can be expanded when needed.

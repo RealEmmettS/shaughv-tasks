@@ -1,13 +1,26 @@
-# Codex and Claude Code
+# Codex, ChatGPT, and Claude Code
 
 The seven skills share one file format and one `.tasks/` folder. Detect the current host
 from the running environment; never infer it from `.tasks/CLAUDE.md`. That filename is a
 compatibility name for common workplace memory, read explicitly by both hosts.
 
+## Match the workflow to available access
+
+Codex is the primary local workflow. A ChatGPT session with authorized project filesystem
+and execution tools can use that same workflow; check the actual tools before setup.
+For uploaded files or a copied task snapshot, follow
+[ChatGPT handoffs](../../tasks-management/references/chatgpt.md). Do planning and return
+proposed updates, without claiming a local board was launched or changed.
+
+Do not equate a ChatGPT Project with this plugin's local project directory. Do not
+assume a cloud session can reach the user's localhost. Use the current host's browser
+panel when it can reach the verified board; otherwise provide the local launch path.
+
 ## Instructions and invocation
 
 In Codex, select `shaughv-tasks:tasks-start` from the skills picker or ask for `tasks-start`
-by name. The installed plugin exposes all seven skills with that namespace. In Claude Code use
+by name. The plugin bundles four workflow skills and three supporting reference skills.
+In Claude Code use
 `/shaughv-tasks:tasks-start` if the short `/tasks-start` name is not exposed. The same rule
 applies to the other user-invocable skills. Resolve supporting assets relative to the
 loaded SKILL.md; only Claude Code may use CLAUDE_PLUGIN_ROOT as a fallback.

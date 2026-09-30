@@ -6,6 +6,32 @@ For the technical version with versions, file paths, and links, see CHANGELOG.md
 
 ---
 
+## Find the next step and carry it forward — September 2026
+
+**Added**
+- Search your work, narrow it by owner or status, and add a task from either layout.
+- Pick prerequisites by name and jump directly to the work holding a task up.
+- Copy a task's saved context into another Codex or ChatGPT conversation.
+- See what still needs checking before completion and whether your edits have saved.
+
+**Improved**
+- A more compact workspace keeps everyday controls close and remembers your preferred layout.
+- Current status and plans come before background records. Completed tasks remain readable.
+- Completing work moves it into Completed; reopening puts it back in the work queue.
+- Small transitions help you follow changes, while reduced-motion preferences keep things still.
+- Codex setup and everyday instructions are easier to follow. The introduction now explains
+  what the board does and how to get started, including how to take context into ChatGPT.
+
+**Fixed**
+- Windows task files load consistently, including their final entries.
+- Edits made during an ongoing save remain queued. Failed saves stay visible so you can retry.
+- Old card animations no longer linger when the board changes again.
+
+**Behind the scenes**
+- All supported installations receive the same updated skills and board.
+
+---
+
 ## A calmer workspace for planning and following the work — September 2026
 
 **Added**
