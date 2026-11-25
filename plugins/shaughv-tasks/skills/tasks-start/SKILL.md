@@ -48,9 +48,15 @@ Open that URL for the human. Use `--repair` to keep a stopped board stopped. New
 are shareable by default. Honor a personal-board request with `--local` on first setup.
 Existing tracking, meaningful titles, custom columns, and Markdown records take precedence.
 
-The helper connects both root instruction files to the same memory and guide. For requested
-native hooks follow [host setup](references/hosts.md). For incomplete installs or missing
-Node consult [setup recovery](references/setup.md).
+For the README's setup message, follow the project install in the linked quickstart and use
+the repository open in that chat. When the human requests hooks, run the helper with
+`--hooks codex` or `--hooks claude` for the current tool. Verify the returned project, board
+URL and hook status. Complete a
+`needs-merge` result using the indicated project settings. Surface pending native review.
+Other tools can use the board directly. [Host setup](references/hosts.md)
+
+The helper connects both root instruction files to the same memory and guide. For incomplete
+installs or missing Node consult [setup recovery](references/setup.md).
 
 ## 3. Work alongside the human
 

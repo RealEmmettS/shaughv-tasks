@@ -1,6 +1,6 @@
 {
   "name": "shaughv-tasks",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "A local task board and project memory for Codex. Plan work, track dependencies and completion checks, and resume in a new chat with the context intact. Seven portable skills also support Claude Code and capability-aware ChatGPT handoffs.",
   "author": {
     "name": "Emmett Shaughnessy",

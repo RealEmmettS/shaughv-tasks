@@ -6,6 +6,10 @@ without launching a stopped board. Git projects default to a shareable board. Us
 for a personal board on first setup. Existing choices take precedence. All display dependencies
 are provisioned from the shipped skill without a registry or global installation.
 
+For the README's copy-paste setup, run in the selected repository and pass
+`--hooks codex` or `--hooks claude` for the current coding tool. Review the verified
+URL and hook result before handing the board back. [Native hooks](hosts.md#optional-native-hooks)
+
 ## Manual recovery
 
 - **Resolve the active skill bundle first.** Let `<skill-dir>` be the directory containing the
