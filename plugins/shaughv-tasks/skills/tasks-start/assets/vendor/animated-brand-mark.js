@@ -271,7 +271,7 @@
       "aria-label": ariaLabel
     });
     svg.style.display = "block";
-    svg.style.width = host.style.width || "auto";
+    svg.style.width = host.style.width || "var(--shaughv-mark-art-width, auto)";
     svg.style.height = host.style.height || "100%";
     svg.style.color = "inherit";
 
@@ -377,13 +377,15 @@
     try {
       class ShaughvMarkEl extends HTMLElement {
         connectedCallback() {
-          if (!this.style.display) this.style.display = "inline-block";
-          if (!this.style.color) this.style.color = "currentColor";
-          mount(this, {
+          if (getComputedStyle(this).display === "inline") this.style.display = "inline-block";
+          this.mark = mount(this, {
             static:    this.hasAttribute("static"),
             iconOnly:  this.hasAttribute("icon-only"),
             ariaLabel: this.getAttribute("aria-label") || "SHAUGHV"
           });
+        }
+        disconnectedCallback() {
+          if (this.mark) this.mark.destroy();
         }
       }
       customElements.define("shaughv-mark", ShaughvMarkEl);
@@ -391,8 +393,7 @@
       // Fallback: auto-mount on element if customElements registration failed.
       document.querySelectorAll("shaughv-mark:not([data-shaughv-mounted])").forEach(function (host) {
         host.setAttribute("data-shaughv-mounted", "");
-        if (!host.style.display) host.style.display = "inline-block";
-        if (!host.style.color) host.style.color = "currentColor";
+        if (getComputedStyle(host).display === "inline") host.style.display = "inline-block";
         mount(host, {
           static:    host.hasAttribute("static"),
           iconOnly:  host.hasAttribute("icon-only"),

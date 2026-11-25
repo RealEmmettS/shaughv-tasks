@@ -2,19 +2,19 @@
 
 @font-face {
   font-family: "Makira"; font-style: normal; font-weight: 400; font-display: swap;
-  src: url("./fonts/makira/Makira-Regular.woff2") format("woff2");
+  src: url("./fonts/makira/Makira-Regular.woff2?v=ddc9e90daf8f") format("woff2");
 }
 @font-face {
   font-family: "Makira"; font-style: normal; font-weight: 500; font-display: swap;
-  src: url("./fonts/makira/Makira-Medium.woff2") format("woff2");
+  src: url("./fonts/makira/Makira-Medium.woff2?v=da5b76677f36") format("woff2");
 }
 @font-face {
   font-family: "Makira"; font-style: normal; font-weight: 600; font-display: swap;
-  src: url("./fonts/makira/Makira-SemiBold.woff2") format("woff2");
+  src: url("./fonts/makira/Makira-SemiBold.woff2?v=2c6dd3129c4f") format("woff2");
 }
 @font-face {
   font-family: "Makira"; font-style: normal; font-weight: 700; font-display: swap;
-  src: url("./fonts/makira/Makira-Bold.woff2") format("woff2");
+  src: url("./fonts/makira/Makira-Bold.woff2?v=bd6f8f7a42d1") format("woff2");
 }
 
 @font-face {
@@ -34,4 +34,4 @@
   src: url("./fonts/gail-rock/Gail-Rock-Bold.woff2") format("woff2");
 }
 
-@font-face { font-family: "Makira"; font-style: normal; font-weight: 300; font-display: swap; src: url("./fonts/makira/Makira-Light.woff2") format("woff2"); }
+@font-face { font-family: "Makira"; font-style: normal; font-weight: 300; font-display: swap; src: url("./fonts/makira/Makira-Light.woff2?v=e5f82f4f4e8c") format("woff2"); }

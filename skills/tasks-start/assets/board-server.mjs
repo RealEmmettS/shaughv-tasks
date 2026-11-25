@@ -54,9 +54,9 @@ const PACKAGE_LOCK = path.join(TASKS_DIR, 'package-lock.json');
 const MANIFEST_FILE = path.join(TASKS_DIR, '.install-manifest.json');    // exhaustive record of what install did — read by /tasks-remove
 
 // The authorized board type system is shipped in the plugin: Makira for reading/action and
-// Gail Rock for state/metadata. Makira's private CDN carries byte-identical fallback copies;
+// Gail Rock for state/metadata. The CDN provides the pinned Makira faces;
 // Gail Rock is shipped-only. Both still degrade to the dashboard's system stacks if absent.
-const FONT_NOTE = 'Makira and Gail Rock are bundled as exact WOFF2 assets for the board type system; Makira also has byte-identical private-CDN fallbacks.';
+const FONT_NOTE = 'Makira and Gail Rock are bundled as exact WOFF2 assets for the board type system; the CDN supplies the same Makira faces.';
 
 // These directories were owned by the pre-1.1.1 installer. They are no longer runtime inputs,
 // so a newer install removes them from the system-owned .tasks/vendor cache before provisioning.
@@ -68,32 +68,38 @@ const RETIRED_VENDOR_DIRS = ['fonts/ibm-plex-mono', 'fonts/unbounded'];
 // byte-exact to the files shipped under skills/tasks-start/assets/vendor/ and, where declared,
 // to the CDN/npm artefacts they mirror.
 const PINNED = {
-  'shaughv-loader.js': { sha256: '5395bdc375e67448f0b6482727af23e222fdca9ee391b609e0d5f3327873f569' },
-  'fonts/makira/Makira-Light.woff2': { sha256: 'eb1d3f4394492e24e482809195442df24ec62cce14741a5fc2985a6251a29d5f' },
+  'shaughv-loader.js': {
+    sha256: '9388d150e46af0bc34711bf3f03f39ff35f35d0163281ffb1b8fbc67113fdded',
+    cdn: 'https://cdn.shaughv.com/js/shaughv-loader.js',
+  },
+  'fonts/makira/Makira-Light.woff2': {
+    sha256: 'e5f82f4f4e8c7fe8fa982487dc5003bc55d87d34e4fbc05e4748555c3f0c2570',
+    cdn: 'https://cdn.shaughv.com/fonts/makira/woff2/Makira-Light.woff2',
+  },
   'anime.min.js': {
     sha256: 'b5ce1be3c3f530f192e0f2571d1942846096d66119cbada34bfdc912c4873f35',
     npm: { pkg: 'animejs', version: '3.2.2', file: path.join('animejs', 'lib', 'anime.min.js') },
     cdn: 'https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js',
   },
   'animated-brand-mark.js': {
-    sha256: 'f56628c010793a65e618f05b142fd54a7b66b6217c999fe88a2302e160755eb6',
+    sha256: '5a26d999e3859459b90d0d1d172d8216b1891a7acf1fc4c568ace1f533be1721',
     cdn: 'https://cdn.shaughv.com/js/animated-brand-mark.js',
   },
   'fonts/makira/Makira-Regular.woff2': {
-    sha256: '8123abbc97aee587e516a6cf70d20bee5b1696e4a0b1aff6307c932efda65ce1',
-    cdn: 'https://cdn.shaughv.com/fonts/makira/woff2/Makira-Regular.woff2',
+    sha256: 'ddc9e90daf8f3891e9deb2b37cf9010d644348fb04beb4c2ccb94080a5d7b10c',
+    cdn: 'https://cdn.shaughv.com/fonts/makira/woff2/Makira-Regular-ddc9e90daf8f.woff2',
   },
   'fonts/makira/Makira-Medium.woff2': {
-    sha256: '4f59dee09f86558f83d9ca8c0609eda0a944f1907742af2a92abe71eeb773870',
-    cdn: 'https://cdn.shaughv.com/fonts/makira/woff2/Makira-Medium.woff2',
+    sha256: 'da5b76677f36136c9a29ba0657bf410e69a9e1afadce7ea1311d2b2ec7de3198',
+    cdn: 'https://cdn.shaughv.com/fonts/makira/woff2/Makira-Medium-da5b76677f36.woff2',
   },
   'fonts/makira/Makira-SemiBold.woff2': {
-    sha256: '89ed63922acf207e2bd74865e177604e36141a6e0a009b16ef90180c6ebb54d6',
-    cdn: 'https://cdn.shaughv.com/fonts/makira/woff2/Makira-SemiBold.woff2',
+    sha256: '2c6dd3129c4f94ec8948af3bfbbd4f0108c31d3357ebf85c3174c43a655c2987',
+    cdn: 'https://cdn.shaughv.com/fonts/makira/woff2/Makira-SemiBold-2c6dd3129c4f.woff2',
   },
   'fonts/makira/Makira-Bold.woff2': {
-    sha256: 'd4c7c7e0d2d84bb33518dd900264c2bc2c1b7698d3d98d1a65ba2945d0505085',
-    cdn: 'https://cdn.shaughv.com/fonts/makira/woff2/Makira-Bold.woff2',
+    sha256: 'bd6f8f7a42d18f48408f12aa347d2a7cab1d88f2949015a0c3ea4182751c17c1',
+    cdn: 'https://cdn.shaughv.com/fonts/makira/woff2/Makira-Bold-bd6f8f7a42d1.woff2',
   },
   'fonts/gail-rock/Gail-Rock-Regular.woff2': {
     sha256: 'acc19a5524b3f8530877b0d2602dd80ea41aa38135cd1feec0057da4ec641bf0',
@@ -109,7 +115,7 @@ const PINNED = {
   },
   // The stylesheet is pinned too: a 1.1.0 board must replace its existing copy on upgrade.
   'fonts.css': {
-    sha256: 'd17b9440e5519ccb21ea223341c5ac4ebd85d3b70da2917d680665e8bcc48115',
+    sha256: '34f968080961241cac35e76ec12e4b8bc1b16fdd3537e6d182e0419fb9e2182e',
   },
 };
 
