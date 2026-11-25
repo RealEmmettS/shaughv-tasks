@@ -15,6 +15,7 @@
 // Paths resolve from THIS file's directory (the `.tasks/` folder), so it works no
 // matter what cwd node is invoked from (e.g. a hook fired from the repo root).
 
+import './board-records.js';
 import http from 'node:http';
 import https from 'node:https';
 import fs from 'node:fs';
@@ -53,14 +54,10 @@ const PACKAGE_JSON = path.join(TASKS_DIR, 'package.json');
 const PACKAGE_LOCK = path.join(TASKS_DIR, 'package-lock.json');
 const MANIFEST_FILE = path.join(TASKS_DIR, '.install-manifest.json');    // exhaustive record of what install did — read by /tasks-remove
 
-// The authorized board type system is shipped in the plugin: Makira for reading/action and
-// Gail Rock for state/metadata. The CDN provides the pinned Makira faces;
-// Gail Rock is shipped-only. Both still degrade to the dashboard's system stacks if absent.
-const FONT_NOTE = 'Makira and Gail Rock are bundled as exact WOFF2 assets for the board type system; the CDN supplies the same Makira faces.';
-
+const FONT_NOTE = 'Makira titles, Geist interface text, and Geist Mono metadata are bundled for offline use.';
 // These directories were owned by the pre-1.1.1 installer. They are no longer runtime inputs,
 // so a newer install removes them from the system-owned .tasks/vendor cache before provisioning.
-const RETIRED_VENDOR_DIRS = ['fonts/ibm-plex-mono', 'fonts/unbounded'];
+const RETIRED_VENDOR_DIRS = ['fonts/ibm-plex-mono', 'fonts/unbounded', 'fonts/gail-rock'];
 
 // Every vendored asset, keyed by its path relative to vendor/. Each declares the sources it
 // can come from, in tier order: `npm` (full) → `cdn` (vendor) → shipped plugin copy (shipped).
@@ -101,21 +98,33 @@ const PINNED = {
     sha256: 'bd6f8f7a42d18f48408f12aa347d2a7cab1d88f2949015a0c3ea4182751c17c1',
     cdn: 'https://cdn.shaughv.com/fonts/makira/woff2/Makira-Bold-bd6f8f7a42d1.woff2',
   },
-  'fonts/gail-rock/Gail-Rock-Regular.woff2': {
-    sha256: 'acc19a5524b3f8530877b0d2602dd80ea41aa38135cd1feec0057da4ec641bf0',
+  'fonts/geist/Geist-Variable.woff2': {
+    sha256: '5c5588027e59e74e205b9d6c7fd877b261091cee367f6bb3a8d505da14cae512',
+    cdn: 'https://cdn.shaughv.com/fonts/geist/variable/Geist-Variable.woff2',
   },
-  'fonts/gail-rock/Gail-Rock-Medium.woff2': {
-    sha256: 'd2eb2c255ad5e693246638dc5bc796569732bdc45d6b3cd9e544171c2ad59742',
+  'fonts/geist/OFL.txt': {
+    sha256: 'c683bfbcc7e087f5d37a54ef628f10387c451a83ddc459b151403a164ac46c90',
+    cdn: 'https://cdn.shaughv.com/fonts/geist/OFL.txt',
   },
-  'fonts/gail-rock/Gail-Rock-Semibold.woff2': {
-    sha256: '88b72e2e3238ab6c9288488b057e5fd4befc925dc8faa2370985fbdb9acdfeaa',
+  'fonts/geist/LICENSE.txt': {
+    sha256: 'd857769f7100c5a71b51f8a9fcfab60638649ac9f5b89200d1a46be1795343b3',
+    cdn: 'https://cdn.shaughv.com/fonts/geist/LICENSE.txt',
   },
-  'fonts/gail-rock/Gail-Rock-Bold.woff2': {
-    sha256: '3b2357486231d6e482ff40dc19138fcaab28ecbbab5462a45bbffaed030d76b9',
+  'fonts/geist-mono/GeistMono-Variable.woff2': {
+    sha256: 'cf5bf55f69e043b1ecf04b0719119b7298e94add67ebcaa709a925b945b46b25',
+    cdn: 'https://cdn.shaughv.com/fonts/geist-mono/variable/GeistMono-Variable.woff2',
+  },
+  'fonts/geist-mono/OFL.txt': {
+    sha256: 'c683bfbcc7e087f5d37a54ef628f10387c451a83ddc459b151403a164ac46c90',
+    cdn: 'https://cdn.shaughv.com/fonts/geist-mono/OFL.txt',
+  },
+  'fonts/geist-mono/LICENSE.txt': {
+    sha256: 'e8bb648d25559bba6170ac9519602991c90b08aab6ec4bda3566f8d81b2168cb',
+    cdn: 'https://cdn.shaughv.com/fonts/geist-mono/LICENSE.txt',
   },
   // The stylesheet is pinned too: a 1.1.0 board must replace its existing copy on upgrade.
   'fonts.css': {
-    sha256: '34f968080961241cac35e76ec12e4b8bc1b16fdd3537e6d182e0419fb9e2182e',
+    sha256: 'aaf73a8b331a48e5cccafa9fbb86ece6edcef72929c1ded6d67794e7699118da',
   },
 };
 
@@ -170,6 +179,27 @@ function taskStates(markdown) {
     if (match) states.set(match[2].toLowerCase(), match[1] === ' ' ? 'open' : 'checked');
   }
   return states;
+}
+
+function completionBlocker(board, id, detail) {
+  const states = taskStates(board);
+  const lines = board.split(/\r?\n/);
+  const row = lines.findIndex(line => line.startsWith('- [') && line.trimEnd().endsWith('#' + id));
+  if (row < 0) return 'Create the open task before completing it.';
+  const needs = lines[row].match(/\(needs\s+([^)]+)\)/i)?.[1].match(/[0-9a-z]{2,}/gi) || [];
+  if (needs.some(key => states.get(key.toLowerCase()) === 'open')) return 'Finish the prerequisites first.';
+  for (const line of lines.slice(row + 1)) {
+    if (/^(?:## |-[ \t])/.test(line)) break;
+    if (/^\s+-\s+\[ \]/.test(line)) return 'Finish all open subtasks first.';
+  }
+  for (const part of globalThis.ShaughvTaskRecords.sections(detail)) {
+    if (part.name.toLowerCase() !== 'verification') continue;
+    const text = detail.slice(part.start, part.end);
+    if (/^-\s+\[ \]/m.test(text)) return 'Success criteria remain open.';
+    const waived = text.split(/\r?\n/).filter(line => /^-\s+\[~\]/.test(line));
+    if (waived.some(line => !/\(waived\s+\d{4}-\d{2}-\d{2}\s+[—-]\s+[^:()]+:\s*[^()\s][^()]*\)\s*$/i.test(line))) return 'A waiver needs a dated decision, author and reason.';
+  }
+  return '';
 }
 
 function taskLineIsChecked(markdown, id) {
@@ -345,6 +375,46 @@ async function serve({ open = false, port: requested } = {}) {
     res.end(body);
   }
 
+  async function documentRoute(req, res, target, kind, boardIndex = false) {
+    const revisionHeader = boardIndex ? 'X-Board-Revision' : 'X-Detail-Revision';
+    const content = async () => {
+      try { return await fsp.readFile(target, 'utf8'); }
+      catch (e) { if (e.code === 'ENOENT') return boardIndex ? '# Milestones\n' : ''; throw e; }
+    };
+    const headers = async body => ({ [revisionHeader]: detailRevision(body), 'X-Board-Mtime': String(await fileMtimeMs(target)) });
+    if (req.method === 'GET') {
+      const current = await content();
+      return send(res, 200, 'text/markdown; charset=utf-8', current, await headers(current));
+    }
+    const body = req.method === 'DELETE' ? '' : await readBody(req);
+    const mutate = async () => {
+      const current = await content();
+      const previous = await headers(current);
+      const base = req.headers['x-base-revision'];
+      if ((base && base !== previous[revisionHeader]) ||
+          (!base && req.headers['x-base-mtime'] !== undefined && req.headers['x-base-mtime'] !== previous['X-Board-Mtime'])) {
+        return send(res, 409, 'text/markdown; charset=utf-8', current, previous);
+      }
+      if (boardIndex) {
+        const before = taskStates(current);
+        const newlyDone = new Set([...taskStates(body)].filter(([id, state]) =>
+          state === 'checked' && before.get(id) !== 'checked').map(([id]) => id));
+        if (newlyDone.size) {
+          const tasks = await readOptionalUtf8(TASKS_MD);
+          const openChild = tasks.split(/\r?\n/).some(line => /^- \[ \]/.test(line) &&
+            newlyDone.has(line.match(/\(ms\s+#?([a-z0-9]+)\)/i)?.[1].toLowerCase()));
+          if (openChild) return send(res, 422, 'application/json', JSON.stringify({ error: 'Finish the open tasks in this milestone first.' }));
+        }
+      }
+      if (req.method === 'DELETE') await unlinkOptional(target);
+      else writeFileAtomic(target, Buffer.from(body));
+      const updated = await headers(body);
+      markSelfWrite(kind, String(req.headers['x-board-client'] || ''), updated['X-Board-Mtime']);
+      return send(res, 200, 'application/json', JSON.stringify({ ok: true, revision: updated[revisionHeader] }), updated);
+    };
+    return withTaskDetailWriteLock(target, () => boardIndex ? withTasksWriteLock(mutate) : mutate());
+  }
+
   async function readBody(req) {
     const chunks = [];
     for await (const c of req) chunks.push(c);
@@ -397,6 +467,9 @@ async function serve({ open = false, port: requested } = {}) {
         return send(res, 200, 'text/html; charset=utf-8', html);
       }
 
+      if (pathname === '/board-records.js' && req.method === 'GET') {
+        return send(res, 200, 'text/javascript; charset=utf-8', await fsp.readFile(path.join(TASKS_DIR, 'board-records.js')));
+      }
       if (pathname === '/dashboard.css' && req.method === 'GET') {
         const css = await fsp.readFile(path.join(TASKS_DIR, 'dashboard.css'), 'utf8');
         return send(res, 200, 'text/css; charset=utf-8', css, { 'Cache-Control': 'no-store' });
@@ -466,6 +539,18 @@ async function serve({ open = false, port: requested } = {}) {
 
             const currentStates = taskStates(latest);
             const nextStates = taskStates(body);
+            const activeRows = text => {
+              const stage = globalThis.ShaughvTaskRecords.sections(text).find(s => s.name.replace(/^\*\*|\*\*$/g, '').toLowerCase() === 'active');
+              return stage ? text.slice(stage.start, stage.end).split(/\r?\n/).filter(line => /^- \[ \]/.test(line)) : [];
+            };
+            const priorActive = taskStates(activeRows(latest).join('\n'));
+            for (const line of activeRows(body)) {
+              const id = line.match(/#([a-z0-9]{2,8})\s*$/)?.[1];
+              const needs = line.match(/\(needs\s+([^)]+)\)/i)?.[1].match(/[0-9a-z]{2,}/gi) || [];
+              if (id && !priorActive.has(id) && needs.some(key => nextStates.get(key.toLowerCase()) === 'open')) {
+                return send(res, 422, 'application/json', JSON.stringify({error:'Finish prerequisites before moving into Active.'}));
+              }
+            }
             const newlyChecked = [...nextStates.entries()]
               .filter(([id, state]) => state === 'checked' && currentStates.get(id) !== 'checked')
               .map(([id]) => id);
@@ -522,6 +607,8 @@ async function serve({ open = false, port: requested } = {}) {
                   actualRevision: currentRevision,
                 }), { 'X-Detail-Revision': currentRevision });
               }
+              const reason = completionBlocker(latest, completionId, currentDetail);
+              if (reason) return send(res, 422, 'application/json', JSON.stringify({error:reason}));
             }
 
             // Guarded deletion first moves the detail out of its live id path. If the board
@@ -602,29 +689,8 @@ async function serve({ open = false, port: requested } = {}) {
 
       // MILESTONES.md — same byte-pipe + optimistic-concurrency semantics as /api/tasks.
       // GET serves the skeleton when the file doesn't exist yet; it's only created on first write.
-      if (pathname === '/api/milestones') {
-        if (req.method === 'GET') {
-          const md = await fsp.readFile(MILESTONES_MD, 'utf8').catch(() => '# Milestones\n');
-          const mtime = await fileMtimeMs(MILESTONES_MD);
-          return send(res, 200, 'text/markdown; charset=utf-8', md, { 'X-Board-Mtime': String(mtime) });
-        }
-        if (req.method === 'POST') {
-          const body = await readBody(req);
-          const base = req.headers['x-base-mtime'];
-          if (base !== undefined && base !== '') {
-            const current = await fileMtimeMs(MILESTONES_MD);
-            if (String(current) !== String(base)) {
-              const latest = await fsp.readFile(MILESTONES_MD, 'utf8').catch(() => '# Milestones\n');
-              return send(res, 409, 'text/markdown; charset=utf-8', latest, { 'X-Board-Mtime': String(current) });
-            }
-          }
-          const tmp = MILESTONES_MD + '.tmp';
-          await fsp.writeFile(tmp, body, 'utf8');
-          await fsp.rename(tmp, MILESTONES_MD);
-          const mtime = await fileMtimeMs(MILESTONES_MD);
-          markSelfWrite('milestones', String(req.headers['x-board-client'] || ''), mtime);
-          return send(res, 200, 'application/json', JSON.stringify({ ok: true, mtime }), { 'X-Board-Mtime': String(mtime) });
-        }
+      if (pathname === '/api/milestones' && ['GET','POST'].includes(req.method)) {
+        return await documentRoute(req, res, MILESTONES_MD, 'milestones', true);
       }
 
       // Setup-owned config (git tracking, hooks target). Served verbatim, GET-only — the server
@@ -642,17 +708,7 @@ async function serve({ open = false, port: requested } = {}) {
         const rel = url.searchParams.get('path') || '';
         const target = resolveMemoryPath(rel);
         if (!target) return send(res, 400, 'application/json', JSON.stringify({ error: 'bad path' }));
-        if (req.method === 'GET') {
-          const content = await fsp.readFile(target, 'utf8').catch(() => '');
-          return send(res, 200, 'text/markdown; charset=utf-8', content);
-        }
-        if (req.method === 'POST') {
-          const body = await readBody(req);
-          await fsp.mkdir(path.dirname(target), { recursive: true });
-          await fsp.writeFile(target, body, 'utf8');
-          markSelfWrite('memory', String(req.headers['x-board-client'] || ''));
-          return send(res, 200, 'application/json', JSON.stringify({ ok: true }));
-        }
+        if (['GET','POST'].includes(req.method)) return await documentRoute(req, res, target, 'memory');
       }
 
       // Per-task detail file (rich description + activity log): .tasks/tasks/<id>.md
@@ -733,31 +789,13 @@ async function serve({ open = false, port: requested } = {}) {
 
       // Per-milestone detail file (rich description + Completed archive + activity log):
       // .tasks/milestones/<id>.md. This older surface shares task-detail id validation, lazy
-      // files, atomic replacement, and deletion, but not the task Verification route's
-      // revision precondition. The id regex + fixed directory confine both detail routes inside
+      // files, atomic replacement, revision checks and deletion. The id regex + fixed directory confine both detail routes inside
       // .tasks/; secure/ is structurally unreachable from here.
       if (pathname === '/api/milestone') {
         const id = (url.searchParams.get('id') || '').toLowerCase();
         if (!/^[0-9a-z]{2,8}$/.test(id)) return send(res, 400, 'application/json', JSON.stringify({ error: 'bad id' }));
         const target = path.join(MILESTONE_DETAIL_DIR, id + '.md');
-        if (req.method === 'GET') {
-          const content = await fsp.readFile(target, 'utf8').catch(() => '');
-          return send(res, 200, 'text/markdown; charset=utf-8', content);
-        }
-        if (req.method === 'POST') {
-          const body = await readBody(req);
-          await fsp.mkdir(MILESTONE_DETAIL_DIR, { recursive: true });
-          const tmp = target + '.tmp';
-          await fsp.writeFile(tmp, body, 'utf8');
-          await fsp.rename(tmp, target);
-          markSelfWrite('milestones', String(req.headers['x-board-client'] || ''));
-          return send(res, 200, 'application/json', JSON.stringify({ ok: true }));
-        }
-        if (req.method === 'DELETE') {
-          await fsp.unlink(target).catch(() => {});
-          markSelfWrite('milestones', String(req.headers['x-board-client'] || ''));
-          return send(res, 200, 'application/json', JSON.stringify({ ok: true }));
-        }
+        if (['GET','POST','DELETE'].includes(req.method)) return await documentRoute(req, res, target, 'milestones');
       }
 
       if (pathname === '/api/events' && req.method === 'GET') {
@@ -1360,6 +1398,14 @@ const flagVal = (name) => { const i = argv.indexOf(name); return i >= 0 ? argv[i
 const portArg = argv.includes('--port') ? Number(flagVal('--port')) : undefined;
 
 switch (cmd) {
+  case 'agent': {
+    try {
+      const { agent } = await import('./board-agent.mjs');
+      const result = await agent(argv.slice(1), async () => ({ url: await ensure(), boardId: boardIdentity().boardId }));
+      console.log(JSON.stringify(result));
+    } catch (e) { console.error(e.message); process.exitCode = 1; }
+    break;
+  }
   case 'serve':
     serve({ open, port: portArg }).catch((e) => { console.error(e); process.exit(1); });
     break;

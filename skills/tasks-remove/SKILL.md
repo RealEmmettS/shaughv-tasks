@@ -89,7 +89,7 @@ repo-level memory skill), target that instead — match the repo, don't impose `
 Tasks aren't "memory", so by default they don't survive teardown — but don't silently drop
 open work:
 
-- **Default:** preserve each remaining **Active** and **To-Do** item as a compact typed entry
+- **Default:** preserve each remaining **Active**, **Review**, and **To-Do** item as a compact typed entry
   under `## Open threads` in `memory/workplace.md` (or a linked TODO artifact): current
   result/status; verified state and exact evidence pointers; unresolved check, contradiction, or
   blocker; failed-route signature/re-entry condition that prevents blind repetition; and exact

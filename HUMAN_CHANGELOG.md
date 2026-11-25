@@ -6,6 +6,19 @@ For the technical version with versions, file paths, and links, see CHANGELOG.md
 
 ---
 
+## A project board for people and coding agents — November 2026
+
+**Added**
+- Give a collaborator one link to install the skills, open the board, and pick up work.
+- People and agents can claim tasks, exchange comments, post results, and review success criteria together.
+- Copy a project brief or share one task with all its notes.
+
+**Improved**
+- Titles, reading text, and technical details have distinct typefaces. Compact controls and a smaller footer give the work more space.
+- Simultaneous edits report conflicts so an operator can reconcile their changes.
+
+---
+
 ## The board catches up with the SHAUGHV sites — November 2026
 
 **Added**

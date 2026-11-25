@@ -7,6 +7,9 @@ user-invocable: false
 
 # Task Management
 
+Use the [agent interface](../tasks-start/references/agents.md) for revision-checked edits alongside the human operator.
+
+
 Tasks live in **`.tasks/TASKS.md`** — a plain-markdown file both the agent and the user (and
 the dashboard) read and write. The dashboard board/list views read and write this exact
 file and auto-save.

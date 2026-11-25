@@ -167,7 +167,7 @@ The dashboard parses/serializes this exact shape; the server only moves the byte
 ```
 
 - `## Section` headers (optional `**bold**`); section id = lowercased, non-alnum → `-`.
-  Fresh-board categories are **Backlog → To-Do → Active → Completed** (file order = category
+  Fresh-board categories are **Backlog → To-Do → Active → Review → Completed** (file order = category
   order). Existing custom categories are preserved; legacy **Done** categories still work.
 - Task lines: `- [ ]` / `- [x]`, a **bold** title, optional ` - note`, optional
   ` (needs #id, #id)` prerequisites, optional ` (ms #id)` milestone tag, optional
@@ -314,12 +314,9 @@ redirect condition. Markdown renders headings, lists, code, **bold**, _italic_, 
 
 The board **progressively enhances**. Its core (the Kanban board, live sync, the Slot Roll and
 FLIP motion) is built from Node + browser built-ins and works with **zero** external assets. On
-top of that it layers the **anime.js** motion driver, nine authorized **brand-font WOFF2s**
-(Makira Light 300 plus Makira and Gail Rock at 400, 500, 600, and 700), the **animated brand mark**, canonical loader, and
-`fonts.css` — 13 sha256-pinned assets in total. Makira is the board's body/display face; Gail Rock
-is the technical monospace face. The shipped tier keeps that typography intact without a network.
-Missing assets must be reported as degraded presentation; repair the supplied font files
-before accepting typography. The stylesheet declares only Makira and Gail Rock.
+top of that it bundles anime.js, Makira titles, variable Geist and Geist Mono, the font notices,
+the animated mark, the loader, and its local stylesheet. The shipped tier verifies every file
+and preserves the board's typography offline.
 
 ### The `install` chain (server side)
 
@@ -333,7 +330,7 @@ through):
 | Tier | Source | How |
 |---|---|---|
 | **full** | npm | `npm install` the pinned `animejs` into a **transient** `.tasks/node_modules`, verify, copy the artefact into `vendor/`, then **prune `node_modules`** (nothing npm-related persists). |
-| **vendor** | pinned CDN fetch | `https` GET each available asset straight into `vendor/`; the byte-identical Makira CDN files are secondary candidates, while Gail Rock deliberately has no network candidate. |
+| **vendor** | pinned CDN fetch | `https` GET each available asset straight into `vendor/`; all three font families have verified CDN sources. |
 | **shipped** | the plugin bundle | copy from the absolute assets directory supplied by `/tasks-start` in `SHAUGHV_TASKS_ASSETS_DIR`; host plugin-root variables are compatibility fallbacks. This is the offline-capable floor-with-assets in Claude Code, Codex, and standalone skills.sh installs. |
 | **offline** | nothing | no assets provisioned; core data access still works, but typography/branding requires repair. |
 
@@ -345,8 +342,8 @@ already-valid asset is reused (its provenance preserved), and a re-run rebuilds 
 from actual on-disk state, so a deleted asset is re-provisioned (integrity self-heal).
 
 `fonts.css` is pinned like every binary, so an older board's stale stylesheet is replaced on its
-next install. Reconciliation also removes only the two retired plugin-owned directories
-`vendor/fonts/ibm-plex-mono/` and `vendor/fonts/unbounded/`; unrelated vendor content is untouched.
+next install. Reconciliation also removes only the retired plugin-owned directories
+`vendor/fonts/ibm-plex-mono/`, `vendor/fonts/unbounded/`, and `vendor/fonts/gail-rock/`; unrelated vendor content is untouched.
 
 The achieved `tier` recorded is that of `anime.min.js` (the marquee enhancement); fonts and the
 brand mark degrade independently and are recorded per-asset.
@@ -447,7 +444,7 @@ Written **eagerly** (`status:"in-progress"`) and updated after each asset, then 
       "succeeded": true, "reverseCommand": "winget uninstall --id OpenJS.NodeJS.LTS -e",
       "reverseRisk": "high", "note": "…" }
   ],
-  "notes": ["Makira and Gail Rock are bundled as authorized exact WOFF2 assets …"]
+  "notes": ["Bundled Makira, Geist and Geist Mono …"]
 }
 ```
 

@@ -3,6 +3,14 @@
 This is Emmett's standalone task + workplace-memory Codex plugin. The README is for users
 installing it; this file is for you, future Codex, when editing it.
 
+## Onboarding an agent into a project
+
+Start with the [agent quickstart](https://github.com/RealEmmettS/shaughv-tasks/blob/main/AGENT-QUICKSTART.md).
+Install the seven skills for the selected hosts or extract the full release. Run the loaded
+tasks-start setup helper against the target project and open its verified URL. People and
+agents use the same Markdown and completion checks. [Agent operations](skills/tasks-start/references/agents.md)
+cover assignments, comments, results, criteria, review, and completion.
+
 ## What this repo is
 
 A focused, **skills-only** plugin: the seven SHAUGHV `tasks-*` skills (grown from the five
@@ -89,16 +97,20 @@ commit, using the labels **Added**, **Improved**, **Fixed**, **Removed**, **Secu
 - The `skills/` directory MUST stay lowercase. Case-only renames on Windows need a two-step
   `mv` (e.g. `mv skills tmp && mv tmp skills`).
 - `.gitattributes` pins `skills/tasks-start/assets/vendor/**` (and its Codex mirror) as
-  `binary` so the 13 sha256-pinned board assets stay byte-exact across OS checkout and pass the
+  `binary` so the sha256-pinned board assets stay byte-exact across OS checkout and pass the
   `build-codex-plugin.ps1 -Check` byte-compare. Nothing in this mirror is *generated* text
   (manifest + skills are copied verbatim), so — unlike shaughv-code — no `.mcp.json text eol=lf`
   pin is needed.
 
 ## What not to do
 
-- Don't recreate `.skill` zip bundles.
+- Keep release archives out of Git. Publish them as GitHub Release assets.
 - Don't hand-edit `plugins/shaughv-tasks/` — it's generated. Edit root content and re-run
   `build-codex-plugin.ps1`.
 - Don't add MCP servers, commands, or a `.mcp.json` without an explicit ask.
 - Don't write tests. The useful checks are `build-codex-plugin.ps1 -Check`, manifest
   validation, Codex marketplace discovery, and seeing a skill trigger on its phrases.
+
+## Publishing downloads
+
+After merging, run `pwsh ./build-release.ps1 -Revision <merge-sha> -Destination <output-folder>`. Attach the complete ZIP, seven individual `.skill` archives, and the checksum file to the matching GitHub release. The root skills are the editable sources.
