@@ -100,7 +100,7 @@ codex plugin add shaughv-tasks@shaughv-tasks
 /plugin install shaughv-tasks@shaughv-tasks
 ```
 
-Return to your project chat and paste the [setup message](#open-your-board).
+Open your project chat and ask “Use the installed SHAUGHV Tasks plugin to open this repo’s board and set up its project hooks.”
 
 </details>
 

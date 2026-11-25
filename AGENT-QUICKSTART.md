@@ -22,7 +22,8 @@ node .claude/skills/tasks-start/assets/setup.mjs --hooks claude
 
 ### Other setups
 
-- **Already installed.** Use `assets/setup.mjs` beside the loaded `tasks-start/SKILL.md`. Run it from the target repository with the same hook flag for the current tool. If `--help` does not list `--hooks`, update the skills or use the current project install above.
+- **Already installed in this repository.** Reuse its current `tasks-start/assets/setup.mjs` with the hook flag for your tool. If the skills exist only in a user-wide install, run the project install above for the README's setup message.
+- **Marketplace install.** When the human chose the marketplace, use the helper beside the loaded `tasks-start/SKILL.md`. Run it from their project. If its `--help` does not list `--hooks`, update that installation first.
 - **Another coding tool.** Install the skills for that tool and run its `tasks-start/assets/setup.mjs` from the project. The board supports file and terminal access. Native hooks are available for Codex and Claude Code. [Project install options](README.md#install-with-npx)
 - **Manual download.** Extract the [complete ZIP](https://github.com/RealEmmettS/shaughv-tasks/releases/latest/download/shaughv-tasks.zip) outside the target repository. From the project, run `node "/path/to/extracted/skills/tasks-start/assets/setup.mjs"` with the hook flag for your tool.
 - **Personal board.** For a new Git project, add `--local` to the setup command if the human wants the board kept out of Git. Existing boards retain their tracking settings. Use `--repair` to upgrade without starting a stopped board.

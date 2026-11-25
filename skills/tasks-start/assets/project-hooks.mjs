@@ -114,11 +114,22 @@ export function installProjectHooks({ project, config, host, generated, git, wri
         return manual('Git could not locate this repository’s local exclude file.');
       const entry = '/' + (prefix.stdout.trimEnd() + target).replace(/[\\[*?]/g, '\\$&');
       const excludeFile = exclude.stdout.trim();
-      const existing = fs.existsSync(excludeFile) ? fs.readFileSync(excludeFile, 'utf8') : '';
+      const existed = fs.existsSync(excludeFile);
+      const existing = existed ? fs.readFileSync(excludeFile, 'utf8') : '';
       if (!existing.split(/\r?\n/).includes(entry)) {
         fs.mkdirSync(path.dirname(excludeFile), { recursive: true });
-        fs.appendFileSync(excludeFile, (existing && !existing.endsWith('\n') ? '\n' : '') + entry + '\n');
+        const addition = (existing && !existing.endsWith('\n') ? '\n' : '') + entry + '\n';
+        fs.appendFileSync(excludeFile, addition);
+        if (git(project, 'check-ignore', '-q', '--', target).status !== 0) {
+          if (fs.readFileSync(excludeFile, 'utf8') === existing + addition) {
+            if (existed) write(excludeFile, existing, stat(excludeFile).mode);
+            else fs.unlinkSync(excludeFile);
+          }
+          return manual('The project’s Git rules would still share these personal hook settings.');
+        }
         excludeEntry = entry;
+      } else {
+        return manual('The project’s Git rules would still share these personal hook settings.');
       }
     }
   }

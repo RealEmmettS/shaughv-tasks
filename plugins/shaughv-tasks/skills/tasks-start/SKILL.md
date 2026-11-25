@@ -48,9 +48,10 @@ Open that URL for the human. Use `--repair` to keep a stopped board stopped. New
 are shareable by default. Honor a personal-board request with `--local` on first setup.
 Existing tracking, meaningful titles, custom columns, and Markdown records take precedence.
 
-When the human requests hooks, including through the README's setup message, run the helper
-with `--hooks codex` or `--hooks claude` for the current tool. Use the repository open in
-that chat as the project. Verify the returned project, board URL and hook status. Complete a
+For the README's setup message, follow the project install in the linked quickstart and use
+the repository open in that chat. When the human requests hooks, run the helper with
+`--hooks codex` or `--hooks claude` for the current tool. Verify the returned project, board
+URL and hook status. Complete a
 `needs-merge` result using the indicated project settings. Surface pending native review.
 Other tools can use the board directly. [Host setup](references/hosts.md)
 
