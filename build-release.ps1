@@ -14,7 +14,7 @@ $timestamp = git -C $PSScriptRoot show -s --format=%cI $commit
 
 function Export-Archive([string] $Name, [string] $Tree, [string] $Prefix) {
     $output = Join-Path $target $Name
-    git -C $PSScriptRoot archive --format=zip "--mtime=$timestamp" "--prefix=$Prefix" "--output=$output" $Tree
+    git -c core.autocrlf=false -c core.eol=lf -C $PSScriptRoot archive --format=zip "--mtime=$timestamp" "--prefix=$Prefix" "--output=$output" $Tree
     if ($LASTEXITCODE -ne 0) { throw "Could not archive $Tree" }
     $hash = (Get-FileHash -LiteralPath $output -Algorithm SHA256).Hash.ToLowerInvariant()
     "$hash  $Name"
