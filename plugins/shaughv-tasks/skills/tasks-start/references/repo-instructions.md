@@ -21,6 +21,8 @@ Suggested section:
 ```markdown
 ## Task management system
 
+Agent onboarding: https://github.com/RealEmmettS/shaughv-tasks/blob/main/AGENT-QUICKSTART.md
+
 This repo uses the SHAUGHV `tasks-*` system. Before task work, read `.tasks/CLAUDE.md`
 for shared workplace memory in both Codex and Claude Code; read deeper `.tasks/memory/`
 files as needed. The board source of truth is

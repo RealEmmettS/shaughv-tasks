@@ -4,12 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TASKS / SHAUGHV</title>
+  <script src="./board-records.js"></script>
   <script src="./board-config.js"></script>
   <link rel="icon" type="image/svg+xml" href="https://cdn.shaughv.com/brand/shaughv/favicons/SHAUGHV-Favicon-Dark.svg" media="(prefers-color-scheme: light)">
   <link rel="icon" type="image/svg+xml" href="https://cdn.shaughv.com/brand/shaughv/favicons/SHAUGHV-Favicon-Light.svg" media="(prefers-color-scheme: dark)">
   <link rel="preconnect" href="https://cdn.shaughv.com" crossorigin>
-  <!-- SHAUGHV fonts: bundled Makira (reading/action) + Gail Rock (state/metadata). -->
-  <link rel="stylesheet" href="./vendor/fonts.css?v=34f968080961">
+  <!-- SHAUGHV fonts: Makira titles, Geist interface text, and Geist Mono metadata. -->
+  <link rel="stylesheet" href="./vendor/fonts.css?v=aaf73a8b331a">
   <script defer src="./vendor/animated-brand-mark.js?v=5a26d999e385"></script>
   <script defer src="./vendor/anime.min.js"></script>
   <script defer src="./vendor/shaughv-loader.js?v=9388d150e46a"></script>
@@ -36,13 +37,16 @@
       <div class="header-left">
         <shaughv-mark class="brand-mark" data-icon-only data-static aria-label="SHAUGHV"></shaughv-mark>
         <div class="project-heading">
-          <div class="eyebrow">SHAUGHV / workspace</div>
+          <div class="eyebrow">Project workspace</div>
           <h1 id="appTitle" class="app-title">Tasks</h1>
         </div>
       </div>
-      <label class="theme-control"><span class="appearance-label">Appearance</span>
+      <div class="header-actions">
+        <button id="projectBrief" hidden>Agent brief</button>
+        <label class="theme-control"><span class="appearance-label">Appearance</span>
         <select id="themeToggle" aria-label="Appearance"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select>
-      </label>
+        </label>
+      </div>
     </header>
     <nav class="workspace-toolbar" aria-label="Workspace">
       <div class="toolbar-start">
@@ -64,7 +68,7 @@
       <div class="task-tools" id="taskTools" hidden>
         <div class="task-search"><label class="sr-only" for="taskSearch">Search tasks</label><input id="taskSearch" type="search" placeholder="Search tasks, people, or #id" autocomplete="off" aria-keyshortcuts="/"></div>
         <label class="sr-only" for="taskFilter">Show tasks</label>
-        <select id="taskFilter"><option value="all">All tasks</option><option value="open">Open</option><option value="active">Active</option><option value="blocked">Blocked</option><option value="completed">Completed</option></select>
+        <select id="taskFilter"><option value="all">All tasks</option><option value="open">Open</option><option value="active">Active</option><option value="review">In review</option><option value="blocked">Blocked</option><option value="completed">Completed</option></select>
         <label class="sr-only" for="ownerFilter">Filter by owner</label><select id="ownerFilter"><option value="">All owners</option></select>
         <button id="newTaskBtn" class="primary" aria-expanded="false" aria-controls="taskComposer" aria-keyshortcuts="n">New task</button>
       </div>
@@ -174,6 +178,14 @@
     </div>
   </div>
 
+  <dialog id="recordEditor" class="app-dialog record-dialog" aria-labelledby="recordHeading">
+    <h2 id="recordHeading"></h2>
+    <label id="authorField">Author<input id="entryAuthor" autocomplete="name"></label>
+    <label id="entryLabel" for="entryText">Message</label>
+    <textarea id="entryText" rows="6"></textarea>
+    <p id="entryFeedback" role="status"></p>
+    <div class="app-dialog-actions"><button id="entryCancel">Cancel</button><button class="primary" id="entrySave">Save</button></div>
+  </dialog>
   <div class="status-bar" id="status" role="status" aria-live="polite"></div>
 
   <script>
@@ -225,12 +237,9 @@
 
     function compactSourcePath(value) {
       const full = String(value || '');
-      if (full.length <= 88) return full;
-      const separator = full.includes('\\') ? '\\' : '/';
       const parts = full.split(/[\\/]+/).filter(Boolean);
-      if (parts.length <= 6) return full;
-      const prefix = /^[A-Za-z]:/.test(parts[0]) ? parts[0] + separator : (full.startsWith('/') ? separator : '');
-      return prefix + '…' + separator + parts.slice(-5).join(separator);
+      const board = parts.lastIndexOf('.tasks');
+      return board >= 0 ? parts.slice(Math.max(0, board - 1)).join('/') : full;
     }
 
     function updateSourceDisplay() {
@@ -659,6 +668,7 @@
     let msDetails = {};                    // id → parsed detail (powers archived counts + the modal)
     let activeMilestoneFilter = null;      // milestone id, or null = show everything
     let lastMilestonesModified = 0;
+    let lastMilestonesRevision = '';
     let msSaving = false;
     let boardRepoName = '';                // from /api/ping root — disambiguates multi-board tabs
     let serverRoot = '';
@@ -766,6 +776,7 @@
         if (taskFilter === 'open' && t.checked) return false;
         if (taskFilter === 'completed' && !t.checked) return false;
         if (taskFilter === 'active' && (t.checked || sectionId !== 'active')) return false;
+        if (taskFilter === 'review' && (t.checked || sectionId !== 'review')) return false;
         if (taskFilter === 'blocked' && (t.checked || !isBlocked(t))) return false;
         const haystack = [t.title, t.note, '#' + t.id, t.owner, milestoneById(t.milestoneId)?.title,
           ...(t.subtasks || []).flatMap(s => [s.text, s.description])].join(' ').toLowerCase();
@@ -785,6 +796,7 @@
     function refreshTaskTools() {
       const available = Boolean(taskFileName || taskFileHandle);
       document.getElementById('taskTools').hidden = !available;
+      document.getElementById('projectBrief').hidden = !available;
       document.getElementById('taskResults').hidden = !available;
       const all = allTasks();
       const visible = sections.flatMap(s => visibleTasks(s.id));
@@ -799,8 +811,8 @@
       const milestone = milestoneById(activeMilestoneFilter);
       document.getElementById('taskResultCount').textContent = filtered
         ? `${visible.length} of ${all.length} tasks${milestone ? ' · ' + milestone.title : ''}`
-        : all.length ? `${all.length} tasks · ${all.filter(t => !t.checked && t.section === 'active').length} active · ${all.filter(t => !t.checked && isBlocked(t)).length} blocked`
-          : 'A clear place to start. Add your first task.';
+        : all.length ? `${all.length} ${all.length === 1 ? 'task' : 'tasks'} · ${all.filter(t => !t.checked && t.section === 'active').length} active · ${all.filter(t => !t.checked && t.section === 'review').length} in review · ${all.filter(t => !t.checked && isBlocked(t)).length} blocked`
+          : 'Add the first task to start planning.';
       document.getElementById('clearTaskFilters').hidden = !filtered;
       document.getElementById('filterEmpty').hidden = !available || !filtered || visible.length > 0;
     }
@@ -861,6 +873,7 @@
       try {
         const res = await fetch('/api/milestones');
         const content = await res.text();
+        lastMilestonesRevision = res.headers.get('X-Board-Revision') || '';
         lastMilestonesModified = Number(res.headers.get('X-Board-Mtime')) || 0;
         milestones = parseMilestoneMarkdown(content);
         if (activeMilestoneFilter && !milestoneById(activeMilestoneFilter)) activeMilestoneFilter = null;
@@ -876,6 +889,7 @@
         try {
           const r = await fetch('/api/milestone?id=' + encodeURIComponent(m.id));
           msDetails[m.id] = parseDetail(await r.text());
+          msDetails[m.id].revision = r.headers.get('X-Detail-Revision');
         } catch (_) { msDetails[m.id] = parseDetail(''); }
       }));
     }
@@ -889,12 +903,13 @@
       try {
         const res = await fetch('/api/milestones', {
           method: 'POST',
-          headers: serverWriteHeaders('text/markdown', { 'X-Base-Mtime': String(lastMilestonesModified) }),
+          headers: serverWriteHeaders('text/markdown', { 'X-Base-Mtime': String(lastMilestonesModified), 'X-Base-Revision': lastMilestonesRevision }),
           body: milestonesToMarkdown(),
         });
         verifyServerResponse(res);
         if (res.status === 409) {
           const latest = await res.text();
+          lastMilestonesRevision = res.headers.get('X-Board-Revision') || '';
           lastMilestonesModified = Number(res.headers.get('X-Board-Mtime')) || lastMilestonesModified;
           milestones = parseMilestoneMarkdown(latest);
           await loadMilestoneDetails();
@@ -905,6 +920,7 @@
         }
         if (!res.ok) throw new Error('HTTP ' + res.status);
         lastMilestonesModified = Number(res.headers.get('X-Board-Mtime')) || lastMilestonesModified;
+        lastMilestonesRevision = res.headers.get('X-Board-Revision') || '';
         saved = true;
       } catch (e) { showStatus('Milestones save failed: ' + e.message); }
       finally { msSaving = false; if (saved && msChangesWaiting) saveMilestonesToServer(); }
@@ -916,11 +932,12 @@
       try {
         const res = await fetch('/api/milestone?id=' + encodeURIComponent(id), {
           method: 'POST',
-          headers: serverWriteHeaders('text/markdown'),
+          headers: serverWriteHeaders('text/markdown', { 'X-Base-Revision': d.revision || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855' }),
           body: serializeDetail(d),
         });
         verifyServerResponse(res);
         if (!res.ok) throw new Error('HTTP ' + res.status);
+        d.revision = res.headers.get('X-Detail-Revision');
         markBoardUpdated();
         return true;
       } catch (e) { showStatus('Milestone detail save failed: ' + e.message); return false; }
@@ -960,7 +977,6 @@
         <div style="display: flex; align-items: flex-start; gap: 10px;">
           <span class="checkbox ${task.checked ? 'checked' : ''}" style="pointer-events: none; flex-shrink: 0; margin-top: 1px;"></span>
           <div class="card-title" style="flex: 1; min-width: 0; ${task.checked ? 'text-decoration: line-through; opacity: 0.55;' : ''}">${escapeHtml(task.title)}</div>
-          <span title="task id" style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); opacity: 0.75; white-space: nowrap;">#${task.id}</span>
         </div>
       `;
 
@@ -976,11 +992,12 @@
         const m = milestoneById(task.milestoneId);
         metaBits.push(`<span class="chip" title="${m ? 'Milestone: ' + escapeHtml(m.title) : 'Unknown milestone #' + escapeHtml(task.milestoneId)}">${icon('target', 11)}<span class="chip-label">${m ? escapeHtml(m.title) : '#' + escapeHtml(task.milestoneId) + '?'}</span></span>`);
       }
-      if (task.owner) metaBits.push(`<span class="chip" title="Owner — who's driving this task"><span class="chip-label">${escapeHtml(task.owner)}</span></span>`);
       if (taskInconsistent(task)) metaBits.push(`<span class="chip warn" title="Checked done in the file, but subtasks are still open — finish them or uncheck">${icon('alert-triangle', 11)}<span class="chip-label">checked · ${openSubtasks(task).length} open</span></span>`);
       if (metaBits.length) {
         html += `<div style="margin-left: 26px; margin-top: 6px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; font-size: 12px; color: var(--text-muted); font-family: var(--font-mono);">${metaBits.join('')}</div>`;
       }
+
+      html += `<div class="card-byline">${task.owner ? `<span class="chip" title="Task owner">${escapeHtml(task.owner)}</span>` : ''}<span class="card-id" title="Task ID">#${task.id}</span></div>`;
 
       card.innerHTML = html;
 
@@ -1731,13 +1748,7 @@
             if (msTask || msSaving) { msReloadDeferred = true; showStatus('Milestones changed outside this tab — close the milestone to refresh'); }
             else loadMilestonesFromServer().then(() => renderTasks());
           } else if (kind === 'detail') {
-            // A generic detail event does not identify which task changed. Never replace an
-            // open modal: Note/Owner/prerequisite fields can hold unblurred browser drafts
-            // even when the description is not in edit mode. Completion re-reads and
-            // revision-checks its own detail; close/reopen is the explicit refresh boundary.
-            if (tmTask) {
-              showStatus('Task detail changed outside this tab — close and reopen it to refresh; completion will re-check durable state');
-            }
+            if (tmTask) refreshExternalDetail(tmTask);
           } else if (kind === 'config') {
             loadBoardIdentityFromServer();
           } else if (kind === 'memory' && activeMainTab === 'memory') {
@@ -2414,8 +2425,12 @@
     }
 
     async function saveMemoryToServer(serverPath, content) {
+      const bytes = new TextEncoder().encode(modalOverlay._baseMarkdown || '');
+      const digest = new Uint8Array(await crypto.subtle.digest('SHA-256',bytes));
+      const revision = Array.from(digest, b=>b.toString(16).padStart(2,'0')).join('');
+
       const res = await fetch('/api/memory/file?path=' + encodeURIComponent(serverPath), {
-        method: 'POST', headers: serverWriteHeaders('text/markdown'), body: content,
+        method: 'POST', headers: serverWriteHeaders('text/markdown', { 'X-Base-Revision':revision }), body: content,
       });
       verifyServerResponse(res);
       if (!res.ok) throw new Error('Memory save returned HTTP ' + res.status);
@@ -2781,6 +2796,7 @@
       `;
 
       modalOverlay.classList.add('visible');
+      modalOverlay._baseMarkdown = file.content;
       modalOverlay.dataset.type = 'dirFile';
       modalOverlay.dataset.dirName = dirName;
       modalOverlay.dataset.fileName = fileName;
@@ -2816,6 +2832,7 @@
       `;
 
       modalOverlay.classList.add('visible');
+      modalOverlay._baseMarkdown = '';
       modalOverlay.dataset.type = 'newDirFile';
       modalOverlay.dataset.dirName = dirName;
     }
@@ -2838,6 +2855,7 @@
       `;
 
       modalOverlay.classList.add('visible');
+      modalOverlay._baseMarkdown = content;
       modalOverlay.dataset.type = type;
       modalOverlay.dataset.fileName = fileName;
     }
@@ -3395,6 +3413,27 @@
       }
     }
 
+    let detailRefreshSequence = 0;
+    async function refreshExternalDetail(task) {
+      const sequence = ++detailRefreshSequence;
+      const startingRevision = detailPersistenceState(task.id).revision;
+      const epoch = tmDetailLoadEpoch;
+      const busy = () => tmDescEditing || tmDetailMutationPending || tmCompletionPending || tmDeletionPending ||
+        editor.open || detailPersistenceState(task.id).pending ||
+        (tmBodyEl.contains(document.activeElement) && document.activeElement.matches('input,textarea,select,[role="combobox"]'));
+      try {
+        const source = await readTaskDetail(task.id);
+        if (tmTask !== task || epoch !== tmDetailLoadEpoch || sequence !== detailRefreshSequence) return;
+        const state = detailPersistenceState(task.id);
+        if (state.revision !== startingRevision) return;
+        if (state.revision === source.revision) return;
+        if (busy()) { showStatus('Task updated elsewhere. Finish editing and reopen it to refresh.'); return; }
+        Object.assign(state, { revision:source.revision, baseBody:source.body, error:null });
+        tmDetail = parseDetail(source.body); tmDetailLoaded = true;
+        renderTaskModalBody();
+      } catch (e) { showStatus('Could not refresh task: ' + e.message); }
+    }
+
     let taskPanelReturnFocus = null;
     const taskPanelBreakpoint = window.matchMedia('(max-width: 1199px)');
     function syncPanelModality() {
@@ -3634,7 +3673,7 @@
         ${task.checked ? `<div class="tm-blocked">${icon('lock', 13)} Reopen this task before changing its contract, subtasks, or durable detail.</div>` : ''}
         <div class="tm-properties">
           <div class="tm-property"><label for="tmSection">Status</label><select id="tmSection" class="tm-note-input">${sectionOptions}</select></div>
-          <div class="tm-property"><label for="tmOwner">Owner</label><input id="tmOwner" class="tm-note-input" placeholder="Unassigned" value="${escapeHtml(task.owner || '')}"></div>
+          <div class="tm-property"><label for="tmOwner">Owner</label><input id="tmOwner" class="tm-note-input" placeholder="Person or agent" value="${escapeHtml(task.owner || '')}"></div>
           <div class="tm-property wide"><label for="tmNote">Context</label><input id="tmNote" class="tm-note-input" placeholder="One-line context" value="${escapeHtml(task.note || '')}"></div>
           ${SERVER_MODE ? `<div class="tm-property"><label for="tmMilestone">Milestone</label><select id="tmMilestone" class="tm-note-input">${msOptions}</select></div>` : ''}
           <div class="tm-property wide"><label for="tmNeeds">Prerequisites</label><div id="tmPrerequisites"></div><select id="tmNeeds" class="tm-note-input"><option value="">Add a prerequisite…</option></select></div>
@@ -3650,18 +3689,27 @@
         <div class="tm-section-label">${icon('check-square', 12)} Subtasks <span class="tm-count-badge" id="tmSubCount"></span></div>
         <div id="tmSubtasks"></div>
 
-        ${detailsAvailable ? `<div class="tm-section-label">${icon('shield-check', 12)} Verification${detailsReady ? '' : detailsLoading} <span class="tm-count-badge" id="tmVerifyCount"></span></div>
+        ${detailsAvailable ? `<div class="tm-section-label">${icon('shield-check', 12)} Success criteria${detailsReady ? '' : detailsLoading} <span class="tm-count-badge" id="tmVerifyCount"></span></div>
         <div id="tmVerification"></div>` : ''}
 
+        <div class="record-actions" id="recordActions">
+          <button data-entry="comment">Comment</button><button data-entry="result">Post result</button><button data-entry="record">Edit Markdown</button>
+        </div>
         <div id="tmRecordSections"></div>
         <details class="task-record-section"><summary>Activity</summary><ul class="tm-activity" id="tmActivity"></ul></details>
       `;
 
       renderTmDesc();
       if (descriptionDraft !== undefined) { const draft = document.querySelector('#tmDescArea textarea'); if (draft) draft.value = descriptionDraft; }
+      const actions = document.getElementById('recordActions');
+      actions.hidden = !detailsReady || contractLocked;
+      actions.onclick = event => {
+        const mode = event.target.closest('[data-entry]')?.dataset.entry;
+        if (mode) openRecordEditor(mode);
+      };
       const records = document.getElementById('tmRecordSections');
       if (detailsReady) for (const block of tmDetail.blocks.filter(block => block.kind === 'other')) {
-        const current = /^(status|current status|next actions?|plan)$/i.test(block.name);
+        const current = /^(status|current status|next actions?|plan|comments|results)$/i.test(block.name);
         const section = document.createElement('details'); section.className = 'task-record-section'; section.open = current;
         const heading = document.createElement('summary'); heading.textContent = block.name;
         const content = document.createElement('div'); content.className = 'tm-desc-rendered';
@@ -4339,6 +4387,70 @@
     document.getElementById('tmClose').addEventListener('click', closeTaskModal);
     document.getElementById('tmDoneBtn').addEventListener('click', closeTaskModal);
     document.getElementById('tmCompleteBtn').addEventListener('click', () => tmCheckboxEl.click());
+    const guideUrl = 'https://github.com/RealEmmettS/shaughv-tasks/blob/main/AGENT-QUICKSTART.md';
+    const editor = document.getElementById('recordEditor');
+    const entryText = document.getElementById('entryText');
+    const entryAuthor = document.getElementById('entryAuthor');
+    const entrySave = document.getElementById('entrySave');
+    let editingRecord = null;
+
+    async function openRecordEditor(mode) {
+      if (editor.open || sourceMismatch) return;
+      const brief = mode === 'brief';
+      const task = brief ? null : tmTask;
+      try {
+        if (hasChanges) await autoSave();
+        if (hasChanges || isSaving) throw Error('Wait for the board to finish saving.');
+        if (!brief && (!task || !tmDetailLoaded || tmDescDirty || !await taskDetailIsPersisted(task.id))) throw Error('Save the open task details first.');
+        const source = brief ? null : await readTaskDetail(task.id);
+        if (!brief && task !== tmTask) return;
+        const lines = brief ? ['# ' + boardTitle, '', 'Agent guide: ' + guideUrl,
+          'Read .tasks/CLAUDE.md, .tasks/TASKS.md and .tasks/MILESTONES.md. Open .tasks/tasks/<id>.md for the task you take.',
+          'Coordinate with its owner. Post results and evidence, then move work to Review when a decision is needed.', '',
+          ...sections.flatMap(section => [ '## ' + section.name, ...(tasks[section.id] || []).map(t =>
+            '- [' + (t.checked ? 'x' : ' ') + '] ' + t.title + ' #' + t.id + ' · ' + (t.owner || 'Unassigned')
+            + (t.needs?.length ? ' · needs ' + t.needs.map(id=>'#'+id).join(', ') : '')), '' ]),
+          'Snapshot ' + new Date().toISOString() + '. Re-read the project files before editing.'] : [];
+        editingRecord = { mode, task, source };
+        document.getElementById('recordHeading').textContent = {brief:'Project handoff',comment:'Add a comment',result:'Post a result',record:'Edit task record'}[mode];
+        document.getElementById('authorField').hidden = brief || mode === 'record';
+        try { entryAuthor.value = localStorage.getItem('shaughv-tasks-operator') || ''; } catch { entryAuthor.value = ''; }
+        document.getElementById('entryLabel').textContent = {brief:'Agent brief',comment:'Comment',result:'Result and evidence',record:'Markdown'}[mode];
+        entryText.value = brief ? lines.join('\n') : mode === 'record' ? source.body : '';
+        entryText.readOnly = brief;
+        document.getElementById('entryFeedback').textContent = '';
+        document.getElementById('entryCancel').textContent = brief ? 'Close' : 'Cancel';
+        entrySave.textContent = brief ? 'Copy brief' : 'Save';
+        editor.showModal(); entryText.focus();
+      } catch (e) { showStatus(e.message); }
+    }
+
+    document.getElementById('projectBrief').onclick = () => openRecordEditor('brief');
+    document.getElementById('entryCancel').onclick = () => { if (!entrySave.disabled) editor.close(); };
+    editor.addEventListener('cancel', event => { if (entrySave.disabled) event.preventDefault(); });
+    editor.addEventListener('close', () => { editingRecord = null; });
+    entrySave.onclick = async () => {
+      if (!editingRecord || entrySave.disabled) return;
+      const { mode, task, source } = editingRecord;
+      const feedback = document.getElementById('entryFeedback');
+      entrySave.disabled = true;
+      try {
+        if (mode === 'brief') {
+          await navigator.clipboard.writeText(entryText.value); showStatus('Project brief copied');
+        } else {
+          const base = mode === 'record' ? source : await readTaskDetail(task.id);
+          const body = mode === 'record' ? entryText.value : ShaughvTaskRecords.append(base.body, mode, entryText.value, entryAuthor.value);
+          await writeTaskDetail(task.id, body, base.revision, base.body);
+          if (mode !== 'record') try { localStorage.setItem('shaughv-tasks-operator',entryAuthor.value.trim()); } catch {}
+          if (tmTask === task) await loadTaskDetailForModal(task);
+          showStatus(mode === 'record' ? 'Task record saved' : mode === 'comment' ? 'Comment posted' : 'Result posted');
+        }
+        editor.close();
+      } catch (e) {
+        feedback.textContent = e.code === 'DETAIL_CONFLICT' ? 'The record changed. Copy your draft, reopen the latest record, and merge your edit.' : e.message;
+      } finally { entrySave.disabled = false; }
+    };
+
     document.getElementById('tmHandoff').addEventListener('click', async event => {
       const task = tmTask;
       if (!task || !tmDetailLoaded || tmDescDirty || tmDetailMutationPending || tmCompletionPending || tmDeletionPending) {
@@ -4356,7 +4468,7 @@
           task.milestoneId ? `Milestone: ${milestoneById(task.milestoneId)?.title || '#' + task.milestoneId}` : '',
           (task.needs || []).length ? 'Prerequisites: ' + task.needs.map(id => `${taskById(id)?.title || 'Missing task'} (#${id})`).join(', ') : '',
           '', '## Subtasks', ...(task.subtasks || []).map(s => `- [${s.checked ? 'x' : ' '}] ${s.text}${s.description ? '\n  ' + s.description.replace(/\n/g, '\n  ') : ''}`),
-          '', '## Saved task notes', detail.body || 'No additional notes.', '',
+          '', 'Agent guide: ' + guideUrl, '', '## Saved task notes', detail.body || 'No additional notes.', '',
           `Snapshot copied ${new Date().toISOString()}. Source: .tasks/TASKS.md and .tasks/tasks/${task.id}.md.`,
           'Re-read the current project files before applying changes. If you cannot access them, propose updates for review; do not claim the live board changed.'];
         await navigator.clipboard.writeText(lines.join('\n'));

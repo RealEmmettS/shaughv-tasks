@@ -7,6 +7,9 @@ argument-hint: "[milestone|task|subtask] [title]"
 
 # /tasks-create
 
+Use the [agent interface](../tasks-start/references/agents.md) for revision-checked edits alongside the human operator.
+
+
 Put new work on the board at the right level, correctly linked and verifiable. This skill
 decides the level with you and writes the shapes that `tasks-management` defines — it never
 redefines the formats; when in doubt about a token or template, `tasks-management` is the

@@ -7,6 +7,9 @@ user-invocable: false
 
 # Workplace Memory
 
+Use the [agent interface](../tasks-start/references/agents.md) for revision-checked edits alongside the human operator.
+
+
 Memory makes the agent a colleague who speaks the user's internal language instead of asking
 round-trip clarifying questions.
 

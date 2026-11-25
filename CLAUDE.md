@@ -3,6 +3,14 @@
 This is Emmett's standalone task + workplace-memory plugin. The README is for users
 installing it; this file is for you, future Claude, when editing it.
 
+## Onboarding an agent into a project
+
+Start with the [agent quickstart](https://github.com/RealEmmettS/shaughv-tasks/blob/main/AGENT-QUICKSTART.md).
+Install the seven skills for the selected hosts or extract the full release. Run the loaded
+tasks-start setup helper against the target project and open its verified URL. People and
+agents use the same Markdown and completion checks. [Agent operations](skills/tasks-start/references/agents.md)
+cover assignments, comments, results, criteria, review, and completion.
+
 ## What this repo is
 
 A focused, **skills-only** plugin: the seven SHAUGHV `tasks-*` skills (grown from the five
@@ -114,7 +122,7 @@ rules if you need a refresher.)
 - The `skills/` directory MUST stay lowercase. Case-only renames on Windows need a two-step
   `mv` (e.g. `mv skills tmp && mv tmp skills`).
 - `skills/tasks-start/assets/vendor/**` is pinned `binary` in `.gitattributes` (root + the
-  Codex mirror). Those 13 files are sha256-verified by `board-server.mjs` at install time and
+  Codex mirror). Those files are sha256-verified by `board-server.mjs` at install time and
   byte-compared by `build-codex-plugin.ps1 -Check`; never let an editor or EOL normalization
   touch them.
 - `board-server.mjs` and `dashboard.html` resolve their own paths at runtime from the
@@ -132,3 +140,7 @@ rules if you need a refresher.)
 - Don't write tests. The skills are documentation/prompts; the meaningful checks are
   `build-codex-plugin.ps1 -Check`, manifest validation, and `claude --plugin-dir <path>` +
   seeing a skill trigger on its phrases and the board come up.
+
+## Publishing downloads
+
+After merging, run `pwsh ./build-release.ps1 -Revision <merge-sha> -Destination <output-folder>`. Attach the complete ZIP, seven individual `.skill` archives, and the checksum file to the matching GitHub release. The root skills are the editable sources.

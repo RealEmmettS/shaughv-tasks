@@ -15,19 +15,22 @@ A fresh `TASKS.md` (no example tasks):
 
 ## Active
 
+## Review
+
 ## Completed
 ```
 
 ### Columns (the Kanban flow)
 
-The four sections are a left-to-right flow — read them to know the state of the work:
+The five sections are a left-to-right flow — read them to know the state of the work:
 
 - **Backlog** — captured but not committed yet (someday / maybe / not now).
 - **To-Do** — queued and ready; *what to pick up next*.
 - **Active** — being worked on *right now* (keep this short).
+- **Review** — work awaiting a decision or verification. Either operator can review and respond.
 - **Completed** — finished work and recent history, cleared after a while.
 
-These exact four categories are the fresh-board default. Preserve an existing board's custom
+These five categories are the fresh-board default. Preserve an existing board's custom
 categories and order; legacy boards whose completion category is named **Done** remain valid.
 
 Move a task rightward as it progresses. A task can't enter **Active** while it still has an

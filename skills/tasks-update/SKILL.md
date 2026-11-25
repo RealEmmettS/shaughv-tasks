@@ -24,18 +24,10 @@ Read `.tasks/TASKS.md`, `.tasks/MILESTONES.md`, `.tasks/config.json`, and
 Without writable project access, follow [ChatGPT handoffs](../tasks-management/references/chatgpt.md)
 and return a proposed update rather than claiming files changed.
 
-Before syncing task content, run the **existing-board** portion of `/tasks-start`'s
-[create/repair/upgrade gate](../tasks-start/references/setup.md) (step 2) without launching the browser or repeating fresh-setup
-questions. In particular:
-
-- Compare the loaded skill's versioned five-file dashboard bundle with the target marker;
-  upgrade the whole bundle only when the source is newer, repair missing equal-version
-  members, and never downgrade a newer target.
-- Enforce the durable title invariant. Preserve a meaningful `config.json.boardTitle`; if it
-  is missing, blank, or generic (`Tasks`, `Task Board`, `SHAUGHV Tasks`), infer the actual
-  project name using `/tasks-start`'s precedence and ask only when credible signals conflict.
-- Reconcile `.tasks/board-config.js` from the persisted title using a real JSON serializer so
-  both localhost and `file://` dashboards show the same project identity.
+Before syncing, run `node "<tasks-start>/assets/setup.mjs" --project "<project>" --repair`.
+It verifies the bundle and leaves stopped boards stopped. Review pending handoffs, comments,
+results, and success criteria. Use the [agent interface](../tasks-start/references/agents.md)
+for revision-checked changes.
 
 If the installed plugin appears stale, first try the harness-native plugin update. If it is
 unavailable, fails, or freshness is still uncertain, use the GitHub skill/connector to read

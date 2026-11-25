@@ -1,4 +1,4 @@
-/* Supplied SHAUGHV fonts: Makira 300-700 and Gail Rock 400-700. Local files only. */
+/* Board typography. All faces are available offline. */
 
 @font-face {
   font-family: "Makira"; font-style: normal; font-weight: 400; font-display: swap;
@@ -17,21 +17,14 @@
   src: url("./fonts/makira/Makira-Bold.woff2?v=bd6f8f7a42d1") format("woff2");
 }
 
+@font-face { font-family: "Makira"; font-style: normal; font-weight: 300; font-display: swap; src: url("./fonts/makira/Makira-Light.woff2?v=e5f82f4f4e8c") format("woff2"); }
+
 @font-face {
-  font-family: "Gail Rock"; font-style: normal; font-weight: 400; font-display: swap;
-  src: url("./fonts/gail-rock/Gail-Rock-Regular.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Gail Rock"; font-style: normal; font-weight: 500; font-display: swap;
-  src: url("./fonts/gail-rock/Gail-Rock-Medium.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Gail Rock"; font-style: normal; font-weight: 600; font-display: swap;
-  src: url("./fonts/gail-rock/Gail-Rock-Semibold.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Gail Rock"; font-style: normal; font-weight: 700; font-display: swap;
-  src: url("./fonts/gail-rock/Gail-Rock-Bold.woff2") format("woff2");
+  font-family: "Geist"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url("./fonts/geist/Geist-Variable.woff2?v=5c5588027e59") format("woff2");
 }
 
-@font-face { font-family: "Makira"; font-style: normal; font-weight: 300; font-display: swap; src: url("./fonts/makira/Makira-Light.woff2?v=e5f82f4f4e8c") format("woff2"); }
+@font-face {
+  font-family: "Geist Mono"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url("./fonts/geist-mono/GeistMono-Variable.woff2?v=cf5bf55f69e0") format("woff2");
+}

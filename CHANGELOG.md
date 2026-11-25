@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 A plain-English companion lives at [HUMAN_CHANGELOG.md](./HUMAN_CHANGELOG.md) and is kept in lockstep with this file — see the changelog rule in [CLAUDE.md](./CLAUDE.md).
 
+## [1.5.0] — 2026-11-25
+
+### Added
+- One-command setup, an agent client, a Review stage for new boards, and project handoffs.
+- Shared Markdown comments, results, success criteria, and a full task-record editor.
+- A permanent agent quickstart, complete ZIP, and individual skill downloads.
+
+### Improved
+- Use Makira for headings, Geist for interface text, and Geist Mono for metadata. Refine board lanes, controls and the compact CDN footer.
+- Coordinate concurrent edits using Markdown revisions. Enforce task completion checks on the server.
+
 ## [1.4.0] — 2026-11-25
 
 ### Added
