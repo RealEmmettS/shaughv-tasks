@@ -31,7 +31,7 @@ process.stdin.on('end', () => {
       process.exit(result.error ? 1 : result.status ?? 1);
     }
     const parent = path.dirname(dir);
-    if (parent === dir) process.exit(0);
+    if (parent === dir || fs.existsSync(path.join(dir, '.git'))) process.exit(0);
     dir = parent;
   }
 });

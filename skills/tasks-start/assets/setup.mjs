@@ -8,6 +8,7 @@ import crypto from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import { installProjectHooks } from './project-hooks.mjs';
 
 const assets = path.dirname(fileURLToPath(import.meta.url));
 const files = [
@@ -24,12 +25,13 @@ const { values } = parseArgs({
     title: { type: 'string' },
     local: { type: 'boolean' },
     tracked: { type: 'boolean' },
+    hooks: { type: 'string' },
     repair: { type: 'boolean' },
     help: { type: 'boolean' },
   },
 });
 if (values.help) {
-  console.log('node setup.mjs [--project PATH] [--title NAME] [--local | --tracked] [--repair]');
+  console.log('node setup.mjs [--project PATH] [--title NAME] [--local | --tracked] [--hooks codex|claude] [--repair]');
   process.exit(0);
 }
 function optional(file) {
@@ -43,10 +45,10 @@ function optional(file) {
 function json(file) {
   return JSON.parse(optional(file) || '{}');
 }
-function write(file, data) {
+function write(file, data, mode) {
   if (fs.existsSync(file) && fs.readFileSync(file).equals(Buffer.from(data))) return;
   const tmp = file + '.' + process.pid + '.tmp';
-  fs.writeFileSync(tmp, data);
+  fs.writeFileSync(tmp, data, { mode });
   try {
     fs.renameSync(tmp, file);
   } finally {
@@ -72,6 +74,8 @@ function versionOrder(a, b) {
 }
 async function setup() {
   if (values.local && values.tracked) throw Error('Choose either --local or --tracked.');
+  const host = values.hooks === 'claude-code' ? 'claude' : values.hooks;
+  if (host !== undefined && !['codex', 'claude'].includes(host)) throw Error('Choose --hooks codex or --hooks claude.');
   const start = fs.realpathSync(values.project || '.');
   const repo = git(start, 'rev-parse', '--show-toplevel');
   const boundary = repo.status === 0 ? fs.realpathSync(repo.stdout.trim()) : start;
@@ -194,6 +198,11 @@ async function setup() {
       createdAt: config.createdAt || new Date().toISOString().slice(0, 10),
       pluginVersion: sourceVersion,
     });
+    let hooks;
+    if (host) {
+      const generated = execFileSync(process.execPath, [at('board-hooks.mjs'), host], { encoding: 'utf8', windowsHide: true });
+      hooks = installProjectHooks({ project, config, host, generated: JSON.parse(generated).hooks, git, write });
+    }
     write(at('config.json'), JSON.stringify(config, null, 2) + '\n');
     const instruction =
       '\n## Task management system\n\nWork from .tasks/TASKS.md, .tasks/MILESTONES.md and .tasks/CLAUDE.md. Read the active task in .tasks/tasks/<id>.md. Humans and agents share the board, review queue, comments, results and success criteria. Run \x60node .tasks/board-server.mjs agent help\x60 for revision-checked edits. Setup and operating guide: https://github.com/RealEmmettS/shaughv-tasks/blob/main/AGENT-QUICKSTART.md\n';
@@ -225,7 +234,7 @@ async function setup() {
       if (identity.ok !== 'shaughv-task-board' || fs.realpathSync(identity.root) !== fs.realpathSync(board))
         throw Error('Board identity check failed.');
     }
-    return { project, board, title, version: sourceVersion, tracking, assets: install.provisioned, url };
+    return { project, board, title, version: sourceVersion, tracking, assets: install.provisioned, ...(hooks && { hooks }), url };
   } finally {
     lock.close();
   }

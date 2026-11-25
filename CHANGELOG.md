@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 A plain-English companion lives at [HUMAN_CHANGELOG.md](./HUMAN_CHANGELOG.md) and is kept in lockstep with this file — see the changelog rule in [CLAUDE.md](./CLAUDE.md).
 
+## [1.6.0] — 2026-11-25
+
+### Added
+
+- The setup helper accepts `--hooks codex` or `--hooks claude` to merge and verify native board hooks in the selected project. It preserves other settings and reports any existing configuration that needs a manual merge.
+
+### Improved
+
+- The README opens with a copyable setup request and walks the project lead through a task from assignment to review. The linked agent guide includes exact project install commands.
+- Hook lookup stops at the current Git root when a nested repository has no board.
+
 ## [1.5.0] — 2026-11-25
 
 ### Added

@@ -1,53 +1,121 @@
 # SHAUGHV Tasks
 
-A Markdown project board for people building software with coding agents. Plan the work, assign an owner, discuss a result, and review the evidence together. People use the local dashboard. Agents can make the same changes from the terminal. Both work in the project's `.tasks/` folder.
+See who owns each task, what your coding agents are building, and what’s ready for your review. Open a card in your browser to read the result, ask for a change, or mark it complete. You and your agents can both edit the board.
 
-**Give a new agent this link:** [Agent quickstart](https://github.com/RealEmmettS/shaughv-tasks/blob/main/AGENT-QUICKSTART.md). Tell it, “Set up or resume the task board in this project.” The guide covers installation, launch, collaboration, and recovery.
+[Open your board](#open-your-board) · [Try a first task](#take-a-task-through-review) · [Install with npx](#install-with-npx) · [Downloads](#downloads-and-other-installs)
 
-![The project dashboard with tasks grouped by stage and owner](docs/images/task-board.jpg)
+## Open your board
+
+Open **the project you want to manage** in Codex, Claude Code, or another local coding tool that can edit files and run commands. Copy this whole message into that project’s chat.
+
+```text
+Use this guide to set up SHAUGHV Tasks in the repo open in this chat.
+https://github.com/RealEmmettS/shaughv-tasks/blob/main/AGENT-QUICKSTART.md
+Install the skills here and set up the board hooks this tool supports.
+Start or reopen the board and give me its link.
+Read the tasks and tell me what needs attention first.
+```
+
+Open the link your agent gives you. In Codex, use `/hooks` to review and trust the project hooks. These let your coding tool pick up the board when a session starts. Next time, just ask **“Open my task board.”**
+
+## Take a task through review
+
+![Example project board. Emmett owns the launch checklist, Codex is refining the review queue, and the project brief is ready for review.](docs/images/task-board.jpg)
+
+1. **Describe the work.** Choose **New task** and enter “Add a Help link to the mobile menu.” Open the card, set an **Owner**, and add a check under **Success criteria** such as “Help opens the support page on my phone.”
+2. **See what changed.** The owner can use **Post result** to record what they tested and move the card into **Review**. Open the card and try the link on your phone.
+3. **Make the call.** If the link works, check off the criterion and choose **Mark complete**. If it needs another pass, leave a **Comment** and move the card back to **Active**.
+
+Group related tasks with **New milestone**. Use **Memory** for project decisions you want to keep across chats.
+
+**Starting a new chat?** Use **Agent brief** for a summary of the whole board, or **Copy handoff** inside one card for that task and its notes.
+
+### Where your work lives
+
+Tasks, comments, results, and project notes are Markdown files in your project’s `.tasks/` folder. Edits show up live on the same local board. To share across computers, commit and sync the files with Git. For a personal board, ask your agent to keep it out of Git during setup.
 
 ## Install with npx
 
-From your project, run:
+If you prefer to install the skills yourself, open a terminal in your project folder. Use Node.js 22.20 or later. [Get Node.js](https://nodejs.org/en/download)
 
 ```sh
-npx skills add RealEmmettS/shaughv-tasks
+npx skills add RealEmmettS/shaughv-tasks --skill "*"
 ```
 
-Choose all seven skills and the agents you use. To install them directly for Codex and Claude Code in this project:
+Choose the coding tools you use and the project install when prompted. Then paste the [setup message](#open-your-board) into your project chat to start the board and set up its hooks.
+
+<details>
+<summary>Install for several coding tools at once</summary>
+
+**For Codex and Claude Code in this project**
 
 ```sh
-npx skills add RealEmmettS/shaughv-tasks --skill "*" --agent codex claude-code -y
+npx --yes skills add RealEmmettS/shaughv-tasks --skill "*" --agent codex claude-code -y
 ```
 
-To install all seven for every supported agent in this project, use `--agent "*"`. Add `-g` for a user-wide installation. The npx installer requires Node.js 22.20 or later. [Installer reference](https://github.com/vercel-labs/skills)
-
-Ask your agent to **start the task board**. For a manual launch, run the setup helper in the installed `tasks-start/assets` directory with your project as the working directory. For the standard Codex project install:
+**For every supported coding tool in this project**
 
 ```sh
-node .agents/skills/tasks-start/assets/setup.mjs
+npx --yes skills add RealEmmettS/shaughv-tasks --all
 ```
 
-Open the localhost URL it prints. Running setup again resumes or upgrades the same board. New boards in Git are shareable by default. Use `--local` on first setup for a Git-ignored board. Nothing is committed automatically.
+Add `-g` if you want the skills available across all your projects. Each board and its hooks still belong to the project where you run setup.
+
+</details>
 
 ## Downloads and other installs
 
-| Format | How to use it |
-| --- | --- |
-| [Complete ZIP](https://github.com/RealEmmettS/shaughv-tasks/releases/latest/download/shaughv-tasks.zip) | Extract it. Copy the seven folders from `skills/` to your agent's skills directory, or run `node "/path/to/extracted/skills/tasks-start/assets/setup.mjs" --project "/path/to/project"` directly. |
-| [Individual .skill downloads](https://github.com/RealEmmettS/shaughv-tasks/releases/latest) | Download [tasks-start.skill](https://github.com/RealEmmettS/shaughv-tasks/releases/latest/download/tasks-start.skill) or choose any of the seven release assets. Import the desired files into a host that supports skill uploads. Use the complete ZIP for the whole system and its cross-skill references. A chat-only host can work from files or a handoff. |
-| Codex marketplace | Run `codex plugin marketplace add RealEmmettS/shaughv-tasks`, then `codex plugin add shaughv-tasks@shaughv-tasks`. |
-| Claude Code marketplace | Run `/plugin marketplace add RealEmmettS/shaughv-tasks`, then `/plugin install shaughv-tasks@shaughv-tasks`. Use `/shaughv-tasks:tasks-start`. |
+- **Complete kit.** Get all seven skills, the board, and the guides in one download. [Download the ZIP](https://github.com/RealEmmettS/shaughv-tasks/releases/latest/download/shaughv-tasks.zip)
+- **Individual skills.** For tools that accept `.skill` uploads, choose the ones you need. [Download tasks-start.skill](https://github.com/RealEmmettS/shaughv-tasks/releases/latest/download/tasks-start.skill) · [Browse all seven](https://github.com/RealEmmettS/shaughv-tasks/releases/latest)
 
-## Working together
+<details>
+<summary>Install the ZIP or start its board directly</summary>
 
-- **Plan and assign.** Create a task, choose a human or agent as owner, and add prerequisites, subtasks, and success criteria. Use milestones for larger outcomes.
-- **Build and review.** Move work from Backlog through To-Do and Active into Review. Either operator can comment, post results, check criteria, and complete or reopen tasks. Existing custom columns are preserved.
-- **Hand off.** **Agent brief** prepares the whole project for a new chat. **Copy handoff** in a task includes its saved Markdown record. A chat with file access can work directly. A chat with only a snapshot can propose changes for reconciliation.
-- **Keep the record.** `.tasks/TASKS.md` and `MILESTONES.md` hold the indexes. `.tasks/tasks/<id>.md` holds a task's comments, results, criteria, and activity. `.tasks/CLAUDE.md` and `memory/` hold shared context. Git transports tracked records between checkouts. Open tabs on the same local server update live.
+Extract the ZIP. To install the skills by hand, copy the seven folders inside `skills/` into your project's `.agents/skills/` for Codex or `.claude/skills/` for Claude Code. Then paste the setup message into that project's chat.
+
+To start the board directly, open a terminal in the extracted folder and replace the example path below with your project's folder.
+
+```sh
+node skills/tasks-start/assets/setup.mjs --project "/path/to/your/project"
+```
+
+Open the local address shown under `url`. For project hooks, add `--hooks codex` or `--hooks claude` for the tool you use.
+
+</details>
+
+<details>
+<summary>Install from the Codex or Claude Code marketplace</summary>
+
+**Codex** · Run in a terminal.
+
+```sh
+codex plugin marketplace add RealEmmettS/shaughv-tasks
+codex plugin add shaughv-tasks@shaughv-tasks
+```
+
+**Claude Code** · Run these commands one at a time in its chat.
+
+```text
+/plugin marketplace add RealEmmettS/shaughv-tasks
+/plugin install shaughv-tasks@shaughv-tasks
+```
+
+Return to your project chat and paste the [setup message](#open-your-board).
+
+</details>
 
 ## Updates
 
-For npx installs, run `npx skills update` in the project or `npx skills update -g` for a user-wide install. For Codex, run `codex plugin marketplace upgrade shaughv-tasks` followed by `codex plugin add shaughv-tasks@shaughv-tasks`. For Claude Code, update the marketplace and installed plugin. For manual installs, replace the downloaded skill folders. Run **tasks-start** again in each project to apply the upgrade and retain its records.
+Use the method you originally installed with. Then ask your agent to open the board in each project to apply the update.
 
-[Agent operations](skills/tasks-start/references/agents.md) · [Release notes](HUMAN_CHANGELOG.md) · [ChatGPT handoffs](skills/tasks-management/references/chatgpt.md)
+<details>
+<summary>Find my update command</summary>
+
+- **npx** · Run `npx skills update` in the project, or `npx skills update -g` for a user-wide install.
+- **Codex marketplace** · Run `codex plugin marketplace upgrade shaughv-tasks`, then `codex plugin add shaughv-tasks@shaughv-tasks`.
+- **Claude Code marketplace** · In a terminal, run `claude plugin marketplace update shaughv-tasks`, then `claude plugin update shaughv-tasks@shaughv-tasks`.
+- **Manual download** · Replace the installed skill folders with the copies from the latest ZIP.
+
+</details>
+
+[What’s new](HUMAN_CHANGELOG.md) · [Agent setup guide](https://github.com/RealEmmettS/shaughv-tasks/blob/main/AGENT-QUICKSTART.md) · [Working from a chat snapshot](skills/tasks-management/references/chatgpt.md)

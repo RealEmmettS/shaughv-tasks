@@ -6,6 +6,18 @@ For the technical version with versions, file paths, and links, see CHANGELOG.md
 
 ---
 
+## Open a board from your project chat — November 2026
+
+**Added**
+
+- Paste one message into the project you have open. Your coding tool can install the skills there, set up its board reminders, and give you the link to your board.
+
+**Improved**
+
+- The guide shows how to assign a task, review a result, and send it back for another pass. Downloads and alternate installs have their own section.
+
+---
+
 ## A project board for people and coding agents — November 2026
 
 **Added**

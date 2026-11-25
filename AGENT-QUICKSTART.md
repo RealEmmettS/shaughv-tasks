@@ -1,15 +1,37 @@
-# Start here with a project
+# Set up SHAUGHV Tasks in the open project
 
-Give a human or agent this permanent link: https://github.com/RealEmmettS/shaughv-tasks/blob/main/AGENT-QUICKSTART.md
-
-Work in the project the user is building. This repository distributes the tools. The target project's own `.tasks/` holds the data.
+Use the repository attached to the chat where the human pasted the setup message. In a terminal there, `git rev-parse --show-toplevel` prints its root. Change to that folder before running the commands below. If several repositories are open and the target is unclear, ask which one to use.
 
 ## Set up or resume
 
-1. When the skills are already installed, locate the loaded `tasks-start/SKILL.md`. The setup helper is beside it under `assets/setup.mjs`.
-2. Otherwise use the [README install instructions](README.md#install-with-npx) for the requested agent and scope. For a manual install, extract the [complete release](https://github.com/RealEmmettS/shaughv-tasks/releases/latest/download/shaughv-tasks.zip) outside the target project. The same helper lives in `skills/tasks-start/assets/`.
-3. Run `node "/path/to/tasks-start/assets/setup.mjs" --project "/path/to/project"`. It finds an existing board within the repository boundary, repairs the portable bundle, provisions the shipped fonts and scripts, and returns JSON with the verified board URL. Open that URL for the human. On an existing board retain its tracking choice. On a new Git project, use `--local` if the operator wants personal tracking. Use `--repair` to upgrade without starting a stopped board.
-4. Read the project's effective root instructions, then `.tasks/CLAUDE.md`, `.tasks/TASKS.md`, `.tasks/MILESTONES.md`, and the relevant task records. Report what is active, blocked, or awaiting review. Hooks and memory interviews are optional. [Host setup](skills/tasks-start/references/hosts.md)
+The README’s setup message asks for a project install and the current tool’s project hooks. The commands below install all seven skills in that repository, start or resume its `.tasks/` board, and configure hooks for the selected tool. The npx installer needs Node.js 22.20 or later.
+
+### Codex
+
+```sh
+npx --yes skills add RealEmmettS/shaughv-tasks --skill "*" --agent codex -y
+node .agents/skills/tasks-start/assets/setup.mjs --hooks codex
+```
+
+### Claude Code
+
+```sh
+npx --yes skills add RealEmmettS/shaughv-tasks --skill "*" --agent claude-code -y
+node .claude/skills/tasks-start/assets/setup.mjs --hooks claude
+```
+
+### Other setups
+
+- **Already installed.** Use `assets/setup.mjs` beside the loaded `tasks-start/SKILL.md`. Run it from the target repository with the same hook flag for the current tool. If `--help` does not list `--hooks`, update the skills or use the current project install above.
+- **Another coding tool.** Install the skills for that tool and run its `tasks-start/assets/setup.mjs` from the project. The board supports file and terminal access. Native hooks are available for Codex and Claude Code. [Project install options](README.md#install-with-npx)
+- **Manual download.** Extract the [complete ZIP](https://github.com/RealEmmettS/shaughv-tasks/releases/latest/download/shaughv-tasks.zip) outside the target repository. From the project, run `node "/path/to/extracted/skills/tasks-start/assets/setup.mjs"` with the hook flag for your tool.
+- **Personal board.** For a new Git project, add `--local` to the setup command if the human wants the board kept out of Git. Existing boards retain their tracking settings. Use `--repair` to upgrade without starting a stopped board.
+
+### Open the board and pick up work
+
+1. Check the setup output. `project` must be the selected repository and `board` its `.tasks/` folder. Open the verified `url` and give the human the link.
+2. Check `hooks` when you requested them. `configured` means the commands were written and verified in the project settings. In Codex, tell the human to review the project hooks in `/hooks` when `pendingReview` is true. If setup reports `needs-merge`, finish the merge in the indicated project settings and verify the installed commands. The host guide covers inline TOML, existing local settings, and native review. [Hook setup and verification](skills/tasks-start/references/hosts.md#optional-native-hooks)
+3. Read the effective root instructions, `.tasks/CLAUDE.md`, the board, milestones, and relevant task records. Summarize what is active, blocked, or ready for review. On an empty board, invite the human to name the first task.
 
 ## Operate the board
 

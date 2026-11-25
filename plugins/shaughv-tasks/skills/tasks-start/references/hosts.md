@@ -50,15 +50,26 @@ Record choices under `config.json.hosts`, preserving unknown fields and legacy `
 ```
 
 Valid recorded states are `enabled`, `declined`, and `unavailable`. No entry means the
-host has not been configured. Ask once for the active host only, unless the user has
-already requested hooks for both. Persist a decline. Resume never re-asks a recorded
+host has not been configured. The setup message in the README authorizes hooks for the
+current tool in the repository open in that chat. On a general board request without
+a hook choice, offer hooks for the active host. Persist a decline. Resume never re-asks a recorded
 choice. An unavailable host stays manual until the user requests setup again.
 Legacy `hooks: local|shared` records placement, not consent. Infer enabled only from
 positively identified installed board hooks; never install a missing hook from that
 legacy value alone. Record the actual native target and the generated command strings
 as `commands` in that host's entry after a successful merge.
 
-Generate a reviewable JSON block with:
+Pass `--hooks codex` or `--hooks claude` to the setup helper to install and verify the
+requested project's hooks. A repeat run keeps one board command per event and retains
+unrelated hooks and settings. Backups of changed settings stay under `.tasks/secure/`.
+The `hooks.target` and `hooks.status` in the result identify the settings file and outcome.
+For `needs-merge`, read the reason and complete the merge in the selected project using
+the steps below. Keep existing inline TOML hooks in their original file. Read it back,
+check each generated command and matcher, and record the verified target and commands
+under `.tasks/config.json` → `hosts`. A link to settings outside this repo does not
+authorize changing them. Ask about placement if the local and shared choices conflict.
+
+Generate the reviewable JSON block for a manual merge with the command for this host.
 
 ```text
 node .tasks/board-hooks.mjs codex
@@ -69,7 +80,7 @@ The generator only prints configuration. Its command embeds a readable Node brid
 with no machine-specific absolute path or shell variable expansion. The bridge reads
 the host's JSON `cwd`, walks to the nearest ancestor board, and launches that board's
 server with the original input. It works from a nested shell directory and with spaces
-in paths. A payload outside a board produces no action. Missing or invalid `cwd` fails
+in paths. Lookup stops at the current Git repository's root. A payload outside a board produces no action. Missing or invalid `cwd` fails
 closed. Node must be on the hook process's PATH.
 
 ### Codex

@@ -5,11 +5,12 @@ installing it; this file is for you, future Codex, when editing it.
 
 ## Onboarding an agent into a project
 
-Start with the [agent quickstart](https://github.com/RealEmmettS/shaughv-tasks/blob/main/AGENT-QUICKSTART.md).
-Install the seven skills for the selected hosts or extract the full release. Run the loaded
-tasks-start setup helper against the target project and open its verified URL. People and
-agents use the same Markdown and completion checks. [Agent operations](skills/tasks-start/references/agents.md)
-cover assignments, comments, results, criteria, review, and completion.
+Use the repository open in the human's chat as the target. Follow the
+[agent quickstart](https://github.com/RealEmmettS/shaughv-tasks/blob/main/AGENT-QUICKSTART.md)
+for a project-scoped install. The README's setup message requests hooks for the current tool.
+Run the helper with `--hooks codex` or `--hooks claude` as appropriate, check the returned
+project and hook status, open its verified board URL, and report what needs attention.
+[Agent operations](skills/tasks-start/references/agents.md) covers the shared board and task records.
 
 ## What this repo is
 
