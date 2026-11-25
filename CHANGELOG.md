@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 A plain-English companion lives at [HUMAN_CHANGELOG.md](./HUMAN_CHANGELOG.md) and is kept in lockstep with this file — see the changelog rule in [CLAUDE.md](./CLAUDE.md).
 
+## [1.4.0] — 2026-11-25
+
+### Added
+- Use the CDN cursor and frosted dropdowns on the board. The native selects continue to work offline.
+- Place the CDN's paired wordmark and crest below the workspace and keep file and save status in view.
+
+### Improved
+- Refresh all five bundled Makira weights, the animated mark, and the loader from the live CDN.
+  Pin their installer sources and version their local browser URLs so upgrades pick up new bytes.
+  Load the bundled anime.js before the loader can request its network fallback.
+
 ## [1.3.0] — 2026-09-29
 
 ### Added

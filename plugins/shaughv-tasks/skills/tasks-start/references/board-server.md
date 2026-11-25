@@ -406,8 +406,15 @@ provisioning and secret edits never spam SSE.
 
 The dashboard loads relative `./vendor/` assets in both localhost and file mode.
 Font declarations use only the supplied local WOFF2 files. The canonical brand mark,
-loader, and anime.js are local scripts, with no duplicate remote script loads. The
-installer still verifies every downloaded or copied candidate against its pinned hash.
+loader, and anime.js are local scripts. Load anime.js before the loader. When these
+bundles change, update their installer pins and the version queries on the changed
+local script, stylesheet, and font URLs so existing boards refresh on reload.
+The installer verifies every downloaded or copied candidate against its pinned hash.
+
+The dashboard links the shared footer stylesheet and artwork from the CDN. It loads the
+hosted cursor and dropdown scripts asynchronously with subresource integrity. When
+refreshing these links, resolve the scripts from the live CDN catalog and update their
+integrity digests together. Without the CDN the board keeps its native pointer and selects.
 If anime.js is unavailable, the existing built-in Slot Roll driver remains available;
 FLIP uses WAAPI. Missing fonts or brand assets need installer repair before visual acceptance.
 

@@ -9,10 +9,10 @@
   <link rel="icon" type="image/svg+xml" href="https://cdn.shaughv.com/brand/shaughv/favicons/SHAUGHV-Favicon-Light.svg" media="(prefers-color-scheme: dark)">
   <link rel="preconnect" href="https://cdn.shaughv.com" crossorigin>
   <!-- SHAUGHV fonts: bundled Makira (reading/action) + Gail Rock (state/metadata). -->
-  <link rel="stylesheet" href="./vendor/fonts.css">
-  <script defer src="./vendor/animated-brand-mark.js"></script>
-  <script defer src="./vendor/shaughv-loader.js"></script>
+  <link rel="stylesheet" href="./vendor/fonts.css?v=34f968080961">
+  <script defer src="./vendor/animated-brand-mark.js?v=5a26d999e385"></script>
   <script defer src="./vendor/anime.min.js"></script>
+  <script defer src="./vendor/shaughv-loader.js?v=9388d150e46a"></script>
   <script>
     (function () {
       var preference = 'system';
@@ -29,78 +29,92 @@
   <link rel="stylesheet" href="./dashboard.css">
 </head>
 <body>
-  <a class="skip-link" href="#tasksPanel">Skip to workspace</a>
-  <header>
-    <div class="header-left">
-      <shaughv-mark class="brand-mark" data-icon-only data-static aria-label="SHAUGHV"></shaughv-mark>
-      <div class="project-heading">
-        <div class="eyebrow">SHAUGHV / workspace</div>
-        <h1 id="appTitle" class="app-title">Tasks</h1>
+  <shaughv-cursor color="var(--accent)"></shaughv-cursor>
+  <div class="workspace">
+    <a class="skip-link" href="#tasksPanel">Skip to workspace</a>
+    <header>
+      <div class="header-left">
+        <shaughv-mark class="brand-mark" data-icon-only data-static aria-label="SHAUGHV"></shaughv-mark>
+        <div class="project-heading">
+          <div class="eyebrow">SHAUGHV / workspace</div>
+          <h1 id="appTitle" class="app-title">Tasks</h1>
+        </div>
       </div>
-    </div>
-    <label class="theme-control"><span>Appearance</span>
-      <select id="themeToggle" aria-label="Appearance"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select>
-    </label>
-  </header>
-  <nav class="workspace-toolbar" aria-label="Workspace">
-    <div class="toolbar-start">
-      <div class="view-toggle" id="mainTabToggle">
-        <button id="tasksTabBtn" class="active" aria-pressed="true">Tasks</button><button id="memoryTabBtn" aria-pressed="false">Memory</button>
+      <label class="theme-control"><span class="appearance-label">Appearance</span>
+        <select id="themeToggle" aria-label="Appearance"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select>
+      </label>
+    </header>
+    <nav class="workspace-toolbar" aria-label="Workspace">
+      <div class="toolbar-start">
+        <div class="view-toggle" id="mainTabToggle">
+          <button id="tasksTabBtn" class="active" aria-pressed="true">Tasks</button><button id="memoryTabBtn" aria-pressed="false">Memory</button>
+        </div>
+        <div class="view-toggle" id="taskViewToggle" aria-label="Task layout">
+          <button id="boardViewBtn" class="active" aria-pressed="true">Board</button><button id="listViewBtn" aria-pressed="false">List</button>
+        </div>
       </div>
-      <div class="view-toggle" id="taskViewToggle" aria-label="Task layout">
-        <button id="boardViewBtn" class="active" aria-pressed="true">Board</button><button id="listViewBtn" aria-pressed="false">List</button>
+      <div class="toolbar-end buttons">
+        <button id="openTaskBtn">Select File</button><button id="openMemoryBtn" style="display:none">Open Folder</button>
+        <button id="saveBtn" class="primary" disabled style="display:none">Save</button>
       </div>
-    </div>
-    <div class="toolbar-end buttons">
-      <button id="openTaskBtn">Select File</button><button id="openMemoryBtn" style="display:none">Open Folder</button>
-      <button id="saveBtn" class="primary" disabled style="display:none">Save</button>
-    </div>
-  </nav>
+    </nav>
 
-  <!-- TASKS TAB PANEL -->
-  <main class="tab-panel active" id="tasksPanel" tabindex="-1">
-    <div class="task-tools" id="taskTools" hidden>
-      <div class="task-search"><label class="sr-only" for="taskSearch">Search tasks</label><input id="taskSearch" type="search" placeholder="Search tasks, people, or #id" autocomplete="off" aria-keyshortcuts="/"></div>
-      <label class="sr-only" for="taskFilter">Show tasks</label>
-      <select id="taskFilter"><option value="all">All tasks</option><option value="open">Open</option><option value="active">Active</option><option value="blocked">Blocked</option><option value="completed">Completed</option></select>
-      <label class="sr-only" for="ownerFilter">Filter by owner</label><select id="ownerFilter"><option value="">All owners</option></select>
-      <button id="newTaskBtn" class="primary" aria-expanded="false" aria-controls="taskComposer" aria-keyshortcuts="n">New task</button>
-    </div>
-    <form class="task-composer" id="taskComposer" hidden>
-      <label class="sr-only" for="newTaskTitle">New task title</label><input id="newTaskTitle" placeholder="What needs to be done?" required autocomplete="off">
-      <label class="sr-only" for="newTaskSection">New task status</label><select id="newTaskSection"></select>
-      <button type="submit" class="primary">Add task</button><button type="button" id="cancelNewTask">Cancel</button>
-      <span id="newTaskContext" class="composer-context"></span>
-    </form>
-    <div class="task-results" id="taskResults" hidden><span id="taskResultCount" role="status" aria-live="polite"></span><button id="clearTaskFilters" hidden>Clear filters</button></div>
-    <div class="filter-empty" id="filterEmpty" hidden>No tasks match. Try another search or clear your filters.</div>
-    <div class="milestone-rail" id="milestoneRail" style="display: none;"></div>
-    <div class="list-view" id="listView" style="display: none;"></div>
-    <div class="board" id="board">
-      <div class="empty-state" id="boardEmptyState" style="width: 100%;">
+    <!-- TASKS TAB PANEL -->
+    <main class="tab-panel active" id="tasksPanel" tabindex="-1">
+      <div class="task-tools" id="taskTools" hidden>
+        <div class="task-search"><label class="sr-only" for="taskSearch">Search tasks</label><input id="taskSearch" type="search" placeholder="Search tasks, people, or #id" autocomplete="off" aria-keyshortcuts="/"></div>
+        <label class="sr-only" for="taskFilter">Show tasks</label>
+        <select id="taskFilter"><option value="all">All tasks</option><option value="open">Open</option><option value="active">Active</option><option value="blocked">Blocked</option><option value="completed">Completed</option></select>
+        <label class="sr-only" for="ownerFilter">Filter by owner</label><select id="ownerFilter"><option value="">All owners</option></select>
+        <button id="newTaskBtn" class="primary" aria-expanded="false" aria-controls="taskComposer" aria-keyshortcuts="n">New task</button>
+      </div>
+      <form class="task-composer" id="taskComposer" hidden>
+        <label class="sr-only" for="newTaskTitle">New task title</label><input id="newTaskTitle" placeholder="What needs to be done?" required autocomplete="off">
+        <label class="sr-only" for="newTaskSection">New task status</label><select id="newTaskSection"></select>
+        <button type="submit" class="primary">Add task</button><button type="button" id="cancelNewTask">Cancel</button>
+        <span id="newTaskContext" class="composer-context"></span>
+      </form>
+      <div class="task-results" id="taskResults" hidden><span id="taskResultCount" role="status" aria-live="polite"></span><button id="clearTaskFilters" hidden>Clear filters</button></div>
+      <div class="filter-empty" id="filterEmpty" hidden>No tasks match. Try another search or clear your filters.</div>
+      <div class="milestone-rail" id="milestoneRail" style="display: none;"></div>
+      <div class="list-view" id="listView" style="display: none;"></div>
+      <div class="board" id="board">
+        <div class="empty-state" id="boardEmptyState" style="width: 100%;">
+          <shaughv-mark aria-label="SHAUGHV" style="display:block; height: 88px; width: 88px; color: var(--accent); margin: 0 auto 28px;"></shaughv-mark>
+          <p style="margin-bottom: 8px; font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.02em; font-size: 20px; color: var(--text-primary);">Your tasks, in focus</p>
+          <p style="margin-bottom: 24px; font-size: 15px; color: var(--text-muted);">Select your TASKS.md file to load the board.</p>
+          <button id="openBtnLarge">Select TASKS.md</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- MEMORY TAB PANEL -->
+    <div class="tab-panel" id="memoryPanel">
+      <div id="memoryEmptyState" class="empty-state">
         <shaughv-mark aria-label="SHAUGHV" style="display:block; height: 88px; width: 88px; color: var(--accent); margin: 0 auto 28px;"></shaughv-mark>
-        <p style="margin-bottom: 8px; font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.02em; font-size: 20px; color: var(--text-primary);">Your tasks, in focus</p>
-        <p style="margin-bottom: 24px; font-size: 15px; color: var(--text-muted);">Select your TASKS.md file to load the board.</p>
-        <button id="openBtnLarge">Select TASKS.md</button>
+        <p style="margin-bottom: 8px; font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.02em; font-size: 20px; color: var(--text-primary);">Workplace memory</p>
+        <p style="margin-bottom: 24px; font-size: 15px; color: var(--text-muted);">Select your project folder to browse its people, terms, and notes.</p>
+        <button id="openMemoryBtnLarge">Select Folder</button>
+      </div>
+      <div id="memoryMainContent" style="display: none; flex-direction: column; min-height: 0; flex: 1;">
+        <div class="memory-tabs" id="memoryTabsContainer"></div>
+        <div class="memory-content-area">
+          <div id="memoryContentContainer"></div>
+        </div>
       </div>
     </div>
-  </main>
 
-  <!-- MEMORY TAB PANEL -->
-  <div class="tab-panel" id="memoryPanel">
-    <div id="memoryEmptyState" class="empty-state">
-      <shaughv-mark aria-label="SHAUGHV" style="display:block; height: 88px; width: 88px; color: var(--accent); margin: 0 auto 28px;"></shaughv-mark>
-      <p style="margin-bottom: 8px; font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.02em; font-size: 20px; color: var(--text-primary);">Workplace memory</p>
-      <p style="margin-bottom: 24px; font-size: 15px; color: var(--text-muted);">Select your project folder to browse its people, terms, and notes.</p>
-      <button id="openMemoryBtnLarge">Select Folder</button>
-    </div>
-    <div id="memoryMainContent" style="display: none; flex-direction: column; min-height: 0; flex: 1;">
-      <div class="memory-tabs" id="memoryTabsContainer"></div>
-      <div class="memory-content-area">
-        <div id="memoryContentContainer"></div>
-      </div>
-    </div>
+    <div class="workspace-footer"><div id="filePath" class="file-path"></div><span id="boardSaveState" role="status" aria-live="polite"></span></div>
   </div>
+  <footer class="shaughv-footer" data-align="center">
+    <div class="shaughv-footer__brand">
+      <div class="shaughv-footer__marks">
+        <span class="shaughv-footer__wordmark" role="img" aria-label="SHAUGHV"></span>
+        <span class="shaughv-footer__crest" role="img" aria-label="Shaughnessy crest"></span>
+      </div>
+      <small>© 2026 Emmett Shaughnessy</small>
+    </div>
+  </footer>
 
   <!-- MODAL (shared for memory) -->
   <div class="modal-overlay" id="modalOverlay">
@@ -160,15 +174,21 @@
     </div>
   </div>
 
-  <footer class="workspace-footer"><div id="filePath" class="file-path"></div><span id="boardSaveState" role="status" aria-live="polite"></span><span class="footer-label">Tasks / SHAUGHV</span></footer>
   <div class="status-bar" id="status" role="status" aria-live="polite"></div>
 
   <script>
+    function setSelectValue(select, value) {
+      if (select.value === value) return;
+      select.value = value;
+      // Refresh the visible dropdown without invoking the board's change handlers.
+      select.dispatchEvent(new Event('input'));
+    }
+
     // Persist explicit choices; System follows the OS while the board is open.
     (function () {
       const control = document.getElementById('themeToggle');
       const appearance = window.boardAppearance;
-      control.value = appearance.preference;
+      setSelectValue(control, appearance.preference);
       control.addEventListener('change', () => {
         appearance.preference = control.value;
         try { localStorage.setItem('shaughv-tasks-theme', control.value); } catch (_) {}
@@ -178,7 +198,7 @@
       window.addEventListener('storage', event => {
         if (event.key !== 'shaughv-tasks-theme') return;
         appearance.preference = ['light','dark'].includes(event.newValue) ? event.newValue : 'system';
-        control.value = appearance.preference;
+        setSelectValue(control, appearance.preference);
         appearance.apply();
       });
     })();
@@ -758,7 +778,7 @@
     function resetTaskFilters() {
       taskSearch = ''; taskFilter = 'all'; ownerFilter = ''; activeMilestoneFilter = null;
       document.getElementById('taskSearch').value = '';
-      document.getElementById('taskFilter').value = 'all';
+      setSelectValue(document.getElementById('taskFilter'), 'all');
       renderTasks();
     }
 
@@ -775,7 +795,7 @@
       const options = '<option value="">All owners</option><option value="__unassigned__">Unassigned</option>'
         + owners.map(owner => `<option value="${escapeHtml(owner)}">${escapeHtml(owner)}</option>`).join('');
       if (ownerSelect.innerHTML !== options) ownerSelect.innerHTML = options;
-      ownerSelect.value = ownerFilter;
+      setSelectValue(ownerSelect, ownerFilter);
       const milestone = milestoneById(activeMilestoneFilter);
       document.getElementById('taskResultCount').textContent = filtered
         ? `${visible.length} of ${all.length} tasks${milestone ? ' · ' + milestone.title : ''}`
@@ -790,8 +810,8 @@
       const select = document.getElementById('newTaskSection');
       const openSections = sections.filter(s => !isCompletionSection(s.id));
       select.innerHTML = openSections.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
-      select.value = openSections.some(s => s.id === sectionId) ? sectionId
-        : (openSections.some(s => s.id === 'to-do') ? 'to-do' : openSections[0]?.id || '');
+      setSelectValue(select, openSections.some(s => s.id === sectionId) ? sectionId
+        : (openSections.some(s => s.id === 'to-do') ? 'to-do' : openSections[0]?.id || ''));
       document.getElementById('newTaskContext').textContent = activeMilestoneFilter
         ? 'Milestone: ' + (milestoneById(activeMilestoneFilter)?.title || activeMilestoneFilter) : '';
       composer.hidden = false;
@@ -831,7 +851,7 @@
     document.addEventListener('keydown', e => {
       if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing || activeMainTab !== 'tasks'
           || tmTask || msTask || operatorDialogPending || !taskFileName
-          || e.target.closest('input,textarea,select,[contenteditable="true"],dialog')) return;
+          || e.defaultPrevented || e.target.closest('input,textarea,select,[role="combobox"],[contenteditable="true"],dialog')) return;
       if (e.key === '/') { e.preventDefault(); document.getElementById('taskSearch').focus(); }
       if (e.key.toLowerCase() === 'n') { e.preventDefault(); showTaskComposer(); }
     });
@@ -3381,7 +3401,7 @@
       const modal = taskPanelBreakpoint.matches && taskModalOverlay.classList.contains('visible');
       const anyModal = modal || [...document.querySelectorAll('.modal-overlay.visible')].some(el => el !== taskModalOverlay);
       taskModalOverlay.querySelector('[role="dialog"]').setAttribute('aria-modal', String(modal));
-      document.querySelectorAll('body > header, body > nav, body > .tab-panel, body > main, body > footer').forEach(el => { el.inert = anyModal; });
+      document.querySelectorAll('.workspace, body > footer').forEach(el => { el.inert = anyModal; });
     }
     taskPanelBreakpoint.addEventListener('change', syncPanelModality);
     function hideTaskPanel() {
@@ -3658,7 +3678,7 @@
         const to = secSel.value;
         if (to !== task.section) {
           moveTask(task.id, to);            // honours the Active-block gate; sets task.section on success
-          secSel.value = task.section;      // reflect reality (revert if the move was refused)
+          setSelectValue(secSel, task.section); // Revert the displayed status if the move was refused.
           tmCheckboxEl.className = 'checkbox ' + (task.checked ? 'checked' : '');
         }
       });
@@ -5224,5 +5244,9 @@
       })();
     }
   </script>
+  <!-- Keep the local board usable while the hosted enhancements load. -->
+  <link rel="stylesheet" href="https://cdn.shaughv.com/brand/shaughv/components.css">
+  <script async src="https://cdn.shaughv.com/js/shaughv-cursor.js?v=2026-10-21.4" crossorigin="anonymous" integrity="sha384-brXH1L1yhly0z0T2QlBB/uSvPBb9OTYVidWqjeJNP7h+Le9/i65oN9QV8qMvyawC"></script>
+  <script async data-auto src="https://cdn.shaughv.com/js/shaughv-dropdown.js?v=2026-10-21.2" crossorigin="anonymous" integrity="sha384-gnSstj2cCyJB6MBLfT9x0b80nOHVoWio0JWNqinyGwbNDM1FOxPAlBhwEvMmcqvG"></script>
 </body>
 </html>

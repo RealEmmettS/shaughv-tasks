@@ -39,7 +39,8 @@ the people, project names, and shorthand you would otherwise explain again.
 
 The interface uses SHAUGHV's Makira and Gail Rock typefaces, light and dark appearances,
 and small transitions that make changes easier to follow. It respects reduced-motion
-preferences and bundles its fonts and display scripts for local use.
+preferences and bundles its fonts, animated mark, and loader for local use. When connected,
+the board also loads the shared SHAUGHV cursor, dropdowns, and footer artwork from the CDN.
 
 ## Get started with Codex
 

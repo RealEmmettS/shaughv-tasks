@@ -6,6 +6,16 @@ For the technical version with versions, file paths, and links, see CHANGELOG.md
 
 ---
 
+## The board catches up with the SHAUGHV sites — November 2026
+
+**Added**
+- The board uses the shared SHAUGHV cursor and menus when connected. Scroll below the workspace to see the wordmark and family crest.
+
+**Improved**
+- The board carries the latest Makira lettering, animated mark, and loading indicator with it. They work offline, along with task editing and the standard menus.
+
+---
+
 ## Find the next step and carry it forward — September 2026
 
 **Added**
